@@ -1,11 +1,7 @@
 # Sessions preview
 
-Generated 2026-11-15 — public sessions to 2026-12-27.
+Generated 2026-11-16 — public sessions to 2026-12-28.
 
-
-## Sunday 15 November 2026
-- **10:00–12:00** Candle Making · Christmas Glow: Candle Making & Gifting · L1 front room (Savor) · RM99 · pair RM178 · Dine add-on (after) · 20 of 20 seats left
-- **15:00–17:00** Candle Making · Christmas Glow: Candle Making & Gifting · L1 front room (Savor) · RM99 · pair RM178 · Dine add-on (after) · 20 of 20 seats left
 
 ## Wednesday 18 November 2026
 - **19:00–21:00** Watercolour · Koi & Lotus · L2 front room · RM80 · pair RM144 · Dine add-on (before) · 20 of 20 seats left
