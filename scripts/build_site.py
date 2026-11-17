@@ -472,10 +472,19 @@ def ReviewList(voice, reviews=None):
     return f'<div class="v-{voice}"><div class="reviews">{cards}</div></div>'
 
 
+# Shown under the hours table on every page. The FAQ on /workshops/ repeats this sentence.
+HOURS_FRIDAY_NOTE = 'Fridays: no workshops after 12:30pm.'
+
+
+def hours_notes_text():
+    """The hours note visitors already see, including the Friday workshop cutoff."""
+    return f"{' '.join(SITE['hours_notes']).strip()} {HOURS_FRIDAY_NOTE}".strip()
+
+
 def HoursBlock():
     rows = ''.join(f'<tr><td>{e(h["days"])}</td><td>{"Closed" if h.get("closed") else fmt_time(h["open"]) + "–" + fmt_time(h["close"])}</td></tr>' for h in SITE['hours'])
     notes = ' '.join(SITE['hours_notes'])
-    return f'<div class="hours"><table>{rows}</table><p class="notes">{e(notes)} Fridays: no workshops after 12:30pm.</p></div>'
+    return f'<div class="hours"><table>{rows}</table><p class="notes">{e(notes)} {HOURS_FRIDAY_NOTE}</p></div>'
 
 
 # ------------------------------------------------------------------ shell
@@ -907,9 +916,168 @@ def studio_hero_note():
             f'<span>{icon("tag")}{e(pw["name"])} prices until {until.day} {until.strftime("%B %Y")}</span></div>')
 
 
+def english_join(parts):
+    parts = [p for p in parts if p]
+    if not parts:
+        return ''
+    if len(parts) == 1:
+        return parts[0]
+    if len(parts) == 2:
+        return f'{parts[0]} and {parts[1]}'
+    return ', '.join(parts[:-1]) + ' and ' + parts[-1]
+
+
+def text_html(s):
+    """Escape an accordion answer. Apostrophes stay, matching the Good to know copy."""
+    return html.escape(s, quote=False)
+
+
+def lowest_workshop_price():
+    """Lowest amount one person pays for a visible workshop. Pair prices cover two people."""
+    vals = []
+    for f in WORKSHOP_FORMATS:
+        for key in ('price', 'price_specialty'):
+            if isinstance(f.get(key), (int, float)):
+                vals.append(f[key])
+        bundle = f.get('bundle') or {}
+        if isinstance(bundle.get('price'), (int, float)):
+            vals.append(bundle['price'])
+    return min(vals)
+
+
+def holiday_surcharge_sentence():
+    """Same surcharge and waived dates as the Good to know accordion."""
+    waived = ', '.join(long_date(d) for d in POL.get('public_holiday_surcharge_waived_dates', []))
+    pct = int(POL['public_holiday_surcharge'] * 100)
+    if waived:
+        return f"Public holiday sessions are {pct}% more, except {waived}."
+    return f"Public holiday sessions are {pct}% more."
+
+
+def pricing_window_sentence():
+    pw = POL['pricing_window']
+    until = dt.date.fromisoformat(pw['until'])
+    return f"These are {pw['name']} prices until {until.day} {until.strftime('%B %Y')}."
+
+
+def format_price_phrase(f):
+    if f.get('bundle') and not isinstance(f.get('price'), (int, float)):
+        return f"{f['name']} {rm(f['bundle']['price'])}"
+    phrase = f"{f['name']} {rm(f['price'])}"
+    if f.get('price_unit'):
+        phrase += f" {f['price_unit']}"
+    if f.get('pair_price'):
+        phrase += f", pair {rm(f['pair_price'])}"
+    return phrase
+
+
+def workshop_duration_clause():
+    mins = {f.get('duration_min') for f in WORKSHOP_FORMATS}
+    if mins == {120}:
+        return 'Each one is two hours'
+    if len(mins) == 1:
+        return f"Each one is {length(WORKSHOP_FORMATS[0])}"
+    return 'They run for ' + english_join(f"{length(f)} ({f['name']})" for f in WORKSHOP_FORMATS)
+
+
+def hours_prose():
+    """Day labels and times, written as a sentence from the same hours the footer shows."""
+    open_parts, closed = [], []
+    for h in SITE['hours']:
+        if h.get('closed'):
+            closed.append(h['days'])
+        else:
+            open_parts.append(f"{h['days']} {fmt_time(h['open'])}–{fmt_time(h['close'])}")
+    if len(open_parts) > 1:
+        opened = ', '.join(open_parts[:-1]) + ' and ' + open_parts[-1]
+    else:
+        opened = open_parts[0] if open_parts else ''
+    if len(closed) > 1:
+        closed_s = f"{english_join(closed)} are closed."
+    elif closed:
+        closed_s = f"{closed[0]} is closed."
+    else:
+        closed_s = ''
+    return opened, closed_s
+
+
+def workshop_faq():
+    """Questions on /workshops/. Plain text is the visible answer and the FAQPage text."""
+    fmts = WORKSHOP_FORMATS
+    names = [f['name'] for f in fmts]
+    links = [f'<a href="/workshops/{f["id"]}/">{text_html(f["name"])}</a>' for f in fmts]
+    duration = workshop_duration_clause()
+    included = POL['included']
+    q1 = (f"You can book {english_join(names)} in Kuala Lumpur. {duration}, with {included} included, "
+          f"and you take your work home the same day.")
+    q1_html = (f"You can book {english_join(links)} in Kuala Lumpur. {text_html(duration)}, with {text_html(included)} included, "
+               f"and you take your work home the same day.")
+
+    q2 = '. '.join(format_price_phrase(f) for f in fmts) + '. ' + pricing_window_sentence() + ' ' + holiday_surcharge_sentence()
+
+    address = SITE['address']
+    where = f"{address['street']}, {address['postcode']} {address['city']}, {address['note']}"
+    opened, closed_s = hours_prose()
+    q3 = (f"We're at {where}. Please arrive {POL['arrive_early_min']} minutes early. "
+          f"Hours are {opened}. {closed_s} {hours_notes_text()}").strip()
+
+    q4 = (f"Seats are {POL['refunds']}. We confirm on WhatsApp and send payment details there. "
+          f"Reschedules are {POL['reschedule']}. Please give us {POL['cancel_notice_hours']} hours' notice. "
+          f"Each session runs with a minimum of {POL['minimum_to_run']} people. If one doesn't reach it, "
+          f"we'll message you to move to another date.")
+
+    pair_bits = [f"{f['name']} {rm(f['pair_price'])}" for f in fmts if f.get('pair_price')]
+    if pair_bits and POL.get('pair_discount'):
+        lead = f"Yes. Two of you get {int(POL['pair_discount'] * 100)}% off. Pair prices are {english_join(pair_bits)}."
+    elif pair_bits:
+        lead = f"Yes. Pair prices are {english_join(pair_bits)}."
+    else:
+        lead = 'Yes. You can book a seat for two.'
+    dine = (WS.get('addons') or {}).get('dine') or {}
+    dine_shown = [f for f in fmts if f.get('dine_addon')]
+    dine_s = ''
+    if dine_shown and isinstance(dine.get('price_from'), (int, float)):
+        dine_s = f"You can add {dine.get('name') or 'Dine + workshop'}, a meal at Savor from {rm(dine['price_from'])} a person"
+        if len(dine_shown) != len(fmts):
+            dine_s += ', on workshops that show it'
+        dine_s += '.'
+    q5 = ' '.join(part for part in (lead, dine_s, 'For a team, see our group packages.') if part)
+    q5_html = text_html(q5).replace('group packages', '<a href="/groups/">group packages</a>', 1)
+
+    return [
+        ('What art and painting workshops can I book in Kuala Lumpur?', q1, q1_html),
+        ('How much do workshops in KL cost?', q2, text_html(q2)),
+        ('Where is the studio, and what are the hours?', q3, text_html(q3)),
+        ('How do I book a workshop, and can I change the date?', q4, text_html(q4)),
+        ('Can I book for two people, or for a team?', q5, q5_html),
+    ]
+
+
+def workshop_hub_ld(faqs):
+    """Breadcrumb, the formats on this page, and the FAQ. The business block stays in head()."""
+    crumbs = {'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': [
+        {'@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': SITE['url'] + '/'},
+        {'@type': 'ListItem', 'position': 2, 'name': 'Workshops', 'item': SITE['url'] + '/workshops/'},
+    ]}
+    formats = {'@context': 'https://schema.org', '@type': 'ItemList', 'name': 'Workshops', 'itemListElement': [
+        {'@type': 'ListItem', 'position': i, 'name': f['name'], 'url': SITE['url'] + f"/workshops/{f['id']}/"}
+        for i, f in enumerate(WORKSHOP_FORMATS, 1)
+    ]}
+    faq = {'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': [
+        {'@type': 'Question', 'name': question, 'acceptedAnswer': {'@type': 'Answer', 'text': plain}}
+        for question, plain, _html in faqs
+    ]}
+    return '\n'.join(ld(obj) for obj in (crumbs, formats, faq))
+
+
 def build_workshops_index():
     sunday = coming_sunday()
-    body = hero_band('Master Artist Studio Sessions', 'Workshops in <em>the room with the view</em>',
+    faqs = workshop_faq()
+    # page() prints the title as given. It does not add a brand suffix.
+    title = 'Workshops in Kuala Lumpur · Art & Painting'
+    desc = ('Workshops in Kuala Lumpur: art and painting, plus candles, crochet and baking in Desa Sri Hartamas. '
+            f'Two hours, materials included, from {rm(lowest_workshop_price())}. Book a seat.')
+    body = hero_band('Master Artist Studio Sessions', 'Art workshops in Kuala Lumpur, in <em>the room with the view</em>',
                      'Painting, candle making, crochet and baking, with a new theme every week. Two hours, taught properly, with something to take home.',
                      (f'<a class="btn" href="/this-sunday/">This Sunday</a>' if sunday else '') + '<a class="btn ghost" href="#formats">All workshops</a>',
                      crumbs(('/', 'Home'), (None, 'Workshops')), studio_hero_note(), img=('golden-shores-workshop-1.jpg', 'Adults painting at a Sunday workshop'))
@@ -923,10 +1091,10 @@ def build_workshops_index():
 </div></section>
 <section class="sec v-studio"><div class="wrap"><div class="cta-card"><div><h2>Bringing a <em>team?</em></h2><p>Art, baking or mixed team days, with rooms running side by side.</p></div>
   <div class="hero-cta"><a class="btn" href="/groups/">Group packages</a></div></div></div></section>
-<section class="sec tight v-studio"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Good to <em>know</em></h2></div>{Accordion(policy_items())}</div></section>'''
-    page('/workshops/', 'Painting, candle and crochet workshops in KL · Master Artist Studio Sessions',
-         'Themed painting, candle making, crochet and baking workshops in Desa Sri Hartamas, KL. See every date, pick one and book a seat.',
-         body, voice='studio', active='/workshops/', data_attrs=' data-page="workshops"', wa={'msg': "Hi, I'd like to book a workshop. What's on this week? Source: {source}.", 'fmt': 'workshops'})
+<section class="sec tight v-studio"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Good to <em>know</em></h2></div>{Accordion(policy_items())}</div></section>
+<section class="sec alt v-studio" id="faq"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Questions <em>people ask</em></h2></div>{Accordion([(q, answer) for q, _plain, answer in faqs])}</div></section>'''
+    page('/workshops/', title, desc, body, voice='studio', active='/workshops/', extra_head=workshop_hub_ld(faqs),
+         data_attrs=' data-page="workshops"', wa={'msg': "Hi, I'd like to book a workshop. What's on this week? Source: {source}.", 'fmt': 'workshops'})
 
 
 def build_format(f):
