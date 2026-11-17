@@ -1522,7 +1522,7 @@ def build_birthdays():
     <h2>Good to <em>know</em></h2>{Accordion([
         ('Can we bring a cake?', 'Yes. The last 30 minutes are yours in the room for cake and candles.'),
         ('Do parents stay?', 'Parents are welcome to stay and watch.'),
-        ('Allergies', 'Tell us about allergies when you book. Bake parties are plant-based, made in a shared kitchen where gluten and nuts may be present.'),
+        ('Allergies', 'Tell us about allergies when you book. Bake parties are made in a shared kitchen where gluten and nuts may be present.'),
         ('Saturdays', 'We are closed on Saturdays, so parties run on Sundays and weekdays.'),
     ])}</div>
 </div></section>'''

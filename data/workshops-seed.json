@@ -52,7 +52,7 @@
     },
     {
       "id": "bake-lab",
-      "name": "Plant-based Bake Lab",
+      "name": "Bake Lab",
       "discipline": "baking",
       "duration_min": 120,
       "price": 85,
@@ -63,7 +63,7 @@
       "cap": 20,
       "room": "L1 kitchen",
       "audience": "all",
-      "summary": "One plant-based bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes on selected dates.",
+      "summary": "One bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes on selected dates.",
       "upsell": "baking-course",
       "dine_addon": true,
       "live_from": "2026-11-04",
@@ -216,7 +216,7 @@
     },
     {
       "id": "baking-course-6wk",
-      "name": "Plant-based Baking Course (6 weeks)",
+      "name": "Baking Course (6 weeks)",
       "discipline": "baking",
       "type": "course",
       "duration_min": 150,
@@ -314,7 +314,7 @@
           "max": 12,
           "room": "L1 kitchen",
           "when": "Tuesday or Wednesday 3pm, or Friday 10am in the school holidays",
-          "summary": "Plant-based mini pizzas or cinnamon rolls, shaped and baked by the children, boxed to take home."
+          "summary": "Mini pizzas or cinnamon rolls, shaped and baked by the children, boxed to take home."
         },
         {
           "id": "canvas-birthday",
