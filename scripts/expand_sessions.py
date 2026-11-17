@@ -8,7 +8,9 @@ Reads  data/workshops-seed.json  (formats, weekly_schedule_template, schedule
 
 Rules (handoff 02-SITE-SPEC §2):
 - a rolling window of DAYS days from today (or from launch.first_public_sessions
-  if that is later); nothing before a format's live_from or an entry's from;
+  if that is later) for the weekly template; nothing before a format's live_from
+  or an entry's from. Dated rows in schedule.sessions are the published list:
+  every one on or after the window start is kept, including dates past DAYS;
 - `alternate_weeks_with`: the entry's own format runs on its first week, the
   alternate format the next week, and so on;
 - weekly closures (Saturday; Friday from 12:30) and no evening (18:00+)
@@ -88,9 +90,11 @@ def price_for(fmt, date, policies, variant=None):
         price = fmt['bundle']['price']
         if not launch and 'family-sunday' in post:
             price = post['family-sunday']
-    elif variant:                               # e.g. the Thursday specialty / cakes Bake Lab
+    elif variant:                               # e.g. Bake Lab specialty / cakes
         price = fmt.get(f'price_{variant}', price)
-        pair = fmt.get(f'pair_price_{variant}')   # no specialty pair price in the plan yet
+        # The variant's own pair_price_<variant> only. Never inherit pair_price,
+        # and never derive 10% off: that formula is what produced the old RM171.
+        pair = fmt.get(f'pair_price_{variant}')
         key = f"{fmt['id']}-{variant}"
         if not launch and key in post:
             price, pair = post[key], None
@@ -126,7 +130,9 @@ def expand(seed, themes, bookings, holidays, today, days):
                 d += dt.timedelta(days=7)
         for entry in seed.get('schedule', {}).get('sessions', []):
             d = dt.date.fromisoformat(entry['date'])
-            if start <= d <= end:
+            # Published dates stay listed until the day itself, not only for the
+            # next `days`. The weekly template above still stops at `end`.
+            if d >= start:
                 yield d, dict(entry, day=DAY_NAMES[d.weekday()]), entry['format']
 
     sessions, skipped = [], []
@@ -242,7 +248,11 @@ def main():
 
     two_weeks = (max(today, dt.date.fromisoformat(seed.get('launch', {}).get('first_public_sessions', today.isoformat())))
                  + dt.timedelta(days=13)).isoformat()
-    (DATA / 'sessions-preview.md').write_text(preview(sessions, (today + dt.timedelta(days=args.days)).isoformat()))
+    # The preview covers the rolling window and any later dated sessions, so a
+    # published list that runs past `days` is still visible here.
+    last_public = max((s['date'] for s in sessions if s['public']), default=today.isoformat())
+    horizon = max(last_public, (today + dt.timedelta(days=args.days)).isoformat())
+    (DATA / 'sessions-preview.md').write_text(preview(sessions, horizon))
     pub = [s for s in sessions if s['public']]
     print(f'{len(pub)} public sessions ({len(sessions) - len(pub)} private holds), '
           f'{len(skipped)} skipped by closure rules; preview to {two_weeks} in data/sessions-preview.md')
