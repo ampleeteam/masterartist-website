@@ -52,16 +52,18 @@
     },
     {
       "id": "bake-lab",
-      "name": "Plant-based Bake Lab",
+      "name": "Bake Lab",
       "discipline": "baking",
       "duration_min": 120,
-      "price": 95,
-      "price_specialty": 85,
-      "pair_price": 171,
+      "price": 85,
+      "price_specialty": 95,
+      "pair_price": 150,
+      "pair_price_specialty": 170,
+      "_price_note": "PENDING owner confirmation. These four numbers are the only Bake Lab prices: familiar bread price 85 and pair_price 150 (two for RM150); specialty price_specialty 95 and pair_price_specialty 170 (two for RM170). Source: Business & Marketing Plan v4, and the 22 Nov ad (Sunday 3pm, RM85). The Workshop Schedule workbook still says 75/85. Do not derive the pair price as 10% off (that is the old RM171).",
       "cap": 20,
       "room": "L1 kitchen",
       "audience": "all",
-      "summary": "One plant-based bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes at RM85.",
+      "summary": "One bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes on selected dates.",
       "upsell": "baking-course",
       "dine_addon": true,
       "live_from": "2026-11-04",
@@ -214,7 +216,7 @@
     },
     {
       "id": "baking-course-6wk",
-      "name": "Plant-based Baking Course (6 weeks)",
+      "name": "Baking Course (6 weeks)",
       "discipline": "baking",
       "type": "course",
       "duration_min": 150,
@@ -312,7 +314,7 @@
           "max": 12,
           "room": "L1 kitchen",
           "when": "Tuesday or Wednesday 3pm, or Friday 10am in the school holidays",
-          "summary": "Plant-based mini pizzas or cinnamon rolls, shaped and baked by the children, boxed to take home."
+          "summary": "Mini pizzas or cinnamon rolls, shaped and baked by the children, boxed to take home."
         },
         {
           "id": "canvas-birthday",
@@ -571,6 +573,12 @@
         "room": "l2-front"
       },
       {
+        "date": "2026-11-22",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
         "date": "2026-11-25",
         "time": "19:00",
         "end": "21:00",
@@ -588,18 +596,220 @@
       },
       {
         "date": "2026-11-29",
-        "time": "10:00",
-        "end": "12:00",
+        "time": "15:00",
+        "end": "17:00",
         "format": "bake-lab",
+        "variant": "specialty",
         "theme": "Christmas Gingerbread Cookies",
         "room": "l1-kitchen"
       },
       {
-        "date": "2026-11-29",
+        "date": "2026-12-02",
         "time": "15:00",
-        "end": "17:00",
         "format": "bake-lab",
-        "theme": "Christmas Gingerbread Cookies",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-03",
+        "time": "10:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-03",
+        "time": "15:00",
+        "format": "bake-lab",
+        "variant": "specialty",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-06",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-13",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-16",
+        "time": "10:00",
+        "end": "12:00",
+        "format": "bake-lab",
+        "variant": "specialty",
+        "theme": "Brownies",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-16",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-17",
+        "time": "10:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-17",
+        "time": "15:00",
+        "format": "bake-lab",
+        "variant": "specialty",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-23",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-24",
+        "time": "10:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-24",
+        "time": "15:00",
+        "format": "bake-lab",
+        "variant": "specialty",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-27",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-30",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-31",
+        "time": "10:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2026-12-31",
+        "time": "15:00",
+        "format": "bake-lab",
+        "variant": "specialty",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-03",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-06",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-07",
+        "time": "10:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-07",
+        "time": "15:00",
+        "format": "bake-lab",
+        "variant": "specialty",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-10",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-13",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-14",
+        "time": "10:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-14",
+        "time": "15:00",
+        "format": "bake-lab",
+        "variant": "specialty",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-17",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-20",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-21",
+        "time": "10:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-21",
+        "time": "15:00",
+        "format": "bake-lab",
+        "variant": "specialty",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-24",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-27",
+        "time": "15:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-28",
+        "time": "10:00",
+        "format": "bake-lab",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-28",
+        "time": "15:00",
+        "format": "bake-lab",
+        "variant": "specialty",
+        "room": "l1-kitchen"
+      },
+      {
+        "date": "2027-01-31",
+        "time": "15:00",
+        "format": "bake-lab",
         "room": "l1-kitchen"
       }
     ]

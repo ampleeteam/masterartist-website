@@ -246,7 +246,9 @@ def SessionCard(s, link=True):
         nxt = next((x for x in WS['sessions'] if x['id'] == s['next_session']), None)
         action = f'<a class="btn ghost block" href="/workshops/{nxt["format"]}/{nxt["date"]}/">Sold out — next date {day_date(nxt["date"])}</a>' if nxt else ''
     else:
-        action = f'<a class="btn block" href="/workshops/{s["format"]}/{s["date"]}/">Book</a>' if link else ''
+        # Bake Lab days can mix a familiar bake and a specialty bake. Land on that time.
+        href = session_url(s) if s['format'] == 'bake-lab' else f"/workshops/{s['format']}/{s['date']}/"
+        action = f'<a class="btn block" href="{href}">Book</a>' if link else ''
     return f'''<article class="card v-studio">
   <div class="card-photo">{photo(s['format'])}{CalDate(s['date'])}</div>
   <div class="body">
@@ -454,8 +456,13 @@ def PriceTable(voice):
             price, extra = rm(f['bundle']['price']), f"Family Sunday: {f['bundle']['includes']} · extra child {rm(f['bundle']['extra_child'])}"
         else:
             price = rm(f['price']) + (f" {f['price_unit']}" if f.get('price_unit') else '')
+            specialty = ''
+            if f.get('price_specialty'):
+                specialty = f"specialty {rm(f['price_specialty'])}"
+                if f.get('pair_price_specialty'):
+                    specialty += f" (pair {rm(f['pair_price_specialty'])})"
             extra = ' · '.join(x for x in [f"pair {rm(f['pair_price'])}" if f.get('pair_price') else '',
-                                            f"specialty {rm(f['price_specialty'])}" if f.get('price_specialty') else '',
+                                            specialty,
                                             f"{f['duration_min'] // 60}h{f['duration_min'] % 60:02d}".replace('h00', 'h')] if x)
         rows.append(f'<tr><td><a href="/workshops/{f["id"]}/">{e(f["name"])}</a></td><td class="muted">{e(extra)}</td><td class="num">{e(price)}</td></tr>')
     pw = WS['policies']['pricing_window']
@@ -810,7 +817,13 @@ def coming_sunday():
 
 def FormatCard(f):
     nxt = next((s for s in by_format(f['id']) if s['seats_left'] != 0), None)
-    pair = f'<small>Pair {rm(f["pair_price"])}</small>' if f.get('pair_price') else ''
+    bits = []
+    if f.get('pair_price'):
+        bits.append(f'Pair {rm(f["pair_price"])}')
+    if f.get('price_specialty'):
+        bits.append(f'Specialty {rm(f["price_specialty"])}'
+                    + (f' · pair {rm(f["pair_price_specialty"])}' if f.get('pair_price_specialty') else ''))
+    pair = f'<small>{" · ".join(bits)}</small>' if bits else ''
     if f.get('bundle'):
         pair = f'<small>{e(f["bundle"]["name"])}: adult + child · extra child {rm(f["bundle"]["extra_child"])}</small>'
     when = f'<b>Next: {day_date(nxt["date"])} · {fmt_time(nxt["time"])}</b>' if nxt else '<b>New dates soon</b>'
@@ -931,15 +944,21 @@ def build_workshops_index():
 
 def build_format(f):
     sessions = by_format(f['id'])
-    nxt4 = sessions[:4]
-    rest = sessions[4:]
+    # Bake Lab is an ads landing page: every upcoming date stays on the page,
+    # with its own Book button, rather than four tiles and a "More dates" fold.
+    list_all = f['id'] == 'bake-lab'
+    nxt4 = sessions if list_all else sessions[:4]
+    rest = [] if list_all else sessions[4:]
     msg = f"Hi, I'd like to book {f['name']}. Which dates have seats? Source: {{source}}."
     if f.get('bundle'):
         facts = f'<span>{e(f["bundle"]["name"])} <b>{rm(f["bundle"]["price"])}</b></span><span>Extra child <b>{rm(f["bundle"]["extra_child"])}</b></span>'
     else:
         facts = f'<span><b>{money_from(f)}</b></span>' + (f'<span>Pair <b>{rm(f["pair_price"])}</b></span>' if f.get('pair_price') else '')
         if f.get('price_specialty'):
-            facts += f'<span>Specialty bakes <b>{rm(f["price_specialty"])}</b></span>'
+            spec = f'<span>Specialty bakes <b>{rm(f["price_specialty"])}</b>'
+            if f.get('pair_price_specialty'):
+                spec += f' · pair <b>{rm(f["pair_price_specialty"])}</b>'
+            facts += spec + '</span>'
         if f.get('pack_price'):
             facts += f'<span>{f["pack_size"]} sessions <b>{rm(f["pack_price"])}</b></span>'
     facts += f'<span>{e(length(f))}</span><span>{e(f["room"])}</span>'
@@ -950,9 +969,15 @@ def build_format(f):
     if rest:
         more = ('<details class="acc" style="margin-top:20px"><summary>More dates</summary><div><div class="grid-cards">'
                 + ''.join(SessionCard(s) for s in rest) + '</div></div></details>')
+    if f.get('pair_price_specialty') and f.get('pair_price'):
+        pair_line = f"Two of you: {rm(f['pair_price'])} for a familiar bake, {rm(f['pair_price_specialty'])} for a specialty bake"
+    elif f.get('pair_price'):
+        pair_line = f"Two of you get {int(POL['pair_discount'] * 100)}% off"
+    else:
+        pair_line = ''
     make = [('clock', f"{e(length(f))} · {e(f['room'])}"),
              ('palette', f"{e(POL['included'].capitalize())} included"),
-             ('users', f"Two of you get {int(POL['pair_discount'] * 100)}% off" if f.get('pair_price') else ''),
+             ('users', pair_line),
              ('star', 'Beginners welcome: a teacher takes you through it step by step'),
              ('bag', 'Take it home the same day')]
     if f.get('dine_addon'):
@@ -961,9 +986,17 @@ def build_format(f):
         b = f['bundle']
         make.append(('users', f"{e(b['name'])}: {rm(b['price'])} for {e(b['includes'])}; extra child {rm(b['extra_child'])}"))
     team = TeacherCards(f['id'])
+    if list_all and f.get('price_specialty') and f.get('pair_price'):
+        date_note = (f"Familiar bread {rm(f['price'])}, two for {rm(f['pair_price'])}. "
+                     f"Specialty bakes {rm(f['price_specialty'])}"
+                     + (f", two for {rm(f['pair_price_specialty'])}" if f.get('pair_price_specialty') else '')
+                     + f". Seats are limited to {f['cap']}{' ' + e(f['cap_unit']) if f.get('cap_unit') else ''} a session.")
+    else:
+        date_note = f"Seats are limited to {f['cap']}{' ' + e(f['cap_unit']) if f.get('cap_unit') else ''} a session."
+    dates = WeekStrip(sessions) if list_all else SessionGrid(nxt4)
     body += f'''<section class="sec v-studio" id="dates"><div class="wrap">
-  <div class="sec-head"><span class="eyebrow">Next dates</span><h2>Pick a <em>date</em></h2><p>Seats are limited to {f['cap']}{' ' + e(f['cap_unit']) if f.get('cap_unit') else ''} a session.</p></div>
-  {SessionGrid(nxt4)}{more}
+  <div class="sec-head"><span class="eyebrow">Next dates</span><h2>Pick a <em>date</em></h2><p>{date_note}</p></div>
+  {dates}{more}
 </div></section>
 {PhotoRow(f['id'], 'What people <em>made</em>', 'studio')}
 <section class="sec alt v-studio"><div class="wrap listing">
@@ -1410,6 +1443,10 @@ def build_gift_vouchers():
                 opts += f'<option value="{e(f["name"])} voucher ({rm(f["price"])})">{e(f["name"])} · {rm(f["price"])}</option>'
                 if f.get('pair_price'):
                     opts += f'<option value="{e(f["name"])} pair voucher ({rm(f["pair_price"])})">{e(f["name"])} for two · {rm(f["pair_price"])}</option>'
+                if f.get('price_specialty'):
+                    opts += f'<option value="{e(f["name"])} specialty voucher ({rm(f["price_specialty"])})">{e(f["name"])} specialty · {rm(f["price_specialty"])}</option>'
+                    if f.get('pair_price_specialty'):
+                        opts += f'<option value="{e(f["name"])} specialty pair voucher ({rm(f["pair_price_specialty"])})">{e(f["name"])} specialty for two · {rm(f["pair_price_specialty"])}</option>'
             elif f.get('bundle'):
                 opts += f'<option value="{e(f["bundle"]["name"])} voucher ({rm(f["bundle"]["price"])})">{e(f["bundle"]["name"])} · {rm(f["bundle"]["price"])}</option>'
     fields = f'''<h2 class="h3">Buy a voucher</h2>
@@ -1485,7 +1522,7 @@ def build_birthdays():
     <h2>Good to <em>know</em></h2>{Accordion([
         ('Can we bring a cake?', 'Yes. The last 30 minutes are yours in the room for cake and candles.'),
         ('Do parents stay?', 'Parents are welcome to stay and watch.'),
-        ('Allergies', 'Tell us about allergies when you book. Bake parties are plant-based, made in a shared kitchen where gluten and nuts may be present.'),
+        ('Allergies', 'Tell us about allergies when you book. Bake parties are made in a shared kitchen where gluten and nuts may be present.'),
         ('Saturdays', 'We are closed on Saturdays, so parties run on Sundays and weekdays.'),
     ])}</div>
 </div></section>'''

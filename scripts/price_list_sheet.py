@@ -40,7 +40,7 @@ WHY = {
     'glow-canvas': 'Glow paints cost more; the strongest ad hook of the month (Facebook 1 Nov).',
     'candle-making': 'Wax, jars and scents; Christmas gifting (Facebook 1 Nov).',
     'crochet-bag': 'Chunky yarn and a hook to take home (Facebook 1 Nov).',
-    'bake-lab': 'Christmas Gingerbread at RM95 (Facebook 1 Nov). Focaccia at RM75 drew 25 people; ciabatta at RM120 drew 12.',
+    'bake-lab': 'PENDING owner confirmation: familiar RM85 / pair RM150, specialty RM95 / pair RM170 (Business & Marketing Plan v4; 22 Nov ad is Sunday 3pm RM85). The schedule workbook still says 75/85. Do not use the old pair RM171. Christmas Gingerbread was posted at RM95 (Facebook 1 Nov). Focaccia at RM75 drew 25 people; ciabatta at RM120 drew 12.',
     'kids-art-studio': 'Sold only as Family Sunday: adult Textured Canvas plus a child, same hour.',
     'adult-art-class': 'A class, not a party: drop in, or four for the price of about three.',
 }
