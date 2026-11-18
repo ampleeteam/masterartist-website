@@ -92,8 +92,8 @@ def price_for(fmt, date, policies, variant=None):
             price = post['family-sunday']
     elif variant:                               # e.g. Bake Lab specialty / cakes
         price = fmt.get(f'price_{variant}', price)
-        # The variant's own pair_price_<variant> only. Never inherit pair_price,
-        # and never derive 10% off: that formula is what produced the old RM171.
+        # The variant's own pair_price_<variant> only. Never inherit pair_price
+        # (Bake Lab specialty is RM153, not the familiar RM135, and not the old RM171).
         pair = fmt.get(f'pair_price_{variant}')
         key = f"{fmt['id']}-{variant}"
         if not launch and key in post:
