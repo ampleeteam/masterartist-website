@@ -1,10 +1,7 @@
 # Sessions preview
 
-Generated 2026-11-18 — public sessions to 2026-12-30.
+Generated 2026-11-19 — public sessions to 2026-12-31.
 
-
-## Wednesday 18 November 2026
-- **19:00–21:00** Watercolour · Koi & Lotus · L2 front room · RM80 · pair RM144 · Dine add-on (before) · 20 of 20 seats left
 
 ## Thursday 19 November 2026
 - **19:00–21:00** Glow-in-the-Dark Canvas · Glow Lagoon: Jellyfish · L2 front room · RM89 · pair RM160 · Dine add-on (before) · 20 of 20 seats left
