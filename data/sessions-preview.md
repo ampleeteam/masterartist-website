@@ -1,10 +1,7 @@
 # Sessions preview
 
-Generated 2026-11-19 — public sessions to 2026-12-31.
+Generated 2026-11-20 — public sessions to 2027-01-01.
 
-
-## Thursday 19 November 2026
-- **19:00–21:00** Glow-in-the-Dark Canvas · Glow Lagoon: Jellyfish · L2 front room · RM89 · pair RM160 · Dine add-on (before) · 20 of 20 seats left
 
 ## Sunday 22 November 2026
 - **10:00–12:00** Chunky Crochet · Chunky Yarn Bag · L2 front room · RM110 · pair RM198 · Dine add-on (after) · 20 of 20 seats left
