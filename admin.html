@@ -195,6 +195,20 @@ table.bk tr.click:hover td{background:#faf6ee}
 .crm-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .crm-bar input[type=search]{flex:1;min-width:220px;padding:8px 10px;border:1px solid var(--line)}
 .tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;background:#EDE7F6;margin:1px 2px 1px 0}
+.tl{display:flex;flex-direction:column;gap:10px}
+.tl-item{border:1px solid var(--line);padding:10px 12px;background:#fff;max-width:680px}
+.tl-item.in{border-left:3px solid var(--purple)}
+.tl-item.out{margin-left:auto;background:var(--lav-pale);border-left:3px solid var(--gold)}
+.tl-item.bot{background:#fff8ea}
+.tl-item.note{background:#f7f4ef;border-left:3px solid var(--muted)}
+.tl-item.event{max-width:none;background:#f7f4ef;border-left:3px solid var(--gold-deep)}
+.tl-meta{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.tl-who{font-weight:600;color:var(--purple);font-size:13px}
+.tl-body{margin-top:4px}
+.tl-media{margin-top:4px;font-size:12px;color:var(--muted)}
+.tl-compose,.tl-import{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.tl-compose textarea,.tl-import input[type=text]{width:100%;border:1px solid var(--line);background:#fff;padding:8px 10px}
+.kid-card{border:1px solid var(--line);padding:12px;margin:0 0 12px;background:#fff}
 </style>
 </head>
 <body>
@@ -274,6 +288,7 @@ table.bk tr.click:hover td{background:#faf6ee}
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" crossorigin="anonymous"></script>
+<script src="assets/wa-export.js"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 
@@ -475,6 +490,8 @@ async function render(){
 
   const sec = SECTIONS.find(s => s.id === current);
   $('title').textContent = sec ? sec.label : '';
+  const shell = document.querySelector('.bodyw');
+  if (shell) shell.style.maxWidth = (current === 'customers' && crmOpen) ? '1100px' : '';
 
   if (!sec || !canRead(sec.key)) {
     $('view').innerHTML = `<div class="locked"><b>You don't have access to this section.</b><br>
@@ -1031,9 +1048,9 @@ window.addTestimonial = async () => {
    upcoming list. Hidden events and events more than a day old don't show. */
 /* ---------- Bookings: workshop bookings by session, and trial requests ---------- */
 let bkTab = 'upcoming';
-const BK_STATUS = ['requested', 'confirmed', 'paid', 'cancelled', 'refunded'];
+const BK_STATUS = ['requested', 'confirmed', 'paid', 'cancelled', 'refunded', 'no_show'];
 const TL_STATUS = ['new', 'contacted', 'enrolled', 'closed'];
-const BK_LIVE = s => s !== 'cancelled' && s !== 'refunded';
+const BK_LIVE = s => s !== 'cancelled' && s !== 'refunded' && s !== 'no_show';
 const waNum = p => { const d = String(p || '').replace(/\D/g, ''); return d.startsWith('0') ? '6' + d : d; };  // 012… → 6012…
 let bkRows = [];
 views.bookings = async function(){
@@ -1154,9 +1171,16 @@ window.bkCsv = id => {
 
 /* ---------- Customers: the B2C CRM. Filled by the website (every booking and trial request) ---------- */
 let crmRows = [], crmQuery = '', crmFilter = 'all', crmOpen = null, crmMode = 'people', crmWhen = 'upcoming', crmPaidOnly = false;
+let crmFamily = [], crmFamilyRemoved = [], crmFamilyReady = false, crmHealthVisible = false, crmHealthWrite = false;
+let crmParents = [], crmPeople = [], crmCurrent = null, crmTlItems = [], crmTlFilter = 'all', crmCanWrite = false;
+const CRM_MIGRATION = 'supabase/migrations/20261120143000_crm_timeline_and_profile.sql';
 const CRM_FILTERS = { all:'Everyone', news:'Want news', kids:'Parents', repeat:'Booked 2+', trials:'Trial requests', enrolled:'Enrolled', follow:'Follow-ups due', archived:'Archived' };
+const CRM_FORMATS = ['painting', 'watercolour', 'kids art', 'baking', 'crochet', 'pottery', 'voice', 'piano', 'photo & video', 'candles'];
+const CRM_LEVELS = ['', 'beginner', 'intermediate', 'advanced'];
+const CRM_REL = ['mother', 'father', 'guardian', 'other'];
 const money = n => 'RM' + Number(n || 0).toLocaleString('en-MY');
-const shortDate = d => d ? new Date(d).toLocaleDateString('en-MY', { day:'numeric', month:'short', year:'numeric' }) : '';
+const shortDate = d => d ? new Date(d).toLocaleDateString('en-MY', { day:'numeric', month:'short', year:'numeric', timeZone:'Asia/Kuala_Lumpur' }) : '';
+const schemaMissing = err => !!(err && /schema cache|does not exist|Could not find the/i.test(err.message || ''));
 const crmModes = () => `<div class="blog-tabs" style="margin-bottom:6px">
     <button class="${crmMode==='people'?'on':''}" onclick="crmModeGo('people')">People</button>
     <button class="${crmMode==='workshops'?'on':''}" onclick="crmModeGo('workshops')">By workshop</button></div>`;
@@ -1166,10 +1190,11 @@ views.customers = async function(){
   if (crmMode === 'workshops') return crmWorkshops();
   busy(true,'Loading…');
   const { data, error } = await sb.from('contacts').select('*').order('last_activity', { ascending:false }).limit(2000);
+  const queued = await sb.from('unmatched_messages').select('phone_e164, phone_raw', { count:'exact' }).is('resolved_at', null).limit(5);
   busy(false);
   if (error) {
     $('view').innerHTML = `<div class="msg err">${esc(error.message)}</div>
-      <div class="hint">If this says the table doesn't exist, run <b>supabase/bookings.sql</b> and then <b>supabase/crm.sql</b> in the Supabase SQL Editor.</div>`;
+      <div class="hint">If this says the table doesn't exist, run <b>supabase/bookings.sql</b>, then <b>supabase/crm.sql</b>, then <b>${CRM_MIGRATION}</b> in the Supabase SQL Editor.</div>`;
     return;
   }
   crmRows = data || [];
@@ -1183,14 +1208,21 @@ views.customers = async function(){
     if (crmFilter === 'follow' && !(c.follow_up_date && c.follow_up_date <= todayISO())) return false;
     if ((crmFilter === 'archived') !== !!c.archived) return false;
     if (!q) return true;
-    return [c.first_name, c.last_name, c.preferred_name, c.email, c.phone, c.company, c.area, (c.tags || []).join(' '),
+    return [c.first_name, c.last_name, c.preferred_name, c.email, c.phone, c.phone_e164, c.whatsapp_e164, c.company, c.area,
+      c.lifecycle_stage, c.lead_status, (c.tags || []).join(' '),
       (c.children || []).map(k => [k.name, k.school].join(' ')).join(' ')]
       .join(' ').toLowerCase().includes(q);
   });
   const paid = crmRows.reduce((n, c) => n + c.total_paid, 0);
+  let queueNote = '';
+  if (!queued.error && queued.count) {
+    const phones = [...new Set((queued.data || []).map(r => r.phone_e164 || r.phone_raw).filter(Boolean))];
+    queueNote = `<div class="msg info">${queued.count} WhatsApp message${queued.count===1?'':'s'} had no usable number to match, so they are queued${phones.length ? ' (' + esc(phones.join(', ')) + ')' : ''}. They are not dropped. Open the customer with that number and use <b>File queued messages</b>.</div>`;
+  }
   let html = crmModes() + `<div class="hint"><b>Everyone who has booked a workshop or asked for a trial.</b> The website adds and updates customers by itself:
-    one record per person (matched by email, then WhatsApp number), with their children, bookings and what they have paid.
-    Click a customer to see their history, add notes and tags. Only people who ticked <b>Send me news</b> may be sent marketing.</div>
+    one record per person (matched by email, then WhatsApp number). Open a customer for their full profile, family, and the conversation timeline
+    (WhatsApp in and out, automated messages, staff notes, and booking events). Only people who ticked <b>Send me news</b> may be sent marketing.</div>
+    ${queueNote}
     <div class="bk-sum"><span><b>${crmRows.length}</b> customers</span><span>${crmRows.filter(c => c.marketing_consent).length} want news</span>
       <span>${crmRows.filter(c => c.bookings_count > 1).length} booked more than once</span><span>${money(paid)} paid online and recorded</span></div>
     <div class="crm-bar"><input type="search" id="crmQ" placeholder="Search name, email, phone, child, school, company, area, tag" value="${esc(crmQuery)}" oninput="crmSearch(this.value)">
@@ -1201,11 +1233,11 @@ views.customers = async function(){
     <tr><th>Name</th><th>Stage</th><th>Contact</th><th>Children</th><th>Bookings</th><th>Trials</th><th>Paid</th><th>Last seen</th><th>Source</th></tr>
     ${shown.slice(0, 500).map(c => `<tr class="click" onclick="crmGo('${c.id}')">
       <td><b>${esc(c.first_name)} ${esc(c.last_name || '')}</b>${c.marketing_consent ? ' <span class="tag">news</span>' : ''}${(c.tags || []).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</td>
-      <td><small>${esc(c.stage || '')}${c.follow_up_date && c.follow_up_date <= todayISO() ? '<br><b>follow up</b>' : ''}</small></td>
+      <td><small>${esc(c.lifecycle_stage || c.stage || '')}${c.lifecycle_stage && c.stage ? '<br>' + esc(c.stage) : ''}${c.follow_up_date && c.follow_up_date <= todayISO() ? '<br><b>follow up</b>' : ''}</small></td>
       <td><small>${esc(c.phone || '')}<br>${esc(c.email || '')}</small></td>
       <td><small>${(c.children || []).map(k => esc(k.name) + (kidAge(k) ? ' (' + esc(kidAge(k)) + ')' : '') + (k.school ? ', ' + esc(k.school) : '')).join('<br>')}</small></td>
       <td>${c.bookings_count || ''}</td><td>${c.trials_count || ''}</td><td>${c.total_paid ? money(c.total_paid) : ''}</td>
-      <td><small>${shortDate(c.last_activity)}</small></td><td><small>${esc(c.first_source || '')}</small></td></tr>`).join('')}
+      <td><small>${shortDate(c.last_activity)}</small></td><td><small>${esc(c.first_source || c.original_source || '')}</small></td></tr>`).join('')}
   </table></div></div></div>`;
   $('view').innerHTML = html;
   const box = $('crmQ'); if (box && document.activeElement !== box && crmQuery) { box.focus(); box.setSelectionRange(crmQuery.length, crmQuery.length); }
@@ -1216,7 +1248,6 @@ window.crmTab = async k => { crmFilter = k; await render(); };
 window.crmGo = async id => { crmOpen = id; await render(); window.scrollTo(0,0); };
 window.crmBack = async () => { crmOpen = null; await render(); };
 window.crmFromBooking = async id => { crmOpen = id; current = 'customers'; await render(); window.scrollTo(0,0); };
-// Each workshop with the customers who signed up for it and whether they have paid
 async function crmWorkshops(){
   busy(true,'Loading…');
   const { data, error } = await sb.from('workshop_bookings')
@@ -1262,17 +1293,23 @@ const CRM_OPT = {
   language: ['', 'English', 'Mandarin', 'Malay', 'Cantonese', 'Tamil', 'Other'],
   preferred_channel: ['', 'whatsapp', 'email', 'phone'],
   skill_level: ['', 'beginner', 'some experience', 'intermediate', 'advanced'],
-  photo_consent: ['', 'yes', 'yes without name', 'no'],
+  photo_consent: ['', 'yes', 'yes without name', 'yes with first name', 'no'],
   trial_outcome: ['', 'enrolled', 'thinking', 'not for them', 'no-show'],
   how_heard: ['', 'instagram', 'facebook', 'google', 'friend or family', 'walk-in', 'Savor', 'school', 'event', 'other'],
-  interests: ['painting', 'watercolour', 'kids art', 'voice', 'piano', 'photo & video', 'baking', 'candles', 'crochet', 'corporate', 'birthdays'],
+  interests: ['painting', 'watercolour', 'kids art', 'voice', 'piano', 'photo & video', 'baking', 'candles', 'crochet', 'pottery', 'corporate', 'birthdays'],
   preferred_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sun'],
-  preferred_times: ['weekday morning', 'weekday afternoon', 'weekday evening', 'Sunday morning', 'Sunday afternoon']
+  preferred_times: ['weekday morning', 'weekday afternoon', 'weekday evening', 'Sunday morning', 'Sunday afternoon'],
+  gender: ['', 'female', 'male', 'non-binary', 'prefer not to say'],
+  lifecycle_stage: ['subscriber', 'lead', 'marketing qualified', 'sales qualified', 'customer', 'repeat customer', 'evangelist', 'other'],
+  lead_status: ['new', 'open', 'in progress', 'attempted to contact', 'connected', 'unqualified', 'bad timing'],
+  original_source: ['', 'paid social', 'organic social', 'organic search', 'direct', 'referral', 'email', 'offline', 'whatsapp'],
+  voucher_role: ['', 'purchaser', 'recipient', 'both'],
+  academy_status: ['', 'none', 'trial', 'member', 'paused', 'former']
 };
 const KID_FIELDS = [['name', 'Name'], ['dob', 'Date of birth', 'date'], ['age', 'Age'], ['school', 'School'], ['year', 'School year'],
   ['programme', 'Class'], ['allergies', 'Allergies / medical'], ['photo', 'Photos']];
 let crmKids = [];
-function kidAge(k){ if (!k.dob) return k.age || ''; const d = new Date(k.dob), n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a >= 0 ? String(a) : ''; }
+function kidAge(k){ if (!k || !k.dob) return (k && k.age) || ''; const d = new Date(k.dob), n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a >= 0 ? String(a) : ''; }
 function kidRows(w){
   const dis = w ? '' : 'disabled';
   return crmKids.map((k, i) => `<tr>${KID_FIELDS.map(([f, , type]) => `<td>${
@@ -1285,119 +1322,463 @@ window.crmKid = (i, f, v) => { crmKids[i][f] = v.trim() || null; if (f === 'dob'
 window.crmKidAdd = () => { crmKids.push({ name:'' }); document.getElementById('crmKidBody').innerHTML = kidRows(true); };
 window.crmKidDel = i => { crmKids.splice(i, 1); document.getElementById('crmKidBody').innerHTML = kidRows(true); };
 
+function attendeeNames(b){
+  return (b.booking_participants || []).map(r => r.participants && r.participants.full_name).filter(Boolean).join(', ');
+}
+function familyCards(){
+  const dis = crmCanWrite ? '' : 'disabled';
+  const hdis = crmHealthWrite ? '' : 'disabled';
+  if (!crmFamily.length && !crmParents.length) return '<div class="empty" style="margin:0">No children linked yet.</div>';
+  return crmFamily.map(row => {
+    const k = row.key;
+    const sel = (field, opts, val) => `<select onchange="crmFam('${k}','${field}',this.value)" ${dis}>${opts.map(o => `<option value="${esc(o)}" ${String(val||'')===o?'selected':''}>${esc(o || '—')}</option>`).join('')}</select>`;
+    const box = (field, label) => `<label style="font-weight:400;display:flex;gap:5px;align-items:center"><input type="checkbox" ${row[field]?'checked':''} ${dis} onchange="crmFam('${k}','${field}',this.checked)"> ${label}</label>`;
+    const others = (row.other_parents || []).map(p => `${esc(p.name)} (${esc(p.relationship)}${p.is_primary ? ', primary' : ''}${p.pays ? ', pays' : ''}${p.receives_messages ? ', messages' : ''})${p.phone ? ' ' + esc(p.phone) : ''}`).join('<br>');
+    const linkOpts = crmPeople.filter(p => p.id !== crmOpen && !(row.other_parents || []).some(o => o.id === p.id));
+    const health = crmHealthVisible ? `<div class="row">${[['allergies','Allergies'],['medical_notes','Medical notes'],['special_needs','Special needs']].map(([f, label]) =>
+        `<div class="f"><label>${label}</label><input value="${esc(row[f] || '')}" ${hdis} oninput="crmFam('${k}','${f}',this.value)"></div>`).join('')}
+        <div class="f"><label>Emergency name</label><input value="${esc(row.emergency_name || '')}" ${hdis} oninput="crmFam('${k}','emergency_name',this.value)"></div>
+        <div class="f"><label>Emergency phone</label><input value="${esc(row.emergency_phone || '')}" ${hdis} oninput="crmFam('${k}','emergency_phone',this.value)"></div></div>`
+      : '<p class="help">Allergies, medical notes, and special needs are visible to admin and bookings staff only.</p>';
+    return `<div class="kid-card">
+      <div class="row">
+        <div class="f"><label>Full name</label><input value="${esc(row.full_name || '')}" ${dis} oninput="crmFam('${k}','full_name',this.value)"></div>
+        <div class="f"><label>Nickname</label><input value="${esc(row.nickname || '')}" ${dis} oninput="crmFam('${k}','nickname',this.value)"></div>
+        <div class="f"><label>Date of birth</label><input type="date" value="${esc((row.date_of_birth || '').slice(0, 10))}" ${dis} onchange="crmFam('${k}','date_of_birth',this.value)"></div>
+        <div class="f"><label>Age, if no date of birth</label><input value="${esc(row.age_years ?? '')}" ${dis} oninput="crmFam('${k}','age_years',this.value)"></div>
+      </div>
+      <div class="row">
+        <div class="f"><label>School</label><input value="${esc(row.school || '')}" ${dis} oninput="crmFam('${k}','school',this.value)"></div>
+        <div class="f"><label>Relationship to this customer</label>${sel('relationship', CRM_REL, row.relationship || 'guardian')}</div>
+        <div class="f"><label>Photo consent</label>${sel('photo_consent', CRM_OPT.photo_consent, row.photo_consent || '')}</div>
+      </div>
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Who may collect them</label><input value="${esc(row.pickup_names || '')}" ${dis} oninput="crmFam('${k}','pickup_names',this.value)"></div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;margin:4px 0 10px">${box('is_primary','Primary contact')}${box('pays','Pays')}${box('receives_messages','Receives messages')}</div>
+      ${health}
+      ${others ? `<p class="help">Also linked: ${others}</p>` : ''}
+      <p style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px">
+        ${row.contact_id ? `<button class="btn sm" type="button" onclick="crmGo('${row.contact_id}')">Open their customer record</button>` : ''}
+        ${row.id && !row.contact_id && crmCanWrite ? `<button class="btn sm" type="button" onclick="crmPromoteChild('${k}')">Create a customer record for this child</button>` : ''}
+        ${crmCanWrite ? `<button class="btn sm" type="button" onclick="crmFamRemove('${k}')">Remove</button>` : ''}
+      </p>
+      ${row.id && crmCanWrite && linkOpts.length ? `<div class="row"><div class="f"><label>Link another parent</label><select id="link-${row.id}">${linkOpts.map(p => `<option value="${p.id}">${esc((p.first_name || '') + ' ' + (p.last_name || ''))}</option>`).join('')}</select></div>
+        <div class="f"><label>Relationship</label><select id="linkrel-${row.id}">${CRM_REL.map(r => `<option>${r}</option>`).join('')}</select></div>
+        <div class="f"><label>&nbsp;</label><button class="btn sm" type="button" onclick="crmLinkParent('${row.id}')">Link parent</button></div></div>` : ''}
+    </div>`;
+  }).join('');
+}
+window.crmFam = (key, field, value) => {
+  const row = crmFamily.find(r => r.key === key);
+  if (row) row[field] = value;
+};
+window.crmFamAdd = () => {
+  crmFamily.push({ key:'new-' + Math.random().toString(36).slice(2, 8), id:null, full_name:'', relationship:'guardian', is_primary:!crmFamily.length, pays:!crmFamily.length, receives_messages:true, photo_consent:'', other_parents:[] });
+  const box = $('crmFamilyBody'); if (box) box.innerHTML = familyCards();
+};
+window.crmFamRemove = key => {
+  const row = crmFamily.find(r => r.key === key);
+  if (!row) return;
+  if (row.id && !confirm('Remove ' + (row.full_name || 'this child') + ' from the family?')) return;
+  if (row.id) crmFamilyRemoved.push(row.id);
+  crmFamily = crmFamily.filter(r => r.key !== key);
+  const box = $('crmFamilyBody'); if (box) box.innerHTML = familyCards();
+};
+window.crmTlTab = key => {
+  crmTlFilter = key;
+  document.querySelectorAll('[data-tl]').forEach(b => b.classList.toggle('on', b.getAttribute('data-tl') === key));
+  const list = $('tlList');
+  if (list && window.MaCrm) list.innerHTML = window.MaCrm.timelineHtml(window.MaCrm.filterTimeline(crmTlItems, key));
+};
+
+function timelineCard(rows, error, queueCount){
+  const canNote = canWrite('customers') || canWrite('bookings');
+  const canImport = canWrite('bookings') && me.role !== 'marketing';
+  if (error && schemaMissing(error)) {
+    return `<div class="card"><div class="card-h"><span class="grip">Conversation</span></div><div class="card-b"><div class="msg info">The timeline is added by <b>${CRM_MIGRATION}</b>. Run that file in the Supabase SQL Editor when you are ready. Nothing is deleted, and the public site is unchanged.</div></div></div>`;
+  }
+  if (error) return `<div class="card"><div class="card-h"><span class="grip">Conversation</span></div><div class="card-b"><div class="msg err">${esc(error.message)}</div></div></div>`;
+  if (!window.MaCrm) return `<div class="card"><div class="card-b"><div class="msg err">assets/wa-export.js did not load, so the timeline cannot be drawn.</div></div></div>`;
+  crmTlItems = window.MaCrm.rowsToTimeline(rows || []);
+  const tabs = [['all','All'],['whatsapp','WhatsApp'],['notes','Notes'],['auto','Automated'],['bookings','Bookings']];
+  const hiddenWa = me.role === 'marketing' || !canRead('bookings');
+  return `<div class="card"><div class="card-h"><span class="grip">Conversation</span></div><div class="card-b">
+    <p class="help" style="margin-top:0">WhatsApp in and out, automated messages, staff replies, notes, and booking events, oldest first. The latest 500 are shown.</p>
+    ${hiddenWa ? '<p class="help">WhatsApp messages are visible to admin and bookings staff, not the marketing role. Notes and booking events are still listed.</p>' : ''}
+    <div class="blog-tabs">${tabs.map(([k, label]) => `<button type="button" data-tl="${k}" class="${crmTlFilter===k?'on':''}" onclick="crmTlTab('${k}')">${label}</button>`).join('')}</div>
+    <div id="tlList">${window.MaCrm.timelineHtml(window.MaCrm.filterTimeline(crmTlItems, crmTlFilter))}</div>
+    ${canNote ? `<div class="tl-compose"><label class="help">Staff note</label><textarea id="crmNote" rows="3" placeholder="Something the team should remember. This stays on the timeline."></textarea><p><button class="btn sm" type="button" onclick="crmAddNote()">Add note</button></p></div>` : ''}
+    ${canImport ? `<div class="tl-import"><label class="help">Import a WhatsApp “Export chat” .txt (without media). Say which name in the file is the studio, so those lines are marked outgoing.</label>
+      <input id="crmExportName" type="text" value="Master Artist">
+      <input id="crmExportFile" type="file" accept=".txt,text/plain">
+      <p><button class="btn sm" type="button" onclick="crmImportExport()">Import chat</button></p>
+      <p class="help">Importing the same file again skips lines already saved. A live WhatsApp connection is not switched on yet: when it is, new messages land in this same list.</p></div>` : ''}
+    ${queueCount && canImport ? `<p><button class="btn sm" type="button" onclick="crmAttachUnmatched()">File ${queueCount} queued message${queueCount===1?'':'s'} from this number</button></p>` : ''}
+  </div></div>`;
+}
+
+async function loadCustomerBookings(id){
+  let q = await sb.from('workshop_bookings').select('*, booking_participants(participants(full_name))')
+    .or(`contact_id.eq.${id},booker_contact_id.eq.${id}`).order('session_date', { ascending:false });
+  if (q.error) q = await sb.from('workshop_bookings').select('*').eq('contact_id', id).order('session_date', { ascending:false });
+  return q;
+}
+
 async function crmDetail(id){
   busy(true,'Loading…');
-  const [c, bk, tl, staff, everyone] = await Promise.all([
-    sb.from('contacts').select('*').eq('id', id).maybeSingle(),
-    sb.from('workshop_bookings').select('*').eq('contact_id', id).order('session_date', { ascending:false }),
+  const c = await sb.from('contacts').select('*').eq('id', id).maybeSingle();
+  if (c.error || !c.data) { busy(false); $('view').innerHTML = `<div class="msg err">${esc((c.error && c.error.message) || 'Customer not found')}</div>`; return; }
+  const x = c.data;
+  const profileReady = Object.prototype.hasOwnProperty.call(x, 'lifecycle_stage');
+  crmCurrent = x;
+  crmHealthVisible = me.role === 'admin' || (me.role !== 'marketing' && canRead('bookings'));
+  crmHealthWrite = me.role === 'admin' || (me.role !== 'marketing' && canWrite('bookings'));
+  crmCanWrite = canWrite('customers');
+  const phones = [x.phone_e164, x.whatsapp_e164].filter(Boolean);
+  const [bk, tl, staff, everyone, timeline, fam, asChild, statsQ, queueQ] = await Promise.all([
+    loadCustomerBookings(id),
     sb.from('trial_leads').select('*').eq('contact_id', id).order('created_at', { ascending:false }),
     sb.from('profiles').select('id, full_name').eq('active', true),
-    sb.from('contacts').select('id, first_name, last_name').order('first_name').limit(2000)
+    sb.from('contacts').select('id, first_name, last_name').order('first_name').limit(2000),
+    sb.from('contact_timeline').select('*').eq('contact_id', id).order('occurred_at', { ascending:false }).limit(500),
+    sb.from('contact_guardians').select('id, participant_id, relationship, is_primary, pays, receives_messages, participants(id, contact_id, full_name, nickname, date_of_birth, age_years, school, photo_consent, pickup_names)').eq('guardian_contact_id', id),
+    sb.from('participants').select('id').eq('contact_id', id),
+    sb.from('contact_booking_stats').select('*').eq('contact_id', id).maybeSingle(),
+    profileReady && phones.length
+      ? sb.from('unmatched_messages').select('id', { count:'exact', head:true }).is('resolved_at', null).in('phone_e164', phones)
+      : Promise.resolve({ count:0, error:null })
   ]);
-  const people = everyone.data || [];
+  crmFamilyReady = !fam.error && !schemaMissing(fam.error);
+  crmParents = [];
+  crmPeople = everyone.data || [];
+  crmFamilyRemoved = [];
+  const healthMap = {};
+  if (crmFamilyReady) {
+    crmFamily = (fam.data || []).map(g => {
+      const p = g.participants || {};
+      return { key:p.id || g.id, id:p.id, full_name:p.full_name || '', nickname:p.nickname || '', date_of_birth:(p.date_of_birth || '').slice(0,10),
+        age_years:p.age_years ?? '', school:p.school || '', photo_consent:p.photo_consent || '', pickup_names:p.pickup_names || '',
+        relationship:g.relationship || 'guardian', is_primary:!!g.is_primary, pays:!!g.pays, receives_messages:!!g.receives_messages,
+        contact_id:p.contact_id || null, other_parents:[] };
+    }).filter(r => r.id);
+    const pids = crmFamily.map(r => r.id);
+    if (pids.length) {
+      const [health, others] = await Promise.all([
+        crmHealthVisible ? sb.from('participant_health').select('*').in('participant_id', pids) : Promise.resolve({ data:[] }),
+        sb.from('contact_guardians').select('participant_id, guardian_contact_id, relationship, is_primary, pays, receives_messages, contacts(id, first_name, last_name, phone, whatsapp_e164)').in('participant_id', pids)
+      ]);
+      (health.data || []).forEach(h => { healthMap[h.participant_id] = h; });
+      (others.data || []).forEach(g => {
+        if (g.guardian_contact_id === id) return;
+        const row = crmFamily.find(r => r.id === g.participant_id);
+        const person = g.contacts || {};
+        if (row) row.other_parents.push({ id:g.guardian_contact_id, name:[person.first_name, person.last_name].filter(Boolean).join(' '), phone:person.whatsapp_e164 || person.phone || '', relationship:g.relationship, is_primary:g.is_primary, pays:g.pays, receives_messages:g.receives_messages });
+      });
+      crmFamily.forEach(r => { const h = healthMap[r.id] || {}; r.allergies = h.allergies || ''; r.medical_notes = h.medical_notes || ''; r.special_needs = h.special_needs || ''; r.emergency_name = h.emergency_name || ''; r.emergency_phone = h.emergency_phone || ''; });
+    }
+  } else crmFamily = [];
+  if (!asChild.error && (asChild.data || []).length) {
+    const pg = await sb.from('contact_guardians').select('relationship, is_primary, pays, receives_messages, contacts(id, first_name, last_name, phone, whatsapp_e164)').in('participant_id', asChild.data.map(p => p.id));
+    crmParents = (pg.data || []).filter(g => g.contacts && g.contacts.id && g.contacts.id !== id);
+  }
   busy(false);
-  if (c.error || !c.data) { $('view').innerHTML = `<div class="msg err">${esc((c.error && c.error.message) || 'Customer not found')}</div>`; return; }
-  const x = c.data, w = canWrite('customers'), dis = w ? '' : 'disabled';
+  const w = crmCanWrite, dis = w ? '' : 'disabled';
   crmKids = JSON.parse(JSON.stringify(x.children || []));
+  const stat = !statsQ.error && statsQ.data ? statsQ.data : null;
+  const revenue = stat ? stat.total_revenue_rm : x.total_paid;
+  const bookingN = stat ? stat.total_bookings : x.bookings_count;
+  const attended = stat ? stat.workshops_attended : x.workshops_attended;
+  const noShows = stat ? stat.no_show_count : x.no_show_count;
+  const lastBooked = stat ? stat.last_booking_date : x.last_booking_date;
   const fid = f => `data-f="${x.id}.${f}"`;
   const inp = (f, label, type, extra) => `<div class="f"><label>${label}</label><input ${type ? `type="${type}"` : ''} ${fid(f)} value="${esc(type === 'date' ? String(x[f] ?? '').slice(0, 10) : x[f] ?? '')}" ${dis} ${extra || ''}></div>`;
   const sel = (f, label, opts) => `<div class="f"><label>${label}</label><select ${fid(f)} ${dis}>${(opts || CRM_OPT[f]).map(o => {
-      const v = typeof o === 'object' ? o[0] : o, l = typeof o === 'object' ? o[1] : (o || '—'); return `<option value="${esc(v)}" ${String(x[f] ?? '')===v?'selected':''}>${esc(l)}</option>`; }).join('')}</select></div>`;
+      const v = typeof o === 'object' ? o[0] : o, l = typeof o === 'object' ? o[1] : (o || '—'); return `<option value="${esc(v)}" ${String(x[f] ?? '')===String(v)?'selected':''}>${esc(l)}</option>`; }).join('')}</select></div>`;
   const chk = (f, label) => `<div class="f check"><input type="checkbox" ${fid(f)} ${x[f]?'checked':''} ${dis}><label>${label}</label></div>`;
   const multi = (f, label) => `<div class="f" style="grid-column:1/-1"><label>${label}</label><div style="display:flex;flex-wrap:wrap;gap:6px 14px">${CRM_OPT[f].map(o =>
       `<label style="font-weight:400;display:flex;gap:5px;align-items:center"><input type="checkbox" data-multi="${f}" value="${esc(o)}" ${(x[f] || []).includes(o)?'checked':''} ${dis}>${esc(o)}</label>`).join('')}</div></div>`;
   const area = (f, label, ph) => `<div class="f" style="grid-column:1/-1"><label>${label}</label><textarea ${fid(f)} rows="3" placeholder="${ph || ''}" ${dis}>${esc(x[f] || '')}</textarea></div>`;
-  const section = (title, body) => `<div class="card"><div class="card-h"><span class="grip">${title}</span>${w ? `<button class="btn sm" onclick="crmSave('${x.id}')">Save</button>` : ''}</div><div class="card-b">${body}</div></div>`;
+  const section = (title, body) => `<div class="card"><div class="card-h"><span class="grip">${title}</span>${w ? `<button class="btn sm" type="button" onclick="crmSave('${x.id}')">Save</button>` : ''}</div><div class="card-b">${body}</div></div>`;
   const staffOpts = [['', '—']].concat((staff.data || []).map(s => [s.id, s.full_name]));
+  const people = everyone.data || [];
+  const customText = profileReady && x.custom_fields && Object.keys(x.custom_fields).length ? JSON.stringify(x.custom_fields, null, 2) : '';
+  const skill = (profileReady && x.skill_by_format) || {};
 
-  let html = `<p style="margin-bottom:14px"><button class="btn sm" onclick="crmBack()">← ${crmMode==='workshops' ? 'All workshops' : 'All customers'}</button></p>
+  let html = `<p style="margin-bottom:14px"><button class="btn sm" type="button" onclick="crmBack()">← ${crmMode==='workshops' ? 'All workshops' : 'All customers'}</button></p>
     <h2 style="margin:0 0 6px">${esc(x.preferred_name || x.first_name)} ${esc(x.last_name || '')}</h2>
-    <div class="bk-sum"><span>${esc(x.stage)}</span><span>${x.bookings_count} booking${x.bookings_count===1?'':'s'}</span><span>${x.trials_count} trial request${x.trials_count===1?'':'s'}</span>
-      <span>${money(x.total_paid)} paid</span>${x.next_booking_date ? `<span>Next: ${shortDate(x.next_booking_date)}</span>` : ''}${x.last_booking_date ? `<span>Last came: ${shortDate(x.last_booking_date)}</span>` : ''}
-      <span>Customer since ${shortDate(x.first_seen)}</span>${x.first_source ? `<span>First came from ${esc(x.first_source)}</span>` : ''}
-      ${x.follow_up_date ? `<span class="${x.follow_up_date <= todayISO() ? 'full' : ''}">Follow up ${shortDate(x.follow_up_date)}</span>` : ''}${x.do_not_contact ? '<span class="full">Do not contact</span>' : ''}</div>`;
-  html += section('Who they are', `
-      <div class="row">${inp('first_name', 'First name')}${inp('last_name', 'Last name')}${inp('preferred_name', 'Preferred name')}</div>
-      <div class="row">${sel('contact_type', 'Type')}${inp('birthday', 'Birthday', 'date')}${sel('language', 'Language')}</div>
-      <div class="row">${inp('company', 'Company (corporate bookings)')}${inp('job_title', 'Job title')}</div>`);
-  html += section('How to reach them', `
-      <div class="row">${inp('phone', 'WhatsApp')}${inp('phone_2', 'Other phone')}${inp('email', 'Email', 'email')}</div>
-      <div class="row">${sel('preferred_channel', 'Prefers')}${inp('instagram', 'Instagram')}</div>
-      ${x.phone ? `<p class="help" style="margin:-4px 0 12px"><a href="https://wa.me/${waNum(x.phone)}" target="_blank" rel="noopener">Message on WhatsApp</a></p>` : ''}
-      <div class="row">${inp('address', 'Address')}${inp('area', 'Area (e.g. Mont Kiara)')}${inp('city', 'City')}${inp('postcode', 'Postcode')}</div>
-      <div class="row">${inp('emergency_name', 'Emergency contact')}${inp('emergency_phone', 'Emergency phone')}${inp('emergency_relation', 'Relationship')}</div>`);
-  html += section('Children', `<div class="bk-wrap"><table class="bk"><tr>${KID_FIELDS.map(([, l]) => `<th>${l}</th>`).join('')}${w ? '<th></th>' : ''}</tr>
+    ${profileReady ? '' : `<div class="msg info">The rest of the profile (lifecycle, WhatsApp in international form, family records, and the timeline) is in <b>${CRM_MIGRATION}</b>. Saving the fields already here still works before that file is run.</div>`}
+    <div class="bk-sum"><span>${esc(x.lifecycle_stage || x.stage || '')}</span>${x.lead_status ? `<span>${esc(x.lead_status)}</span>` : ''}<span>${bookingN || 0} booking${bookingN===1?'':'s'}</span>
+      <span>${money(revenue)} paid</span>${attended ? `<span>${attended} workshop${attended===1?'':'s'} attended</span>` : ''}${noShows ? `<span class="full">${noShows} no-show${noShows===1?'':'s'}</span>` : ''}
+      ${x.trials_count ? `<span>${x.trials_count} trial request${x.trials_count===1?'':'s'}</span>` : ''}${lastBooked ? `<span>Last booking ${shortDate(lastBooked)}</span>` : ''}
+      ${x.next_booking_date ? `<span>Next: ${shortDate(x.next_booking_date)}</span>` : ''}<span>Customer since ${shortDate(x.first_seen || x.created_at)}</span>
+      ${profileReady ? `<span>Contacted ${x.times_contacted || 0} time${x.times_contacted===1?'':'s'}</span>` : ''}
+      ${x.last_contacted_at ? `<span>Last contacted ${shortDate(x.last_contacted_at)}</span>` : ''}${x.last_inbound_at ? `<span>Last message in ${shortDate(x.last_inbound_at)}</span>` : ''}
+      ${x.credit_balance ? `<span>${money(x.credit_balance)} academy credit</span>` : ''}${x.do_not_contact ? '<span class="full">Do not contact</span>' : ''}</div>`;
+
+  html += timelineCard(timeline.data, timeline.error, !queueQ.error ? (queueQ.count || 0) : 0);
+
+  html += section('Contact', `
+      <div class="row">${inp('first_name','First name')}${inp('last_name','Last name')}${inp('preferred_name','Preferred name')}</div>
+      <div class="row">${sel('contact_type','Type')}${inp('birthday','Birthday','date')}${sel('language','Preferred language')}${profileReady ? sel('gender','Gender') : ''}</div>
+      <div class="row">${inp('email','Email','email')}${inp('phone','Phone')}${inp('phone_2','Secondary phone')}</div>
+      ${profileReady ? `<div class="row">${inp('whatsapp_e164','WhatsApp number','', 'placeholder="+60…"')}${sel('preferred_channel','Prefers')}</div>
+        <p class="help">WhatsApp is stored as +60…. Leave it blank to use the phone above. ${x.phone_e164 ? 'Phone in international form: ' + esc(x.phone_e164) + '.' : ''}</p>` : `<div class="row">${sel('preferred_channel','Prefers')}</div>`}
+      ${x.phone ? `<p class="help"><a href="https://wa.me/${waNum(x.whatsapp_e164 || x.phone)}" target="_blank" rel="noopener">Message on WhatsApp</a></p>` : ''}
+      <div class="row">${inp('address','Address')}${inp('area','Area')}${inp('city','City')}${profileReady ? inp('state','State') : ''}${inp('postcode','Postcode')}${profileReady ? inp('country','Country') : ''}</div>
+      <div class="row">${inp('company','Company')}${inp('job_title','Job title')}${profileReady ? chk('is_organiser','Organises group or corporate bookings') : ''}</div>
+      <div class="row">${sel('stage','Studio stage')}${profileReady ? sel('lifecycle_stage','Lifecycle stage') : ''}${profileReady ? sel('lead_status','Lead status') : ''}</div>
+      <div class="row">${sel('owner','Contact owner', staffOpts)}${inp('follow_up_date','Follow up on','date')}${inp('follow_up_note','Follow-up about')}</div>
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Tags (comma-separated)</label><input id="crmTags" value="${esc((x.tags || []).join(', '))}" ${dis}></div></div>
+      ${area('notes','Notes','Preferences, conversations, anything the next person should know')}
+      ${profileReady ? `<div class="f"><label>Custom fields (JSON object)</label><textarea ${fid('custom_fields')} rows="3" placeholder='{"locker":"12"}' ${dis}>${esc(customText)}</textarea><p class="help">For a property we have not named yet. Must be an object, not a list.</p></div>` : ''}
+      <div class="row">${chk('archived','Archived (hidden from the list)')}</div>
+      <p class="help">Created ${shortDate(x.created_at)} · last activity ${shortDate(x.last_activity) || '—'}${x.first_source ? ' · first source recorded by the site: ' + esc(x.first_source) : ''}</p>`);
+
+  const parentHtml = crmParents.length ? `<p><b>Parents and guardians</b></p><ul>${crmParents.map(g => {
+      const person = g.contacts || {};
+      const name = [person.first_name, person.last_name].filter(Boolean).join(' ') || 'Parent';
+      const phone = person.whatsapp_e164 || person.phone || '';
+      const bits = [g.relationship, g.is_primary ? 'primary' : '', g.pays ? 'pays' : '', g.receives_messages ? 'gets messages' : ''].filter(Boolean);
+      return `<li><a href="#customers" onclick="event.preventDefault();crmGo('${person.id}')">${esc(name)}</a> · ${esc(bits.join(', '))}${phone ? ` · <a href="https://wa.me/${waNum(phone)}" target="_blank" rel="noopener">${esc(phone)}</a>` : ''}</li>`;
+    }).join('')}</ul>` : '';
+  html += section('Family', crmFamilyReady ? `${parentHtml}
+      <p class="help">A child can be a lightweight record, or also their own customer. One child can have more than one parent. Primary is who we call first.</p>
+      <div id="crmFamilyBody">${familyCards()}</div>
+      ${w ? `<p><button class="btn sm" type="button" onclick="crmFamAdd()">+ Add a child</button></p>` : ''}
+      <p class="help">Names stay in the admin portal. Allergies are stored apart from the customer list so the marketing role cannot read them.</p>`
+    : `${parentHtml}<div class="bk-wrap"><table class="bk"><tr>${KID_FIELDS.map(([, l]) => `<th>${l}</th>`).join('')}${w ? '<th></th>' : ''}</tr>
       <tbody id="crmKidBody">${kidRows(w)}</tbody></table></div>
-      ${w ? `<p style="margin-top:10px"><button class="btn sm" onclick="crmKidAdd()">+ Add a child</button></p>` : ''}
-      <p class="help">Children's names and schools stay in the admin portal: never on the website, in emails or in ads.</p>`);
-  html += section('What they like', `
-      ${multi('interests', 'Interests')}
-      <div class="row">${sel('skill_level', 'Level')}${sel('photo_consent', 'Usual photo choice')}${inp('dietary', 'Dietary needs (Savor, Bake Lab)')}</div>
-      ${multi('preferred_days', 'Days that suit them')}${multi('preferred_times', 'Times that suit them')}`);
-  html += section('Where they are with us', `
-      <div class="row">${sel('stage', 'Stage')}${inp('enrolled_since', 'Enrolled since', 'date')}${inp('monthly_fee', 'Monthly fee (RM)', 'number')}</div>
-      <div class="row"><div class="f" style="grid-column:1/-1"><label>Enrolled classes (comma-separated)</label><input id="crmProgs" value="${esc((x.enrolled_programmes || []).join(', '))}" ${dis}></div></div>
-      <div class="row">${inp('trial_date', 'Trial date', 'date')}${sel('trial_outcome', 'Trial outcome')}</div>
-      <div class="row">${inp('voucher_code', 'RM50 voucher code')}${chk('voucher_redeemed', 'Voucher used')}</div>`);
-  html += section('How they found us', `
-      <div class="row">${sel('how_heard', 'How they heard')}${sel('referred_by', 'Referred by', [['', '—']].concat(people.filter(r => r.id !== x.id).map(r => [r.id, `${r.first_name} ${r.last_name || ''}`.trim()])))}</div>
-      <p class="help">First came from: ${esc(x.first_source || '—')} · most recent: ${esc(x.last_source || '—')}</p>`);
-  html += section('Permissions', `
-      <div class="row">${chk('marketing_consent', 'Agreed to news' + (x.consent_at ? ' (' + shortDate(x.consent_at) + ')' : ''))}${chk('email_consent', 'News by email')}${chk('whatsapp_consent', 'News by WhatsApp')}</div>
-      <div class="row">${chk('do_not_contact', 'Do not contact at all')}${inp('unsubscribed_at', 'Unsubscribed on', 'date')}${inp('data_deletion_requested', 'Asked to delete their data on', 'date')}</div>`);
-  html += section('Feedback', `<div class="row">${inp('rating', 'How likely to recommend us (0–10)', 'number', 'min="0" max="10"')}${chk('google_review', 'Left a Google review')}${chk('testimonial_ok', 'Happy to be quoted')}</div>`);
-  html += section('Follow-up and notes', `
-      <div class="row">${sel('owner', 'Looked after by', staffOpts)}${inp('follow_up_date', 'Follow up on', 'date')}${inp('follow_up_note', 'Follow-up about')}</div>
-      <div class="row"><div class="f" style="grid-column:1/-1"><label>Tags (comma-separated, e.g. VIP, birthday, teacher-referral)</label><input id="crmTags" value="${esc((x.tags || []).join(', '))}" ${dis}></div></div>
-      ${area('notes', 'Notes', 'Anything worth remembering: preferences, conversations, how they found us')}
-      <div class="row">${chk('archived', 'Archived (hidden from the list)')}</div>`);
+      ${w ? `<p style="margin-top:10px"><button class="btn sm" type="button" onclick="crmKidAdd()">+ Add a child</button></p>` : ''}
+      <p class="help">This is the existing children list. After <b>${CRM_MIGRATION}</b> is run, each child becomes their own record with parents, pickup, and medical notes.</p>`});
+
+  html += section('Preferences', `
+      ${multi('interests','Interests and formats')}
+      <div class="row">${sel('skill_level','Overall level')}${sel('how_heard','How they heard about us')}${profileReady ? chk('birthday_enquiry','Birthday party enquiry') : ''}</div>
+      <div class="f" style="grid-column:1/-1"><label>Dietary requirements and allergies (baking, Savor)</label><input ${fid('dietary')} value="${esc(x.dietary || '')}" ${dis}></div>
+      ${multi('preferred_days','Preferred days')}${multi('preferred_times','Preferred times')}
+      ${profileReady ? `<p class="help" style="margin-top:8px">Skill by format</p><div class="row">${CRM_FORMATS.map(f => `<div class="f"><label>${esc(f)}</label><select data-skill="${esc(f)}" ${dis}>${CRM_LEVELS.map(l => `<option value="${esc(l)}" ${ (skill[f]||'')===l ? 'selected' : ''}>${esc(l || '—')}</option>`).join('')}</select></div>`).join('')}</div>` : ''}`);
+
+  html += section('Consent and safety', `
+      <div class="row">${sel('photo_consent','Photo consent (this adult)')}${profileReady ? inp('waiver_accepted_at','Waiver and terms accepted','date') : ''}</div>
+      <div class="row">${inp('emergency_name','Emergency contact')}${inp('emergency_phone','Emergency phone')}${inp('emergency_relation','Relationship')}</div>
+      <div class="row">${chk('do_not_contact','Do not contact at all')}${inp('data_deletion_requested','Asked to delete their data on','date')}</div>
+      <p class="help">Child allergies and who may collect a child are on the Family card, not here.</p>`);
+
+  html += section('Marketing', `
+      <div class="row">${chk('marketing_consent','Agreed to news' + (x.consent_at ? ' (' + shortDate(x.consent_at) + ')' : ''))}${chk('email_consent','News by email')}${chk('whatsapp_consent','News by WhatsApp')}</div>
+      ${profileReady ? `<div class="row">${inp('email_consent_source','Email opt-in source')}${inp('whatsapp_consent_source','WhatsApp opt-in source')}${chk('unsubscribed','Unsubscribed')}${inp('unsubscribed_at','Unsubscribed on','date')}</div>
+        <p class="help">WhatsApp marketing templates need a record of when they opted in and where that came from (website, staff, or WhatsApp). ${x.email_consent_at ? 'Email opt-in ' + shortDate(x.email_consent_at) + '. ' : ''}${x.whatsapp_consent_at ? 'WhatsApp opt-in ' + shortDate(x.whatsapp_consent_at) + '.' : ''}</p>`
+        : `<div class="row">${inp('unsubscribed_at','Unsubscribed on','date')}</div>`}
+      <div class="row">${profileReady ? sel('original_source','Original source') : ''}${profileReady ? inp('source_detail','Source detail') : ''}${sel('referred_by','Referred by', [['', '—']].concat(people.filter(r => r.id !== x.id).map(r => [r.id, `${r.first_name} ${r.last_name || ''}`.trim()])))}</div>
+      ${profileReady ? `<div class="row">${inp('referral_code','Their referral code')}${inp('utm_source','UTM source')}${inp('utm_medium','UTM medium')}${inp('utm_campaign','UTM campaign')}</div>
+        <div class="row">${inp('utm_content','UTM content')}${inp('utm_term','UTM term')}${inp('meta_ad_id','Meta ad id')}${inp('fbclid','fbclid')}${inp('gclid','gclid')}</div>
+        <div class="row">${inp('first_page','First page seen')}${inp('first_referrer','Referrer')}</div>` : ''}
+      <div class="row">${inp('instagram','Instagram')}${profileReady ? inp('facebook','Facebook') : ''}${profileReady ? inp('tiktok','TikTok') : ''}</div>
+      <p class="help">First came from: ${esc(x.first_source || '—')} · most recent: ${esc(x.last_source || '—')}${x.first_conversion_at ? ' · first conversion ' + shortDate(x.first_conversion_at) + (x.first_conversion_event ? ' (' + esc(x.first_conversion_event) + ')' : '') : ''}${x.recent_conversion_at ? ' · latest ' + shortDate(x.recent_conversion_at) + (x.recent_conversion_event ? ' (' + esc(x.recent_conversion_event) + ')' : '') : ''}</p>
+      <div class="row">${inp('rating','How likely to recommend us (0–10)','number','min="0" max="10"')}${chk('google_review','Left a Google review')}${chk('testimonial_ok','Happy to be quoted')}</div>`);
 
   const rows = bk.data || [];
-  html += `<div class="card"><div class="card-h"><span class="grip">Workshop bookings</span></div><div class="card-b">${rows.length ? `<div class="bk-wrap"><table class="bk">
-      <tr><th>Date</th><th>Workshop</th><th>Tickets</th><th>Savor</th><th>Amount</th><th>Status</th></tr>
-      ${rows.map(b => `<tr class="${['requested', 'confirmed', 'paid'].includes(b.status) ? '' : 'gone'}"><td>${esc(b.session_when)}</td><td>${esc(b.session_name)}</td>
-        <td>${b.ticket==='pair' ? `${b.qty} pair (${b.people})` : b.people}</td><td>${b.dine ? 'Yes' : ''}</td><td>RM${b.amount}</td><td>${esc(b.status)}</td></tr>`).join('')}
-    </table></div>` : '<div class="empty" style="margin:0">No workshop bookings.</div>'}</div></div>`;
-  const tr = tl.data || [];
-  html += `<div class="card"><div class="card-h"><span class="grip">Trial class requests</span></div><div class="card-b">${tr.length ? `<div class="bk-wrap"><table class="bk">
-      <tr><th>Received</th><th>Class</th><th>Who it's for</th><th>Status</th></tr>
-      ${tr.map(r => `<tr><td>${shortDate(r.created_at)}</td><td>${esc(r.programme_slug || '')}</td><td><small>${esc(r.message || '').replace(/\n/g, '<br>')}</small></td><td>${esc(r.status)}</td></tr>`).join('')}
-    </table></div>` : '<div class="empty" style="margin:0">No trial requests.</div>'}</div></div>`;
+  const formats = (x.formats_attended || []).join(', ');
+  html += section('Bookings', `
+      <div class="bk-sum"><span>${bookingN || 0} bookings</span><span>${money(revenue)} revenue</span>${attended ? `<span>${attended} attended</span>` : ''}${lastBooked ? `<span>Last booking ${shortDate(lastBooked)}</span>` : ''}${x.last_workshop_name ? `<span>Last workshop: ${esc(x.last_workshop_name)}</span>` : ''}${formats ? `<span>Formats: ${esc(formats)}</span>` : ''}${x.became_customer_at ? `<span>Customer since payment ${shortDate(x.became_customer_at)}</span>` : ''}</div>
+      ${profileReady ? `<div class="row">${sel('academy_status','Academy status')}${inp('credit_balance','Academy credit (RM)','number','min="0"')}${sel('voucher_role','Gift voucher')}</div>` : ''}
+      <div class="row">${inp('enrolled_since','Enrolled since','date')}${inp('monthly_fee','Monthly fee (RM)','number')}</div>
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Enrolled classes (comma-separated)</label><input id="crmProgs" value="${esc((x.enrolled_programmes || []).join(', '))}" ${dis}></div></div>
+      <div class="row">${inp('trial_date','Trial date','date')}${sel('trial_outcome','Trial outcome')}</div>
+      <div class="row">${inp('voucher_code','Voucher code')}${chk('voucher_redeemed','Voucher used')}</div>
+      <p class="help" style="margin-top:12px"><b>Workshop bookings.</b> The person who pays is the customer. Who attends is listed when we have it. Participants is the head count on the booking.</p>
+      ${rows.length ? `<div class="bk-wrap"><table class="bk"><tr><th>Date</th><th>Workshop</th><th>Who attends</th><th>Participants</th><th>Amount</th><th>Status</th></tr>
+        ${rows.map(b => `<tr class="${['requested','confirmed','paid','pending'].includes(b.status) ? '' : 'gone'}"><td>${esc(b.session_when)}</td><td>${esc(b.session_name)}</td>
+          <td>${esc(attendeeNames(b))}</td><td>${b.people}</td><td>RM${b.amount}</td><td>${esc(b.status)}</td></tr>`).join('')}
+      </table></div>` : '<div class="empty" style="margin:0">No workshop bookings.</div>'}
+      <p class="help" style="margin-top:14px"><b>Trial class requests</b></p>
+      ${(tl.data || []).length ? `<div class="bk-wrap"><table class="bk"><tr><th>Received</th><th>Class</th><th>Who it's for</th><th>Status</th></tr>
+        ${(tl.data || []).map(r => `<tr><td>${shortDate(r.created_at)}</td><td>${esc(r.programme_slug || '')}</td><td><small>${esc(r.message || '').replace(/\n/g, '<br>')}</small></td><td>${esc(r.status)}</td></tr>`).join('')}
+      </table></div>` : '<div class="empty" style="margin:0">No trial requests.</div>'}`);
   $('view').innerHTML = html;
 }
+
+async function crmSaveFamily(contactId){
+  for (const row of crmFamily) {
+    const name = String(row.full_name || '').trim();
+    if (!name) continue;
+    const age = row.age_years === '' || row.age_years == null ? null : Number(row.age_years);
+    if (age != null && (Number.isNaN(age) || age < 0 || age > 100)) { toast('Age should be 0 to 100.'); return false; }
+    const photo = row.photo_consent || null;
+    const body = { full_name:name, nickname:row.nickname || null, date_of_birth:row.date_of_birth || null, age_years:age,
+      school:row.school || null, photo_consent:photo || null, pickup_names:row.pickup_names || null, updated_at:new Date().toISOString(), updated_by:me.id };
+    let pid = row.id;
+    if (!pid) {
+      const ins = await sb.from('participants').insert({ ...body, created_by:me.id }).select('id').single();
+      if (ins.error) { toast('Could not add ' + name + ': ' + ins.error.message); return false; }
+      pid = ins.data.id; row.id = pid; row.key = pid;
+      const link = await sb.from('contact_guardians').insert({ participant_id:pid, guardian_contact_id:contactId, relationship:row.relationship || 'guardian', is_primary:!!row.is_primary, pays:!!row.pays, receives_messages:row.receives_messages !== false && row.receives_messages !== 'false' });
+      if (link.error) { toast(link.error.message); return false; }
+    } else {
+      const up = await sb.from('participants').update(body).eq('id', pid);
+      if (up.error) { toast(up.error.message); return false; }
+      const link = await sb.from('contact_guardians').update({ relationship:row.relationship || 'guardian', is_primary:!!row.is_primary, pays:!!row.pays, receives_messages:!!row.receives_messages }).eq('participant_id', pid).eq('guardian_contact_id', contactId);
+      if (link.error) { toast(link.error.message); return false; }
+    }
+    if (crmHealthWrite) {
+      const health = await sb.from('participant_health').upsert({ participant_id:pid, allergies:row.allergies || null, medical_notes:row.medical_notes || null, special_needs:row.special_needs || null, emergency_name:row.emergency_name || null, emergency_phone:row.emergency_phone || null, updated_at:new Date().toISOString(), updated_by:me.id });
+      if (health.error) { toast(health.error.message); return false; }
+    }
+  }
+  for (const pid of crmFamilyRemoved) {
+    const { error } = await sb.rpc('remove_participant', { p_id:pid });
+    if (error) { toast(error.message); return false; }
+  }
+  crmFamilyRemoved = [];
+  return true;
+}
+
 window.crmSave = async id => {
   const v = collect(id);
   v.email = v.email ? v.email.trim().toLowerCase() : null;
   if (!v.first_name) { toast('Please keep a first name.'); return; }
   if (v.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)) { toast('Please check the email address.'); return; }
   if (v.rating !== null && v.rating !== undefined && (v.rating < 0 || v.rating > 10)) { toast('The rating is 0 to 10.'); return; }
+  if (v.credit_balance != null && v.credit_balance < 0) { toast('Academy credit cannot be negative.'); return; }
+  const before = crmCurrent && crmCurrent.id === id ? crmCurrent : crmRows.find(c => c.id === id);
+  if (Object.prototype.hasOwnProperty.call(v, 'custom_fields')) {
+    const raw = String(v.custom_fields || '').trim();
+    if (!raw) v.custom_fields = {};
+    else {
+      try {
+        const obj = JSON.parse(raw);
+        if (!obj || Array.isArray(obj) || typeof obj !== 'object') throw new Error('object');
+        v.custom_fields = obj;
+      } catch (e) { toast('Custom fields must be a JSON object, for example {"locker":"12"}.'); return; }
+    }
+  }
+  if (Object.prototype.hasOwnProperty.call(v, 'whatsapp_e164')) {
+    if (v.whatsapp_e164 && window.MaCrm) {
+      const n = window.MaCrm.normaliseMyPhone(v.whatsapp_e164);
+      if (!n) { toast('Check the WhatsApp number. Use 012… or +60…'); return; }
+      v.whatsapp_e164 = n;
+    }
+  }
+  if (crmFamilyReady) {
+    const ok = await crmSaveFamily(id);
+    if (!ok) return;
+    v.children = crmFamily.filter(r => String(r.full_name || '').trim()).slice(0, 12).map(r => {
+      const o = { name:String(r.full_name).trim() };
+      if (r.age_years) o.age = String(r.age_years);
+      if (r.date_of_birth) o.dob = r.date_of_birth;
+      if (r.school) o.school = r.school;
+      if (r.nickname) o.nickname = r.nickname;
+      if (r.photo_consent) o.photo = r.photo_consent;
+      return o;
+    });
+  } else {
+    v.children = crmKids.filter(k => k.name && k.name.trim()).slice(0, 12).map(k => {
+      const o = {}; KID_FIELDS.forEach(([f]) => { if (k[f]) o[f] = String(k[f]).trim(); }); if (k.dob) o.age = kidAge(k); return o;
+    });
+  }
   ['interests', 'preferred_days', 'preferred_times'].forEach(f => {
     v[f] = [...document.querySelectorAll(`[data-multi="${f}"]:checked`)].map(el => el.value);
   });
+  if (document.querySelector('[data-skill]')) {
+    const skill = {};
+    document.querySelectorAll('[data-skill]').forEach(el => { if (el.value) skill[el.dataset.skill] = el.value; });
+    v.skill_by_format = skill;
+  }
   v.tags = ($('crmTags').value || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 20);
   v.enrolled_programmes = ($('crmProgs').value || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 10);
-  v.children = crmKids.filter(k => k.name && k.name.trim()).slice(0, 12).map(k => {
-    const o = {}; KID_FIELDS.forEach(([f]) => { if (k[f]) o[f] = String(k[f]).trim(); }); if (k.dob) o.age = kidAge(k); return o;
-  });
-  ['contact_type', 'stage'].forEach(f => { if (!v[f]) delete v[f]; });
-  if (v.unsubscribed_at) v.unsubscribed_at = new Date(v.unsubscribed_at + 'T00:00:00').toISOString();
-  const before = crmRows.find(c => c.id === id);
+  ['contact_type', 'stage', 'lifecycle_stage', 'lead_status'].forEach(f => { if (!v[f]) delete v[f]; });
+  if (v.unsubscribed_at && !String(v.unsubscribed_at).includes('T')) v.unsubscribed_at = new Date(v.unsubscribed_at + 'T00:00:00').toISOString();
   if (v.marketing_consent && !(before && before.marketing_consent)) v.consent_at = new Date().toISOString();
+  if (v.email_consent && !(before && before.email_consent)) {
+    v.email_consent_at = new Date().toISOString();
+    if (!v.email_consent_source) v.email_consent_source = 'staff';
+  }
+  if (v.whatsapp_consent && !(before && before.whatsapp_consent)) {
+    v.whatsapp_consent_at = new Date().toISOString();
+    if (!v.whatsapp_consent_source) v.whatsapp_consent_source = 'staff';
+  }
+  if (v.unsubscribed && !(before && before.unsubscribed) && !v.unsubscribed_at) v.unsubscribed_at = new Date().toISOString();
+  if (v.waiver_accepted_at && !String(v.waiver_accepted_at).includes('T')) v.waiver_accepted_at = new Date(v.waiver_accepted_at + 'T00:00:00').toISOString();
   v.updated_at = new Date().toISOString(); v.updated_by = me.id;
   busy(true);
   const { error } = await sb.from('contacts').update(v).eq('id', id);
   busy(false);
-  if (error) { toast('Could not save: ' + (/contacts_email_key/.test(error.message) ? 'another customer already has that email' : error.message)); return; }
+  if (error) {
+    const msg = /contacts_email_key/.test(error.message) ? 'another customer already has that email'
+      : /contacts_referral_code_key/.test(error.message) ? 'another customer already has that referral code'
+      : /schema cache|Could not find the/.test(error.message) ? 'Run ' + CRM_MIGRATION + ' in the Supabase SQL Editor, then save again.'
+      : error.message;
+    toast('Could not save: ' + msg); return;
+  }
   toast('Saved'); await render();
+};
+
+window.crmAddNote = async () => {
+  const body = ($('crmNote') && $('crmNote').value) || '';
+  if (!body.trim()) { toast('Write a note first.'); return; }
+  busy(true);
+  const { error } = await sb.rpc('add_contact_note', { p_contact_id:crmOpen, p_body:body });
+  busy(false);
+  if (error) { toast(error.message); return; }
+  toast('Note added'); await render();
+};
+window.crmImportExport = async () => {
+  const file = $('crmExportFile') && $('crmExportFile').files[0];
+  if (!file) { toast('Choose a WhatsApp export .txt file.'); return; }
+  if (!window.MaCrm) { toast('The import script did not load.'); return; }
+  const text = await file.text();
+  const parsed = window.MaCrm.parseWhatsAppExport(text);
+  const our = ($('crmExportName') && $('crmExportName').value) || 'Master Artist';
+  if (!parsed.messages.length) { toast('No messages found in that file.'); return; }
+  const fromUs = parsed.messages.filter(m => window.MaCrm.isStudioSender(m.sender, our)).length;
+  if (!confirm('Import ' + parsed.messages.length + ' messages (' + fromUs + ' from ' + our + ')? System lines skipped: ' + parsed.skipped + '. A second import skips duplicates.')) return;
+  busy(true, 'Importing…');
+  let inserted = 0, skipped = 0;
+  const lines = parsed.messages.map(m => ({ occurred_at:m.occurredAt, sender:m.sender, body:m.body, media:m.media || [], system:!!m.system }));
+  for (let i = 0; i < lines.length; i += 5000) {
+    const { data, error } = await sb.rpc('import_whatsapp_export', { p_contact_id:crmOpen, p_our_name:our, p_lines:lines.slice(i, i + 5000) });
+    if (error) { busy(false); toast(error.message); return; }
+    inserted += data.inserted || 0; skipped += data.skipped || 0;
+  }
+  busy(false);
+  toast('Imported ' + inserted + ', skipped ' + skipped); await render();
+};
+window.crmAttachUnmatched = async () => {
+  busy(true);
+  const { data, error } = await sb.rpc('attach_unmatched_messages', { p_contact_id:crmOpen });
+  busy(false);
+  if (error) { toast(error.message); return; }
+  toast('Filed ' + (data || 0) + ' queued message' + (data === 1 ? '' : 's')); await render();
+};
+window.crmPromoteChild = async key => {
+  const row = crmFamily.find(r => r.key === key);
+  if (!row || !row.id) { toast('Save the family first.'); return; }
+  if (!confirm('Create a customer record for ' + (row.full_name || 'this child') + '?')) return;
+  const parts = String(row.full_name || '').trim().split(/\s+/);
+  busy(true);
+  const ins = await sb.from('contacts').insert({ first_name:parts[0] || 'Child', last_name:parts.slice(1).join(' ') || null, contact_type:'individual' }).select('id').single();
+  if (ins.error) { busy(false); toast(ins.error.message); return; }
+  const up = await sb.from('participants').update({ contact_id:ins.data.id }).eq('id', row.id);
+  busy(false);
+  if (up.error) { toast(up.error.message); return; }
+  toast('Customer record created'); crmOpen = ins.data.id; await render();
+};
+window.crmLinkParent = async participantId => {
+  const sel = $('link-' + participantId), rel = $('linkrel-' + participantId);
+  if (!sel || !sel.value) return;
+  busy(true);
+  const { error } = await sb.from('contact_guardians').insert({ participant_id:participantId, guardian_contact_id:sel.value, relationship:(rel && rel.value) || 'guardian', is_primary:false, pays:false, receives_messages:true });
+  busy(false);
+  if (error) { toast(/contact_guardians_pair|duplicate/i.test(error.message) ? 'That parent is already linked.' : error.message); return; }
+  toast('Parent linked'); await render();
 };
 window.crmCsv = () => {
   const q = crmQuery.toLowerCase().trim();
   const rows = crmRows.filter(c => (crmFilter !== 'news' || c.marketing_consent) && (crmFilter !== 'kids' || (c.children || []).length)
     && (crmFilter !== 'repeat' || c.bookings_count > 1) && (crmFilter !== 'trials' || c.trials_count)
     && (!q || [c.first_name, c.last_name, c.email, c.phone, (c.tags || []).join(' ')].join(' ').toLowerCase().includes(q)));
-  const cols = ['first_name', 'last_name', 'preferred_name', 'email', 'phone', 'stage', 'contact_type', 'marketing_consent', 'email_consent', 'whatsapp_consent',
-    'do_not_contact', 'children', 'interests', 'tags', 'area', 'company', 'birthday', 'enrolled_programmes', 'bookings_count', 'trials_count', 'total_paid',
-    'last_booking_date', 'next_booking_date', 'how_heard', 'first_source', 'last_source', 'first_seen', 'last_activity', 'follow_up_date', 'notes'];
+  const cols = ['first_name', 'last_name', 'preferred_name', 'email', 'phone', 'phone_e164', 'whatsapp_e164', 'lifecycle_stage', 'lead_status', 'stage', 'contact_type', 'marketing_consent', 'email_consent', 'whatsapp_consent',
+    'do_not_contact', 'children', 'interests', 'tags', 'area', 'city', 'company', 'birthday', 'enrolled_programmes', 'bookings_count', 'trials_count', 'total_paid',
+    'last_booking_date', 'next_booking_date', 'how_heard', 'original_source', 'first_source', 'last_source', 'first_seen', 'last_activity', 'follow_up_date', 'notes'];
   const cell = v => `"${String(Array.isArray(v) ? v.map(k => typeof k === 'object' ? [k.name, kidAge(k) && 'age ' + kidAge(k), k.school].filter(Boolean).join(', ') : k).join('; ') : v ?? '').replace(/"/g, '""')}"`;
   const csv = [cols.join(','), ...rows.map(c => cols.map(k => cell(c[k])).join(','))].join('\n');
   const a = document.createElement('a');
@@ -1405,6 +1786,7 @@ window.crmCsv = () => {
   a.download = `master-artist-customers-${todayISO()}.csv`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
+
 
 let evFilter = 'upcoming';
 const todayISO = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
