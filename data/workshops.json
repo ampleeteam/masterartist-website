@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-20T06:59:48",
+ "generated": "2026-11-21T06:35:58",
  "currency": "MYR",
  "formats": [
   {
@@ -454,7 +454,7 @@
   "note": "Spec 03-PROMPTS step 7: RM100, RM200 and any-workshop. Validity period TODO."
  },
  "window": {
-  "from": "2026-11-20",
+  "from": "2026-11-21",
   "days": 42
  },
  "sessions": [
