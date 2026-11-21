@@ -1,6 +1,6 @@
 # Sessions preview
 
-Generated 2026-11-21 — public sessions to 2027-01-02.
+Generated 2026-11-22 — public sessions to 2027-01-03.
 
 
 ## Sunday 22 November 2026
