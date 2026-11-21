@@ -182,7 +182,8 @@
         status: row.status || '',
         source: row.source || '',
         bookingEvent: row.booking_event || '',
-        media: row.media || []
+        media: row.media || [],
+        buttons: row.buttons || []
       };
     }).filter(function (row) { return row.occurredAt; })
       .sort(function (a, b) {
@@ -203,7 +204,7 @@
 
   function whoLabel(item) {
     if (item.kind === 'booking') return '';
-    if (item.senderType === 'bot') return 'Automated';
+    if (item.senderType === 'bot') return '\u2699 Automated';
     if (item.senderType === 'system') return 'WhatsApp';
     if (item.senderType === 'staff') return item.senderName || 'Staff';
     return item.senderName || 'Customer';
@@ -222,6 +223,7 @@
       else meta.push(item.channel || 'message');
       if (item.direction && item.kind !== 'booking') meta.push(item.direction === 'in' ? 'in' : 'out');
       if (item.status) meta.push(item.status);
+      else if (item.senderType === 'bot' && item.source === 'live') meta.push('queued');
       if (SOURCE_LABEL[item.source]) meta.push(SOURCE_LABEL[item.source]);
       var who = whoLabel(item);
       var body = item.body || '';
@@ -235,6 +237,7 @@
         + (who ? '<div class="tl-who">' + esc(who) + '</div>' : '')
         + (body ? '<div class="tl-body">' + esc(body).replace(/\n/g, '<br>') + '</div>' : '')
         + (media ? '<div class="tl-media">' + esc(media) + '</div>' : '')
+        + (item.buttons && item.buttons.length ? '<div class="tl-media">' + item.buttons.map(function (b) { return esc(typeof b === 'string' ? b : (b.title || b.text || '')); }).filter(Boolean).join(' · ') + '</div>' : '')
         + '</article>';
     }).join('') + '</div>';
   }

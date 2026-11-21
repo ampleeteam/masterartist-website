@@ -209,6 +209,22 @@ table.bk tr.click:hover td{background:#faf6ee}
 .tl-compose,.tl-import{display:flex;flex-direction:column;gap:8px;margin-top:14px}
 .tl-compose textarea,.tl-import input[type=text]{width:100%;border:1px solid var(--line);background:#fff;padding:8px 10px}
 .kid-card{border:1px solid var(--line);padding:12px;margin:0 0 12px;background:#fff}
+.inbox{display:grid;grid-template-columns:280px minmax(320px,1fr) 300px;gap:12px;min-height:calc(100vh - 130px)}
+.inbox-col{background:#fff;border:1px solid var(--line);display:flex;flex-direction:column;min-width:0;min-height:480px}
+.inbox-h{padding:10px 12px;border-bottom:1px solid var(--line);background:rgba(237,231,246,.45)}
+.inbox-list,.inbox-thread,.inbox-side{overflow:auto;flex:1}
+.inbox-row{display:flex;gap:8px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:#fff;padding:10px 12px;cursor:pointer}
+.inbox-row.on{background:var(--lav-pale)}
+.inbox-row b{display:block;color:var(--purple);font-weight:600}
+.inbox-row small{color:var(--muted)}
+.ch{width:22px;height:22px;border-radius:50%;background:var(--purple);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex:none}
+.unread{min-width:18px;height:18px;border-radius:9px;background:var(--gold);color:var(--purple-deep);font-size:11px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+.inbox-compose{border-top:1px solid var(--line);padding:10px;position:relative}
+.inbox-compose textarea{width:100%;border:1px solid var(--line);padding:8px;min-height:72px}
+.slash-pop{position:absolute;left:10px;right:10px;bottom:calc(100% - 8px);background:#fff;border:1px solid var(--line);z-index:5}
+.slash-pop button{display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid var(--line);padding:8px 10px;cursor:pointer}
+.win-closed{background:#fdf1ec;border-left:2px solid var(--warn);padding:8px 10px;font-size:13px;margin-bottom:8px}
+@media(max-width:980px){.inbox{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -289,6 +305,7 @@ table.bk tr.click:hover td{background:#faf6ee}
 
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" crossorigin="anonymous"></script>
 <script src="assets/wa-export.js"></script>
+<script src="assets/inbox.js"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 
@@ -311,6 +328,7 @@ const SECTIONS = [
   { id:'programmes',   key:'programmes',   label:'Programmes',          ready:true },
   { id:'classes',      key:'classes',      label:'Class Schedule',      ready:true },
   { id:'bookings',     key:'bookings',     label:'Bookings',            ready:true },
+  { id:'inbox',        key:'bookings',     label:'Inbox',               ready:true },
   { id:'customers',    key:'customers',    label:'Customers',           ready:true },
   { id:'events',       key:'events',       label:'Events Calendar',     ready:true },
   { id:'fees',         key:'fees',         label:'Fees & Policies',     ready:true },
@@ -463,6 +481,7 @@ async function boot(){
   if (hm && canRead('blog')) { current = 'blog'; blogOpenSlug = hm[1] || null; }
   if (location.hash === '#bookings' && canRead('bookings')) current = 'bookings';
   if (location.hash === '#customers' && canRead('customers')) current = 'customers';
+  if (location.hash === '#inbox' && canRead('bookings') && profile.role !== 'marketing') current = 'inbox';
 
   $('authScreen').style.display='none';
   $('appScreen').classList.add('on');
@@ -476,7 +495,7 @@ async function render(){
      <span class="nm"><b>${esc(me.full_name)}</b><small>${esc(ROLE_LABEL[me.role]||me.role)}</small>
      <button class="signout" onclick="signOut()">Sign out</button></span>`;
 
-  const visible = SECTIONS.filter(s => canRead(s.key));
+  const visible = SECTIONS.filter(s => canRead(s.key) && !(s.id === 'inbox' && me.role === 'marketing'));
   $('nav').innerHTML = visible.map(s =>
     `<button class="snav${s.id===current?' on':''}${s.ready?'':' soon'}"
       ${s.ready?`onclick="goTo('${s.id}')"`:''}>
@@ -491,7 +510,7 @@ async function render(){
   const sec = SECTIONS.find(s => s.id === current);
   $('title').textContent = sec ? sec.label : '';
   const shell = document.querySelector('.bodyw');
-  if (shell) shell.style.maxWidth = (current === 'customers' && crmOpen) ? '1100px' : '';
+  if (shell) shell.style.maxWidth = current === 'inbox' ? 'none' : (current === 'customers' && crmOpen) ? '1100px' : '';
 
   if (!sec || !canRead(sec.key)) {
     $('view').innerHTML = `<div class="locked"><b>You don't have access to this section.</b><br>
@@ -1406,6 +1425,7 @@ function timelineCard(rows, error, queueCount){
     ${hiddenWa ? '<p class="help">WhatsApp messages are visible to admin and bookings staff, not the marketing role. Notes and booking events are still listed.</p>' : ''}
     <div class="blog-tabs">${tabs.map(([k, label]) => `<button type="button" data-tl="${k}" class="${crmTlFilter===k?'on':''}" onclick="crmTlTab('${k}')">${label}</button>`).join('')}</div>
     <div id="tlList">${window.MaCrm.timelineHtml(window.MaCrm.filterTimeline(crmTlItems, crmTlFilter))}</div>
+    ${canRead('bookings') && me.role !== 'marketing' ? `<p><button class="btn sm" type="button" onclick="crmOpenInbox()">Open in the shared inbox</button></p>` : ''}
     ${canNote ? `<div class="tl-compose"><label class="help">Staff note</label><textarea id="crmNote" rows="3" placeholder="Something the team should remember. This stays on the timeline."></textarea><p><button class="btn sm" type="button" onclick="crmAddNote()">Add note</button></p></div>` : ''}
     ${canImport ? `<div class="tl-import"><label class="help">Import a WhatsApp “Export chat” .txt (without media). Say which name in the file is the studio, so those lines are marked outgoing.</label>
       <input id="crmExportName" type="text" value="Master Artist">
@@ -2036,6 +2056,294 @@ window.delPost = async id => {
   if (error) { toast('Could not delete: ' + error.message); return; }
   toast('Deleted'); await render();
 };
+
+/* ---------- Shared inbox ---------- */
+let inboxFilter = 'all', inboxChannel = '', inboxTag = '', inboxOpen = null, inboxFocusContact = null, inboxShowSettings = false;
+let inboxRows = [], inboxReplies = [], inboxTemplates = [], inboxStaff = [], inboxSettings = null, inboxDraft = '';
+const INBOX_FILTERS = [['all','All'],['unassigned','Unassigned'],['mine','Assigned to me'],['needs','Needs reply'],['open','Open'],['closed','Closed']];
+const INBOX_CH = { whatsapp:'W', email:'E', instagram:'I', facebook:'F', website:'S', note:'N' };
+const INBOX_TAGS = ['painting', 'baking', 'kids', 'adult', 'crochet', 'source ad', 'marketing opted-in'];
+function inboxName(row){
+  const p = (row && row.contacts) || {};
+  return [p.preferred_name || p.first_name, p.last_name].filter(Boolean).join(' ') || 'Customer';
+}
+function inboxWhen(iso){
+  if (!iso) return '';
+  return new Date(iso).toLocaleString('en-MY', { timeZone:'Asia/Kuala_Lumpur', day:'numeric', month:'short', hour:'numeric', minute:'2-digit' });
+}
+function inboxPass(row){
+  const p = row.contacts || {};
+  if (inboxFilter === 'unassigned' && row.assigned_to) return false;
+  if (inboxFilter === 'mine' && row.assigned_to !== me.id) return false;
+  if (inboxFilter === 'needs' && !(row.status === 'open' && row.last_direction === 'in')) return false;
+  if (inboxFilter === 'open' && row.status !== 'open') return false;
+  if (inboxFilter === 'closed' && row.status !== 'closed') return false;
+  if (inboxChannel && row.channel !== inboxChannel) return false;
+  if (inboxTag === 'opt-in' && !(p.whatsapp_consent || p.marketing_consent)) return false;
+  if (inboxTag && inboxTag !== 'opt-in' && !(p.tags || []).includes(inboxTag)) return false;
+  return true;
+}
+window.crmOpenInbox = async () => { inboxFocusContact = crmOpen; current = 'inbox'; await render(); };
+window.inboxFilterGo = async (key) => { inboxFilter = key; await render(); };
+window.inboxChannelGo = async (v) => { inboxChannel = v; await render(); };
+window.inboxTagGo = async (v) => { inboxTag = v; await render(); };
+window.inboxOpenConv = async (id) => { inboxOpen = id; inboxDraft = ''; await render(); };
+window.inboxSettingsGo = async (on) => { inboxShowSettings = on; await render(); };
+window.inboxComposeInput = (el) => {
+  inboxDraft = el.value;
+  const box = $('slashBox');
+  if (!box || !window.MaInbox) return;
+  const q = window.MaInbox.slashQuery(el.value);
+  if (q == null) { box.hidden = true; return; }
+  const hits = window.MaInbox.matchReplies(inboxReplies, q);
+  box.hidden = !hits.length;
+  box.innerHTML = hits.map(r => `<button type="button" onclick="inboxUseReply('${r.id}')"><b>${esc(r.shortcut)}</b> ${esc(r.title)}</button>`).join('');
+};
+window.inboxUseReply = (id) => {
+  const reply = inboxReplies.find(r => r.id === id);
+  const el = $('inboxBody');
+  const row = inboxRows.find(r => r.id === inboxOpen);
+  if (!reply || !el || !window.MaInbox) return;
+  const person = (row && row.contacts) || {};
+  const filled = window.MaInbox.fillTemplate(reply.body, { first_name: person.preferred_name || person.first_name || '', last_name: person.last_name || '' });
+  el.value = el.value.replace(/(?:^|\s)\/[^\s/]*$/, (m) => (m.startsWith(' ') || m.startsWith('\n') ? m[0] : '') + filled);
+  inboxDraft = el.value;
+  const box = $('slashBox'); if (box) box.hidden = true;
+  el.focus();
+};
+views.inbox = async function(){
+  if (me.role === 'marketing') {
+    $('view').innerHTML = `<div class="locked"><b>The shared inbox is for admin and bookings staff.</b><br>Marketing can open Customers for notes and booking events. WhatsApp message text stays hidden.</div>`;
+    return;
+  }
+  busy(true,'Loading…');
+  const [conv, replies, templates, staff, settings] = await Promise.all([
+    sb.from('conversations').select('*, contacts(id, first_name, last_name, preferred_name, phone, phone_e164, whatsapp_e164, email, tags, notes, whatsapp_consent, marketing_consent, ctwa_clid, meta_ad_id, lifecycle_stage)').order('last_message_at', { ascending:false }).limit(200),
+    sb.from('saved_replies').select('*').order('title'),
+    sb.from('message_templates').select('*').eq('active', true).order('name'),
+    sb.from('profiles').select('id, full_name').eq('active', true).order('full_name'),
+    sb.from('inbox_settings').select('*').eq('id', 1).maybeSingle()
+  ]);
+  busy(false);
+  if (conv.error && schemaMissing(conv.error)) {
+    $('view').innerHTML = `<div class="msg info">The shared inbox is added by <b>supabase/migrations/20261121103000_shared_inbox.sql</b>. Run that file in the Supabase SQL Editor after the timeline migration. It does not send WhatsApp messages.</div>`;
+    return;
+  }
+  if (conv.error) { $('view').innerHTML = `<div class="msg err">${esc(conv.error.message)}</div>`; return; }
+  inboxRows = conv.data || [];
+  inboxReplies = replies.data || [];
+  inboxTemplates = templates.data || [];
+  inboxStaff = staff.data || [];
+  inboxSettings = settings.data || null;
+  if (inboxFocusContact) {
+    const found = inboxRows.find(r => r.contact_id === inboxFocusContact && (!inboxChannel || r.channel === inboxChannel));
+    if (found) inboxOpen = found.id;
+    inboxFocusContact = null;
+  }
+  const shown = inboxRows.filter(inboxPass);
+  if (!inboxOpen && shown[0]) inboxOpen = shown[0].id;
+  const open = inboxRows.find(r => r.id === inboxOpen) || null;
+  let thread = { items: [], family: [], bookings: [], queue: [] };
+  if (open) {
+    await sb.from('conversations').update({ unread_count: 0 }).eq('id', open.id);
+    open.unread_count = 0;
+    const [msgs, events, fam, bks, queue] = await Promise.all([
+      sb.from('messages').select('*').eq('conversation_id', open.id).order('occurred_at'),
+      sb.from('workshop_booking_events').select('*').eq('contact_id', open.contact_id).order('occurred_at'),
+      sb.from('contact_guardians').select('relationship, is_primary, pays, receives_messages, participants(full_name, age_years)').eq('guardian_contact_id', open.contact_id),
+      sb.from('workshop_bookings').select('session_name, session_when, status, people, session_date').or(`contact_id.eq.${open.contact_id},booker_contact_id.eq.${open.contact_id}`).order('session_date', { ascending:false }).limit(6),
+      sb.from('outbound_queue').select('kind, status, scheduled_at, template_name, skip_reason').eq('conversation_id', open.id).order('scheduled_at').limit(12)
+    ]);
+    const rows = (msgs.data || []).map(m => ({ ...m, kind:'message' })).concat((events.error ? [] : events.data || []).map(e => ({
+      occurred_at:e.occurred_at, kind:'booking', channel:'website', direction:'out', sender_type:'system', body:e.detail, booking_event:e.event, source:'live', media:[], buttons:[]
+    })));
+    thread = { items: window.MaCrm ? window.MaCrm.rowsToTimeline(rows) : [], family: fam.data || [], bookings: bks.data || [], queue: queue.data || [] };
+  }
+  if (inboxShowSettings) { $('view').innerHTML = inboxSettingsHtml(); return; }
+  $('view').innerHTML = inboxShell(shown, open, thread);
+  const box = $('inboxBody'); if (box && inboxDraft) box.value = inboxDraft;
+};
+function inboxShell(shown, open, thread){
+  const tags = [...new Set(INBOX_TAGS.concat(inboxRows.flatMap(r => (r.contacts && r.contacts.tags) || [])))];
+  const list = shown.map(r => `<button type="button" class="inbox-row${r.id===inboxOpen?' on':''}" onclick="inboxOpenConv('${r.id}')">
+      <span class="ch" title="${esc(r.channel)}">${INBOX_CH[r.channel] || '?'}</span>
+      <span style="flex:1;min-width:0"><b>${esc(inboxName(r))}</b><small>${esc(r.last_message_preview || 'No message yet')}</small></span>
+      <span style="text-align:right">${r.unread_count ? `<span class="unread">${r.unread_count}</span>` : ''}<br><small>${esc(inboxWhen(r.last_message_at))}</small></span>
+    </button>`).join('') || '<div class="empty">No conversations in this folder.</div>';
+  return `<div class="inbox-h" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <div class="blog-tabs" style="margin:0">${INBOX_FILTERS.map(([k, label]) => `<button type="button" class="${inboxFilter===k?'on':''}" onclick="inboxFilterGo('${k}')">${label}</button>`).join('')}</div>
+      <select onchange="inboxChannelGo(this.value)"><option value="">Every channel</option>${Object.keys(INBOX_CH).map(c => `<option value="${c}" ${inboxChannel===c?'selected':''}>${c}</option>`).join('')}</select>
+      <select onchange="inboxTagGo(this.value)"><option value="">Every tag</option><option value="opt-in" ${inboxTag==='opt-in'?'selected':''}>Marketing opted in</option>${tags.map(t => `<option ${inboxTag===t?'selected':''}>${esc(t)}</option>`).join('')}</select>
+      <button class="btn sm" type="button" onclick="inboxSettingsGo(true)">Inbox settings</button>
+    </div>
+    <div class="inbox">
+      <section class="inbox-col"><div class="inbox-h"><b>${shown.length}</b> conversation${shown.length===1?'':'s'}</div><div class="inbox-list">${list}</div></section>
+      <section class="inbox-col">${open ? inboxThread(open, thread) : '<div class="empty">Choose a conversation.</div>'}</section>
+      <section class="inbox-col"><div class="inbox-side">${open ? inboxPanel(open, thread) : ''}</div></section>
+    </div>`;
+}
+function inboxThread(open, thread){
+  const person = open.contacts || {};
+  const fromAd = !!(person.ctwa_clid);
+  const win = window.MaInbox ? window.MaInbox.whatsappWindow(open.last_inbound_at, new Date(), fromAd) : { open:true, label:'', note:'' };
+  const closed = open.channel === 'whatsapp' && !win.open;
+  const paused = open.automation_paused_until && new Date(open.automation_paused_until) > new Date();
+  const staffOpts = [['', 'Unassigned']].concat(inboxStaff.map(s => [s.id, s.full_name]));
+  return `<div class="inbox-h"><b>${esc(inboxName(open))}</b> · ${esc(open.channel)} · ${esc(open.status)}
+      ${paused ? `<span class="pill">Automation paused until ${esc(inboxWhen(open.automation_paused_until))}</span>` : ''}
+      <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+        <select onchange="inboxAssign(this.value)">${staffOpts.map(([id, name]) => `<option value="${id}" ${open.assigned_to===id?'selected':''}>${esc(name)}</option>`).join('')}</select>
+        <button class="btn sm" type="button" onclick="inboxToggle()">${open.status==='open'?'Close':'Reopen'}</button>
+      </span></div>
+    <div class="inbox-thread">${window.MaCrm ? window.MaCrm.timelineHtml(thread.items) : ''}</div>
+    <div class="inbox-compose">
+      <div id="slashBox" class="slash-pop" hidden></div>
+      ${closed ? `<div class="win-closed"><b>${esc(win.label)}.</b> Free text is off. Send an approved template, or tick Internal note. ${esc(win.note || '')}</div>
+        <div class="blog-tabs">${inboxTemplates.map(t => `<button type="button" onclick="inboxSendTemplate('${esc(t.name)}')">${esc(t.name)}</button>`).join('') || '<span class="help">No approved templates.</span>'}</div>`
+        : `<p class="help" style="margin:0 0 6px">${esc(win.label || 'Session window open')}${win.note ? ' ' + esc(win.note) : ''}</p>`}
+      ${(thread.queue || []).length ? `<p class="help">Queue: ${thread.queue.map(q => esc(q.kind) + ' (' + esc(q.status) + ')').join(', ')}. Sending to WhatsApp is not connected yet.</p>` : ''}
+      <textarea id="inboxBody" ${closed ? 'disabled data-closed="1"' : ''} placeholder="${closed ? 'The 24-hour window is closed' : 'Write a reply. Type / for a saved reply.'}" oninput="inboxComposeInput(this)"></textarea>
+      <p style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label class="help" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="inboxNote" onchange="inboxNoteToggle(this)"> Internal note</label>
+        <button class="btn sm" type="button" onclick="inboxSend()">Send</button></p>
+    </div>`;
+}
+function inboxPanel(open, thread){
+  const p = open.contacts || {};
+  const w = canWrite('bookings');
+  const dis = w ? '' : 'disabled';
+  const tags = p.tags || [];
+  const kids = (thread.family || []).map(g => {
+    const child = g.participants || {};
+    return `<li>${esc(child.full_name || 'Child')}${child.age_years ? ' (' + esc(child.age_years) + ')' : ''} · ${esc(g.relationship || '')}${g.is_primary ? ' · primary' : ''}</li>`;
+  }).join('');
+  const books = (thread.bookings || []).map(b => `<li>${esc(b.session_when || '')} · ${esc(b.session_name || '')} · ${b.people || 1} attending · ${esc(b.status || '')}</li>`).join('');
+  return `<p class="help" style="margin-top:0">${esc(p.lifecycle_stage || '')} ${p.ctwa_clid ? '· click-to-WhatsApp ad' : ''} ${p.meta_ad_id ? '· ad ' + esc(p.meta_ad_id) : ''}</p>
+    <p><b>${esc(inboxName(open))}</b><br><small>${esc(p.whatsapp_e164 || p.phone || '')}<br>${esc(p.email || '')}</small></p>
+    <p>${(p.whatsapp_consent || p.marketing_consent) ? '<span class="tag">marketing opted-in</span>' : '<span class="tag">no marketing opt-in</span>'}</p>
+    <div class="f"><label>Tags</label><div>${tags.map(t => `<span class="tag">${esc(t)} ${w ? `<button type="button" onclick="inboxDropTag('${esc(t)}')" style="border:0;background:transparent;cursor:pointer">×</button>` : ''}</span>`).join(' ')}</div>
+      <p style="display:flex;gap:6px;margin-top:6px"><input id="inboxTagAdd" placeholder="Add a tag" ${dis}><button class="btn sm" type="button" onclick="inboxAddTag()" ${dis}>Add</button></p>
+      <p class="help">${INBOX_TAGS.map(t => `<button type="button" class="btn sm" onclick="inboxAddTag('${esc(t)}')">${esc(t)}</button>`).join(' ')}</p></div>
+    <div class="f"><label>Notes</label><textarea id="inboxNotes" rows="4" ${dis}>${esc(p.notes || '')}</textarea>
+      ${w ? `<p><button class="btn sm" type="button" onclick="inboxSaveNotes()">Save notes</button></p>` : ''}</div>
+    <p><b>Family</b></p>${kids ? `<ul>${kids}</ul>` : '<p class="help">No children linked.</p>'}
+    <p><b>Bookings</b></p>${books ? `<ul>${books}</ul>` : '<p class="help">No bookings.</p>'}
+    <p><button class="btn sm" type="button" onclick="crmFromBooking('${p.id}')">Open full profile</button></p>`;
+}
+function inboxSettingsHtml(){
+  const s = inboxSettings || {};
+  const w = canWrite('bookings');
+  const dis = w ? '' : 'disabled';
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  return `<p><button class="btn sm" type="button" onclick="inboxSettingsGo(false)">← Inbox</button></p>
+    <div class="card"><div class="card-h"><span class="grip">Inbox settings</span>${w ? `<button class="btn sm" type="button" onclick="inboxSaveSettings()">Save</button>` : ''}</div><div class="card-b">
+      <div class="row"><div class="f"><label>Pause automations after a staff reply (minutes)</label><input id="ibPause" type="number" min="0" max="1440" value="${esc(s.automation_pause_minutes ?? 30)}" ${dis}></div></div>
+      <p class="help">The rest window is a fixed weekly block in Asia/Kuala_Lumpur. Default is Friday 19:00 until Saturday 19:30. The end time is when replies may start again.</p>
+      <div class="row">
+        <div class="f"><label>Starts</label><select id="ibStartDow" ${dis}>${days.map((d,i) => `<option value="${i}" ${Number(s.sabbath_start_dow)===i?'selected':''}>${d}</option>`).join('')}</select></div>
+        <div class="f"><label>Start time</label><input id="ibStartTime" type="time" value="${esc(String(s.sabbath_start_time || '19:00').slice(0,5))}" ${dis}></div>
+        <div class="f"><label>Ends</label><select id="ibEndDow" ${dis}>${days.map((d,i) => `<option value="${i}" ${Number(s.sabbath_end_dow)===i?'selected':''}>${d}</option>`).join('')}</select></div>
+        <div class="f"><label>End time</label><input id="ibEndTime" type="time" value="${esc(String(s.sabbath_end_time || '19:30').slice(0,5))}" ${dis}></div>
+      </div>
+      <div class="f"><label>Sabbath auto-reply</label><textarea id="ibSabbath" rows="3" ${dis}>${esc(s.sabbath_reply || '')}</textarea></div>
+      <div class="f"><label>Welcome auto-reply for a brand-new conversation</label><textarea id="ibWelcome" rows="3" ${dis}>${esc(s.welcome_reply || '')}</textarea>
+        <p class="help">Quick replies: ${(s.welcome_buttons || []).map(esc).join(', ') || 'Painting, Baking, Kids, Crochet/Yarn, Other'}. Each conversation gets the welcome at most once, and the sabbath reply at most once per rest window. Both wait while automation is paused.</p></div>
+    </div></div>
+    <div class="card"><div class="card-h"><span class="grip">Saved replies</span></div><div class="card-b">
+      ${inboxReplies.map(r => `<p><b>${esc(r.shortcut)}</b> ${esc(r.title)}<br><small>${esc(r.body)}</small> ${w ? `<button class="btn sm" type="button" onclick="inboxDeleteReply('${r.id}')">Delete</button>` : ''}</p>`).join('') || '<p class="help">None yet.</p>'}
+      ${w ? `<div class="row"><div class="f"><label>Title</label><input id="ibReplyTitle"></div><div class="f"><label>Shortcut</label><input id="ibReplyCut" placeholder="/hold"></div></div>
+        <div class="f"><label>Body. You can use {first_name}, {workshop} and {date}.</label><textarea id="ibReplyBody" rows="3"></textarea></div>
+        <p><button class="btn sm" type="button" onclick="inboxAddReply()">Save reply</button></p>` : ''}
+    </div></div>`;
+}
+window.inboxNoteToggle = (el) => { const box = $('inboxBody'); if (box && box.dataset.closed === '1') box.disabled = !el.checked; };
+window.inboxAssign = async (staffId) => {
+  const { error } = await sb.from('conversations').update({ assigned_to: staffId || null }).eq('id', inboxOpen);
+  if (error) { toast(error.message); return; }
+  toast(staffId ? 'Assigned' : 'Unassigned'); await render();
+};
+window.inboxToggle = async () => {
+  const row = inboxRows.find(r => r.id === inboxOpen);
+  if (!row) return;
+  const status = row.status === 'open' ? 'closed' : 'open';
+  const { error } = await sb.from('conversations').update({ status }).eq('id', inboxOpen);
+  if (error) { toast(error.message); return; }
+  toast(status === 'closed' ? 'Closed' : 'Reopened'); await render();
+};
+async function inboxContactPatch(patch){
+  const row = inboxRows.find(r => r.id === inboxOpen);
+  if (!row) return;
+  const { error } = await sb.from('contacts').update({ ...patch, updated_at:new Date().toISOString(), updated_by:me.id }).eq('id', row.contact_id);
+  if (error) { toast(error.message); return; }
+  toast('Saved'); await render();
+}
+window.inboxAddTag = async (preset) => {
+  const row = inboxRows.find(r => r.id === inboxOpen);
+  const typed = preset || ($('inboxTagAdd') && $('inboxTagAdd').value) || '';
+  const tag = String(typed).trim();
+  if (!row || !tag) return;
+  const tags = [...new Set([...(row.contacts.tags || []), tag])].slice(0, 20);
+  await inboxContactPatch({ tags });
+};
+window.inboxDropTag = async (tag) => {
+  const row = inboxRows.find(r => r.id === inboxOpen);
+  if (!row) return;
+  await inboxContactPatch({ tags: (row.contacts.tags || []).filter(t => t !== tag) });
+};
+window.inboxSaveNotes = async () => { await inboxContactPatch({ notes: ($('inboxNotes') && $('inboxNotes').value) || null }); };
+window.inboxSaveSettings = async () => {
+  const sabbath = $('ibSabbath').value, welcome = $('ibWelcome').value;
+  if (window.MaInbox && (!window.MaInbox.copyAllowed(sabbath) || !window.MaInbox.copyAllowed(welcome))) {
+    toast('Please rephrase. We do not use “sip and paint”, “cheaper than”, HRDC, or “plant-based”.'); return;
+  }
+  const { error } = await sb.from('inbox_settings').update({
+    automation_pause_minutes: Number($('ibPause').value || 30),
+    sabbath_start_dow: Number($('ibStartDow').value),
+    sabbath_start_time: $('ibStartTime').value || '19:00',
+    sabbath_end_dow: Number($('ibEndDow').value),
+    sabbath_end_time: $('ibEndTime').value || '19:30',
+    sabbath_reply: sabbath,
+    welcome_reply: welcome,
+    updated_at: new Date().toISOString()
+  }).eq('id', 1);
+  if (error) { toast(error.message); return; }
+  toast('Inbox settings saved'); await render();
+};
+window.inboxAddReply = async () => {
+  let shortcut = ($('ibReplyCut').value || '').trim().toLowerCase();
+  if (shortcut && !shortcut.startsWith('/')) shortcut = '/' + shortcut;
+  const body = $('ibReplyBody').value || '';
+  if (!shortcut || !$('ibReplyTitle').value.trim() || !body.trim()) { toast('Add a title, a shortcut, and the reply.'); return; }
+  if (window.MaInbox && !window.MaInbox.copyAllowed(body)) { toast('Please rephrase that reply.'); return; }
+  const { error } = await sb.from('saved_replies').insert({ title:$('ibReplyTitle').value.trim(), shortcut, body:body.trim(), created_by:me.id });
+  if (error) { toast(error.message); return; }
+  toast('Reply saved'); await render();
+};
+window.inboxDeleteReply = async (id) => {
+  const { error } = await sb.from('saved_replies').delete().eq('id', id);
+  if (error) { toast(error.message); return; }
+  toast('Reply deleted'); await render();
+};
+window.inboxSend = async () => {
+  const note = $('inboxNote') && $('inboxNote').checked;
+  const body = ($('inboxBody') && $('inboxBody').value) || '';
+  const mentions = note && window.MaInbox ? window.MaInbox.mentionsIn(body, inboxStaff).map(s => s.id) : [];
+  busy(true);
+  const { error } = await sb.rpc('send_conversation_message', { p_conversation:inboxOpen, p_body:body, p_template:null, p_as_note:!!note, p_mentions:mentions });
+  busy(false);
+  if (error) { toast(error.message); return; }
+  inboxDraft = '';
+  toast(note ? 'Note added' : 'Reply queued. WhatsApp sending is not connected yet.');
+  await render();
+};
+window.inboxSendTemplate = async (name) => {
+  busy(true);
+  const { error } = await sb.rpc('send_conversation_message', { p_conversation:inboxOpen, p_body:null, p_template:name, p_as_note:false, p_mentions:[] });
+  busy(false);
+  if (error) { toast(error.message); return; }
+  toast('Template queued. WhatsApp sending is not connected yet.');
+  await render();
+};
+
 
 /* ---------- studio details ---------- */
 views.settings = async function(){
