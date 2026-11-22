@@ -1,10 +1,7 @@
 # Sessions preview
 
-Generated 2026-11-22 — public sessions to 2027-01-03.
+Generated 2026-11-23 — public sessions to 2027-01-04.
 
-
-## Sunday 22 November 2026
-- **15:00–17:00** Chunky Crochet · Chunky Yarn Bag · L2 front room · RM110 · pair RM198 · Dine add-on (after) · 20 of 20 seats left
 
 ## Wednesday 25 November 2026
 - **19:00–21:00** Textured & Impasto Canvas · Sunny Bloom: Impasto Sunflower · L2 front room · RM89 · pair RM160 · Dine add-on (before) · 20 of 20 seats left
