@@ -77,7 +77,7 @@
       "@type": "ListItem",
       "position": 2,
       "name": "Blog",
-      "item": "https://masterartist.co/blog.html"
+      "item": "https://masterartist.co/blog/"
     }
   ]
 }
@@ -88,12 +88,12 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-head"><div class="wrap">
   <a class="wordmark" href="/"><img src="/logo.svg" alt="" width="30" height="30">Master Artist</a>
-  <nav class="site-nav" aria-label="Main"><a href="/workshops/">Workshops</a><a href="/classes/">Classes</a><a href="/groups/">Groups</a><a href="/prices/">Prices</a><a href="/blog.html" aria-current=page>Blog</a><a href="/about/">About</a></nav>
+  <nav class="site-nav" aria-label="Main"><a href="/workshops/">Workshops</a><a href="/classes/">Classes</a><a href="/groups/">Groups</a><a href="/prices/">Prices</a><a href="/blog/" aria-current=page>Blog</a><a href="/about/">About</a></nav>
   <span class="head-wa"><a class="btn wa" href="https://wa.me/60102779426?text=Hi%2C%20I%20have%20a%20question%20about%20Master%20Artist.%20Source%3A%20site." data-wa-msg="Hi, I have a question about Master Artist. Source: {source}." data-voice="both" data-format="" data-programme="" data-session="" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.2-1.8-.9-2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.5c.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5 2.5 1 3 .8 3.6.7.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4l-.5-.3zM12 2a10 10 0 0 0-8.6 15l-1.3 4.8 4.9-1.3A10 10 0 1 0 12 2z"/></svg><span>WhatsApp us</span></a></span>
 </div></header>
 <main id="main">
 <section class="page-hero on-dark"><div class="wrap">
-  <div class="crumbs"><a href="/">Home</a> / <a href="/blog.html">Blog</a> / <span id="postCrumb">Article</span></div>
+  <div class="crumbs"><a href="/">Home</a> / <a href="/blog/">Blog</a> / <span id="postCrumb">Article</span></div>
   <span class="eyebrow">Blog</span>
     <h1 id="postTitle">Loading…</h1>
     <div class="post-meta" id="postMeta"></div>
@@ -108,17 +108,44 @@
 <section class="sec alt"><div class="wrap"><div class="doors"><a class="door v-studio" href="/workshops/" style="padding:24px"><span class="label" style="margin:0 0 4px">Master Artist Studio Sessions</span><h3 style="margin:0 0 8px">Come to a workshop</h3><p style="margin:0">A weeknight or a Sunday, a new theme every week, from RM89.</p></a><a class="door v-academy" href="/trial/" style="padding:24px"><span class="label" style="margin:0 0 4px">Master Artist Academy</span><h3 style="margin:0 0 8px">Try a class</h3><p style="margin:0">Weekly classes for kids, teens and adults. Start with a RM50 trial, credited against the first month.</p></a></div></div></section>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" crossorigin="anonymous"></script>
 <script>(function () {
+  function scrub(s) {
+    return String(s || '')
+      .replace(/Plant-based Baking Course/g, 'Baking Course')
+      .replace(/Plant-based Bake Lab/g, 'Bake Lab')
+      .replace(/Plant-based mini pizzas/g, 'Mini pizzas')
+      .replace(/Plant-based cooking class/g, 'Baking class')
+      .replace(/Plant-based gingerbread/g, 'Gingerbread')
+      .replace(/plant-based restaurants/gi, 'restaurants')
+      .replace(/plant-based restaurant/gi, 'restaurant')
+      .replace(/plant-based expertise/gi, 'experience')
+      .replace(/it is plant-based without any substitutions at all/gi, 'it needs no substitutions at all')
+      .replace(/plant-based cooking class/gi, 'baking class')
+      .replace(/plant-based baking course/gi, 'baking course')
+      .replace(/plant-based bake lab/gi, 'bake lab')
+      .replace(/plant-based mini pizzas/gi, 'mini pizzas')
+      .replace(/plant-based gingerbread/gi, 'gingerbread')
+      .replace(/plant-based swaps/gi, 'swaps')
+      .replace(/are plant-based,/gi, 'are')
+      .replace(/plant-based bake/gi, 'bake')
+      .replace(/\bplant[-\s]based\b/gi, '')
+      .replace(/ {2,}/g, ' ')
+      .replace(/ +([,.;:])/g, '$1')
+      .replace(/\( +/g, '(');
+  }
   var slug = new URLSearchParams(location.search).get('slug'), art = document.getElementById('post');
   if (!art || !slug || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return;
   var key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
   fetch('https://fudaosneozobacdalncv.supabase.co/rest/v1/blog_public?slug=eq.' + slug + '&select=*', {headers: {apikey: key, Authorization: 'Bearer ' + key}})
     .then(function (r) { return r.json(); }).then(function (rows) {
       var p = rows && rows[0]; if (!p) return;
-      document.title = p.title + ' \u2014 Master Artist';
-      document.getElementById('postTitle').textContent = p.title;
-      document.getElementById('postCrumb').textContent = p.title;
+      var title = scrub(p.title), body = scrub(p.body_html || '');
+      document.title = title + ' \u2014 Master Artist';
+      var desc = document.querySelector('meta[name="description"]');
+      if (desc) desc.setAttribute('content', scrub(p.seo_description || p.excerpt || desc.getAttribute('content') || ''));
+      document.getElementById('postTitle').textContent = title;
+      document.getElementById('postCrumb').textContent = title;
       document.getElementById('postMeta').innerHTML = '<span>' + new Date(p.published_at).toLocaleDateString('en-GB', {day: 'numeric', month: 'long', year: 'numeric'}) + '</span>';
-      art.innerHTML = '<div class="prose">' + (window.DOMPurify ? DOMPurify.sanitize(p.body_html || '') : '') + '</div>';
+      art.innerHTML = '<div class="prose">' + (window.DOMPurify ? DOMPurify.sanitize(body) : '') + '</div>';
     });
 })();</script>
 </main>
@@ -126,7 +153,7 @@
   <div class="cols">
     <div><h2 class="foot-h">Visit</h2><p>38-2, Jalan 28/70A, Desa Sri Hartamas, 50480 Kuala Lumpur<br>Upstairs, above savor</p></div>
     <div><h2 class="foot-h">Hours</h2><div class="hours"><table><tr><td>Sunday</td><td>10am–6pm</td></tr><tr><td>Monday – Thursday</td><td>10am–10pm</td></tr><tr><td>Friday</td><td>10am–5pm</td></tr><tr><td>Saturday</td><td>Closed</td></tr></table><p class="notes">Open Monday and Tuesday. Closed Friday 5pm to Saturday. Fridays: no workshops after 12:30pm.</p></div></div>
-    <div><h2 class="foot-h">Explore</h2><ul><li><a href="/workshops/">Workshops</a></li><li><a href="/classes/">Classes</a></li><li><a href="/birthdays/">Birthday parties</a></li><li><a href="/groups/">Team days</a></li><li><a href="/gift-vouchers/">Gift vouchers</a></li><li><a href="/teachers/">Teachers</a></li><li><a href="/reviews/">Reviews</a></li><li><a href="/showcase/">Showcase</a></li><li><a href="/blog.html">Blog</a></li></ul></div>
+    <div><h2 class="foot-h">Explore</h2><ul><li><a href="/workshops/">Workshops</a></li><li><a href="/classes/">Classes</a></li><li><a href="/birthdays/">Birthday parties</a></li><li><a href="/groups/">Team days</a></li><li><a href="/gift-vouchers/">Gift vouchers</a></li><li><a href="/teachers/">Teachers</a></li><li><a href="/reviews/">Reviews</a></li><li><a href="/showcase/">Showcase</a></li><li><a href="/blog/">Blog</a></li></ul></div>
     <div><h2 class="foot-h">Contact</h2><ul><li><a class="" href="https://wa.me/60102779426?text=Hi%2C%20I%20have%20a%20question%20about%20Master%20Artist.%20Source%3A%20site." data-wa-msg="Hi, I have a question about Master Artist. Source: {source}." data-voice="both" data-format="" data-programme="" data-session="" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.2-1.8-.9-2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.5c.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5 2.5 1 3 .8 3.6.7.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4l-.5-.3zM12 2a10 10 0 0 0-8.6 15l-1.3 4.8 4.9-1.3A10 10 0 1 0 12 2z"/></svg><span>+60 10-277 9426</span></a></li><li><a href="https://www.instagram.com/masterartist_co/">Instagram</a></li><li><a href="mailto:info@masterartist.co">info@masterartist.co</a></li></ul></div>
   </div>
   <div class="legal"><span>© 2026 Master Artist</span><a href="/privacy/">PDPA notice</a><a href="/terms/">Booking terms</a></div>
