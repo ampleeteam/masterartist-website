@@ -29,7 +29,23 @@ const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice
 const opt = (v: unknown, max: number) => str(v, max) || null;
 
 type Session = { id: string; format: string; date: string; time: string; end: string; name: string; theme?: string; public: boolean;
-  type?: string; cap: number; price: number; pair_price?: number; room?: string };
+  type?: string; cap: number; price: number; pair_price?: number; room?: string;
+  early_bird_price?: number; early_bird_pair_price?: number; late_price?: number; late_pair_price?: number;
+  early_bird_until?: string; early_bird_seats?: number };
+
+// Early bird until early_bird_until (19:00 MYT, 7 days before the session) and the first
+// early_bird_seats. Live seat counts come from workshop_bookings. After either cutoff, charge late_price.
+function priceFor(s: Session, bookedPeople: number) {
+  if (s.early_bird_until && s.early_bird_price != null && s.late_price != null) {
+    const until = Date.parse(s.early_bird_until);
+    const seatsClosed = typeof s.early_bird_seats === "number" && bookedPeople >= s.early_bird_seats;
+    const early = Number.isFinite(until) && Date.now() < until && !seatsClosed;
+    return early
+      ? { price: s.early_bird_price, pair: s.early_bird_pair_price }
+      : { price: s.late_price, pair: s.late_pair_price };
+  }
+  return { price: s.price, pair: s.pair_price };
+}
 
 async function stripe(path: string, params: Record<string, string>) {
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
@@ -79,15 +95,19 @@ Deno.serve(async (req) => {
   if (!s || !s.public || s.type === "course" || s.date < today) return out({ error: "This session is no longer on sale." }, 404);
 
   const qty = Math.floor(Number(b.qty));
-  const pair = b.ticket === "pair" && !!s.pair_price;
   if (!(qty >= 1 && qty <= 20)) return out({ error: "Please choose how many seats." }, 400);
-  const people = pair ? qty * 2 : qty, amount = (pair ? s.pair_price! : s.price) * qty;
 
-  // Seats: confirmed, paid and requested bookings, plus checkouts still open
+  // Seats: confirmed, paid and requested bookings, plus checkouts still open.
+  // Count them before pricing so the early-bird seat cutoff uses the same bookings.
   const since = new Date(Date.now() - HOLD_MINUTES * 60000).toISOString();
   const { data: taken } = await sb.from("workshop_bookings").select("people, status, created_at").eq("session_id", s.id)
     .or(`status.in.(requested,confirmed,paid),and(status.eq.pending,created_at.gte.${since})`);
-  const left = (s.cap || 999) - (taken ?? []).reduce((n, r) => n + (r.people as number), 0);
+  const booked = (taken ?? []).reduce((n, r) => n + (r.people as number), 0);
+  const tier = priceFor(s, booked);
+  const pair = b.ticket === "pair" && tier.pair != null;
+  const unit = pair ? tier.pair! : tier.price;
+  const people = pair ? qty * 2 : qty, amount = unit * qty;
+  const left = (s.cap || 999) - booked;
   if (people > left) return out({ error: left > 0 ? `Only ${left} seat${left > 1 ? "s" : ""} left for this session.` : "This session is full." }, 409);
 
   const first = str(b.first_name, 60), last = str(b.last_name, 60), email = str(b.email, 320).toLowerCase(), phone = str(b.phone, 40);
@@ -122,7 +142,7 @@ Deno.serve(async (req) => {
       "payment_intent_data[metadata][booking_id]": row.id,
       "line_items[0][quantity]": String(qty),
       "line_items[0][price_data][currency]": "myr",
-      "line_items[0][price_data][unit_amount]": String((pair ? s.pair_price! : s.price) * 100),
+      "line_items[0][price_data][unit_amount]": String(unit * 100),
       "line_items[0][price_data][product_data][name]": `${theme}${pair ? " · pair ticket" : ""}`,
       "line_items[0][price_data][product_data][description]": `${when(s)} · Master Artist, Desa Sri Hartamas`,
       success_url: `${SITE}/booking/thanks/?b=${row.id}&s={CHECKOUT_SESSION_ID}`,

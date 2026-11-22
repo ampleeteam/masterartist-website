@@ -191,11 +191,28 @@
   document.querySelectorAll('form.booking[data-session]').forEach(function (form) {
     var d = form.dataset;
     if (slots.length < 2) startBooking(form);
-    var price = Number(d.price || 0), pair = Number(d.pair || 0);
+    function tierNow() {
+      var price = Number(d.price || 0), pair = Number(d.pair || 0);
+      if (d.earlyUntil && d.latePrice) {
+        var until = Date.parse(d.earlyUntil);
+        if (!isNaN(until)) {
+          var earlyOn = Date.now() < until;
+          price = Number(earlyOn ? (d.earlyPrice || price) : d.latePrice);
+          pair = Number(earlyOn ? (d.earlyPair || 0) : (d.latePair || 0));
+        }
+      }
+      var sel = form.querySelector('select[name=ticket]');
+      if (sel && sel.options.length > 1) {
+        sel.options[0].text = 'Single · RM' + price;
+        if (pair) sel.options[1].text = 'Pair · RM' + pair;
+      }
+      return { price: price, pair: pair };
+    }
     function total() {
+      var tier = tierNow();
       var f = new FormData(form), qty = Math.max(1, Number(f.get('qty') || 1));
-      var isPair = f.get('ticket') === 'pair', people = isPair ? qty * 2 : qty;
-      var sum = isPair ? pair * qty : price * qty;
+      var isPair = f.get('ticket') === 'pair' && tier.pair, people = isPair ? qty * 2 : qty;
+      var sum = isPair ? tier.pair * qty : tier.price * qty;
       [].forEach.call(form.querySelectorAll('[data-total]'), function (out) { out.textContent = 'RM' + sum.toLocaleString('en-MY'); });
       return { qty: qty, isPair: isPair, people: people, sum: sum, f: f };
     }

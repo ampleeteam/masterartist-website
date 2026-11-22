@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-24T20:53:19",
+ "generated": "2026-11-24T20:56:36",
  "currency": "MYR",
  "formats": [
   {
@@ -7,8 +7,16 @@
    "name": "Textured & Impasto Canvas",
    "discipline": "art",
    "duration_min": 120,
-   "price": 89,
-   "pair_price": 160,
+   "price": 95,
+   "pair_price": 170,
+   "price_before": 89,
+   "pair_price_before": 160,
+   "early_bird": {
+    "price": 95,
+    "pair_price": 170
+   },
+   "late_price": 115,
+   "late_pair_price": 205,
    "cap": 20,
    "room": "L2 front room",
    "room_fallback": "L1 front room",
@@ -23,8 +31,16 @@
    "name": "Acrylic Canvas",
    "discipline": "art",
    "duration_min": 120,
-   "price": 89,
-   "pair_price": 160,
+   "price": 95,
+   "pair_price": 170,
+   "price_before": 89,
+   "pair_price_before": 160,
+   "early_bird": {
+    "price": 95,
+    "pair_price": 170
+   },
+   "late_price": 115,
+   "late_pair_price": 205,
    "cap": 18,
    "room": "L2 front room",
    "room_fallback": "L1 front room",
@@ -39,8 +55,16 @@
    "name": "Watercolour",
    "discipline": "art",
    "duration_min": 120,
-   "price": 80,
-   "pair_price": 144,
+   "price": 95,
+   "pair_price": 170,
+   "price_before": 80,
+   "pair_price_before": 144,
+   "early_bird": {
+    "price": 95,
+    "pair_price": 170
+   },
+   "late_price": 115,
+   "late_pair_price": 205,
    "cap": 20,
    "room": "L2 front room",
    "room_fallback": "L1 front room",
@@ -55,9 +79,11 @@
    "name": "Bake Lab",
    "discipline": "baking",
    "duration_min": 120,
-   "price": 95,
+   "price": 99,
    "price_specialty": 85,
-   "pair_price": 171,
+   "pair_price": 180,
+   "price_before": 95,
+   "pair_price_before": 171,
    "cap": 24,
    "room": "L1 kitchen",
    "audience": "all",
@@ -72,7 +98,12 @@
    "name": "Reels for Your Business",
    "discipline": "videography",
    "duration_min": 150,
-   "price": 89,
+   "price": 95,
+   "price_before": 89,
+   "early_bird": {
+    "price": 95
+   },
+   "late_price": 115,
    "cap": 10,
    "room": "L2 recording studio",
    "audience": "adults",
@@ -87,7 +118,12 @@
    "name": "Phone Photography Walk + Edit",
    "discipline": "photography",
    "duration_min": 150,
-   "price": 85,
+   "price": 95,
+   "price_before": 85,
+   "early_bird": {
+    "price": 95
+   },
+   "late_price": 115,
    "cap": 10,
    "room": "L2 recording studio",
    "audience": "adults",
@@ -102,8 +138,16 @@
    "name": "Glow-in-the-Dark Canvas",
    "discipline": "art",
    "duration_min": 120,
-   "price": 85,
-   "pair_price": 153,
+   "price": 95,
+   "pair_price": 170,
+   "price_before": 85,
+   "pair_price_before": 153,
+   "early_bird": {
+    "price": 95,
+    "pair_price": 170
+   },
+   "late_price": 115,
+   "late_pair_price": 205,
    "cap": 18,
    "room": "L2 front room",
    "audience": "adults",
@@ -117,8 +161,16 @@
    "name": "Candle Making",
    "discipline": "craft",
    "duration_min": 120,
-   "price": 89,
-   "pair_price": 160,
+   "price": 95,
+   "pair_price": 170,
+   "price_before": 89,
+   "pair_price_before": 160,
+   "early_bird": {
+    "price": 95,
+    "pair_price": 170
+   },
+   "late_price": 115,
+   "late_pair_price": 205,
    "cap": 16,
    "room": "L1 front room (Savor)",
    "audience": "all",
@@ -131,8 +183,10 @@
    "name": "Chunky Crochet",
    "discipline": "craft",
    "duration_min": 120,
-   "price": 110,
-   "pair_price": 198,
+   "price": 115,
+   "pair_price": 210,
+   "price_before": 110,
+   "pair_price_before": 198,
    "cap": 20,
    "room": "L2 front room",
    "audience": "adults and teens",
@@ -305,6 +359,7 @@
      "ages": "13+",
      "duration_min": 150,
      "price_format": "textured-canvas",
+     "price_per_person": 89,
      "min": 8,
      "max": 18,
      "room": "L1 front room",
@@ -405,7 +460,8 @@
    "until": "2027-04-30",
    "floor_adult": 65,
    "studio_pass": {
-    "launch": 260,
+    "launch": 270,
+    "launch_before": 260,
     "sessions": 4,
     "locks_launch_price_until": "2027-08-31"
    }
@@ -417,7 +473,8 @@
   "refunds": "prepaid, non-refundable",
   "arrive_early_min": 15,
   "trial_voucher": {
-   "value": 50,
+   "value": 55,
+   "value_before": 50,
    "credited": true,
    "issued_to": "every attendee"
   },
@@ -425,7 +482,14 @@
    "2026-11-08"
   ],
   "included": "a drink and all materials",
-  "pair_discount": 0.1
+  "pair_discount": 0.1,
+  "prices_from": "2026-12-07",
+  "early_bird": {
+   "days_before": 7,
+   "until_time": "19:00",
+   "timezone": "Asia/Kuala_Lumpur",
+   "seats": 15
+  }
  },
  "launch": {
   "first_public_sessions": "2026-11-04",

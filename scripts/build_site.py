@@ -242,7 +242,11 @@ def SessionCard(s, link=True):
     if s.get('bundle'):
         price = f'<div class="price">{rm(s["price"])} <small>Family Sunday: one adult Textured Canvas + one child, same hour · extra child {rm(s["bundle"]["extra_child"])}</small></div>'
     else:
-        if s.get('pair_word') and s.get('pair_price'):
+        sent = session_sentence(s)
+        if sent:
+            pair = session_pair_sentence(s)
+            price = f'<div class="price"><span class="tier">{e(sent)}</span>{f"<small>{e(pair)}</small>" if pair else ""}</div>'
+        elif s.get('pair_word') and s.get('pair_price'):
             price = f'<div class="price">{two_pax_price(s)}</div>'
         else:
             unit = f' {s["price_unit"]}' if s.get('price_unit') else ''
@@ -293,9 +297,10 @@ def ProgrammeCard(p):
 </article>'''
 
 
-def FactsBlock(items, price_line=None, voice='studio', action=''):
+def FactsBlock(items, price_line=None, voice='studio', action='', price_class=''):
     rows = ''.join(f'<div><dt>{e(k)}</dt><dd>{v}</dd></div>' for k, v in items if v)
-    pl = f'<p class="price-line">{price_line}</p>' if price_line else ''
+    cls = 'price-line' + (f' {price_class}' if price_class else '')
+    pl = f'<p class="{cls}">{price_line}</p>' if price_line else ''
     return f'<div class="facts v-{voice}">{pl}<dl>{rows}</dl>{action}</div>'
 
 
@@ -363,7 +368,15 @@ PAY = bool(SITE.get('payments', {}).get('stripe'))   # online payment through St
 def BookingEmbed(s):
     """WhatsApp booking until a payment tool is chosen (spec §3 fallback: booking: whatsapp)."""
     dine = WS['addons']['dine']
-    if s.get('pair_price') and s.get('pair_word'):
+    if s.get('early_bird_until') and s.get('early_bird_price') is not None:
+        single = f"Early bird · {rm(s['early_bird_price'])}"
+        if s.get('early_bird_pair_price'):
+            pair_label = f"Early bird pair · {rm(s['early_bird_pair_price'])}"
+            pair_opt = (f'<div><label for="tk">Ticket</label><select id="tk" name="ticket"><option value="single">{single}</option>'
+                        f'<option value="pair">{e(pair_label)}</option></select></div>')
+        else:
+            pair_opt = '<input type="hidden" name="ticket" value="single">'
+    elif s.get('pair_price') and s.get('pair_word'):
         save = 2 * s['price'] - s['pair_price']
         pair_label = f"{s['pair_word']} · {rm(s['pair_price'])}" + (f" (save {rm(save)})" if save else '')
         pair_opt = (f'<div><label for="tk">Ticket</label><select id="tk" name="ticket"><option value="single">1 person · {rm(s["price"])}</option>'
@@ -373,6 +386,15 @@ def BookingEmbed(s):
                     f'<option value="pair">Pair · {rm(s["pair_price"])}</option></select></div>')
     else:
         pair_opt = '<input type="hidden" name="ticket" value="single">'
+    early_attrs = ''
+    if s.get('early_bird_until'):
+        early_attrs = (f' data-early-until="{e(s["early_bird_until"])}" data-early-price="{s.get("early_bird_price") or 0}"'
+                       f' data-early-pair="{s.get("early_bird_pair_price") or 0}" data-late-price="{s.get("late_price") or 0}"'
+                       f' data-late-pair="{s.get("late_pair_price") or 0}"')
+    seat_note = ''
+    if s.get('early_bird_until') and s.get('early_bird_seats'):
+        seat_note = (f'<p class="note">Early bird is the first {s["early_bird_seats"]} seats, or until the date above, '
+                     f'whichever comes first.</p>')
     # Savor meals are ordered and paid on Savor's own menu: the field is a link to it, and clicking it
     # marks the booking as dining (ma.js). TODO: addons.dine.order_url is still empty
     when_dine = 'after' if s.get('dine_timing') == 'after' else 'before'
@@ -390,7 +412,7 @@ def BookingEmbed(s):
     pair_attr = f' data-pair-label="{e(s["pair_word"])}"' if s.get('pair_word') else ''
     return f'''<form class="booking v-studio" data-session="{e(s['id'])}" data-format="{e(s['format'])}" data-name="{e(full_name)}" data-when="{e(when)}"
   data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}"{pair_attr} data-booking="whatsapp" data-unit="{msg_unit}" data-dine-url="{e(dine.get('order_url') or '')}"
-  data-date="{s['date']}" data-cap="{s.get('cap') or ''}">
+  data-date="{s['date']}" data-cap="{s.get('cap') or ''}"{early_attrs}>
   <h2 class="h3">Book {e(s.get('theme') or s['name'])}</h2>
   <p class="book-for">{e(s['name']) + ' · ' if s.get('theme') else ''}{e(when)}</p>
   <div class="row">
@@ -409,6 +431,7 @@ def BookingEmbed(s):
   {ConsentFields(consent_kind(s))}
   {NEWS_OPTIN}
   <div class="total"><span>Total</span><b data-total>{rm(s['price'])}</b></div>
+  {seat_note}
   <p class="err" role="alert" hidden></p>
   {f'<button class="btn block" type="submit">Pay <span data-total>{rm(s["price"])}</span> and book</button>'
    f'<p class="note">Secure payment by card, FPX online banking or e-wallet. Your seat is booked as soon as you pay; see the policies below.</p>'
@@ -473,16 +496,34 @@ def PriceTable(voice):
             continue
         if f.get('bundle'):
             price, extra = rm(f['bundle']['price']), f"Family Sunday: {f['bundle']['includes']} · extra child {rm(f['bundle']['extra_child'])}"
+            price_cell = f'<td class="num">{e(price)}</td>'
         else:
-            price = rm(f['price']) + (f" {f['price_unit']}" if f.get('price_unit') else '')
-            extra = ' · '.join(x for x in [f"pair {rm(f['pair_price'])}" if f.get('pair_price') else '',
-                                            f"specialty {rm(f['price_specialty'])}" if f.get('price_specialty') else '',
-                                            f"{f['duration_min'] // 60}h{f['duration_min'] % 60:02d}".replace('h00', 'h')] if x)
-        rows.append(f'<tr><td><a href="/workshops/{f["id"]}/">{e(f["name"])}</a></td><td class="muted">{e(extra)}</td><td class="num">{e(price)}</td></tr>')
+            hours = f"{f['duration_min'] // 60}h{f['duration_min'] % 60:02d}".replace('h00', 'h')
+            if isinstance(f.get('early_bird'), dict) and f.get('late_price') is not None:
+                pair = pair_then(f)
+                price_cell = f'<td class="num tiered">{e(early_sentence(f))}{f"<span>{e(pair)}</span>" if pair else ""}</td>'
+                extra = ' · '.join(x for x in [f"specialty {rm(f['price_specialty'])}" if f.get('price_specialty') else '', hours] if x)
+            else:
+                price = rm(f['price']) + (f" {f['price_unit']}" if f.get('price_unit') else '')
+                shown = [x for x in [f"Pair {rm(f['pair_price'])}" if f.get('pair_price') else '',
+                                      f"Specialty {rm(f['price_specialty'])}" if f.get('price_specialty') else ''] if x]
+                extra = ' · '.join(x for x in [f"pair {rm(f['pair_price'])}" if f.get('pair_price') else '',
+                                                f"specialty {rm(f['price_specialty'])}" if f.get('price_specialty') else '',
+                                                hours] if x)
+                price_cell = f'<td class="num{" tiered" if shown else ""}">{e(price)}{f"<span>{e(" · ".join(shown))}</span>" if shown else ""}</td>'
+        rows.append(f'<tr><td><a href="/workshops/{f["id"]}/">{e(f["name"])}</a></td><td class="muted">{e(extra)}</td>{price_cell}</tr>')
     pw = WS['policies']['pricing_window']
     until = dt.date.fromisoformat(pw['until'])
+    sample = next((f for f in WS['formats'] if isinstance(f.get('early_bird'), dict) and f.get('late_price') is not None), None)
+    early_note = ''
+    if sample:
+        rule = WS['policies'].get('early_bird') or {}
+        pair = pair_then(sample)
+        early_note = (f' Early bird is {rm(sample["early_bird"]["price"])} until 7pm, {rule.get("days_before", 7)} days before the session, '
+                      f'or the first {rule.get("seats", 15)} seats, whichever comes first. Then {rm(sample["late_price"])}.'
+                      + (f' {pair}' if pair else ''))
     note = (f'<p class="price-note">{e(pw["name"])} prices until {until.day} {until.strftime("%B %Y")}. '
-            f'Dine + workshop: a meal at Savor from {rm(WS["addons"]["dine"]["price_from"])} a person. Minimum {WS["policies"]["minimum_to_run"]} to run.</p>')
+            f'Dine + workshop: a meal at Savor from {rm(WS["addons"]["dine"]["price_from"])} a person. Minimum {WS["policies"]["minimum_to_run"]} to run.{early_note}{cutover_sentence()}</p>')
     return f'<div class="v-studio"><table class="price-table"><caption>Studio Sessions · workshops</caption><thead><tr><th>Workshop</th><th>Details</th><th>Price</th></tr></thead><tbody>{"".join(rows)}</tbody></table>{note}</div>'
 
 
@@ -660,7 +701,7 @@ def build_styleguide():
 <section class="sg-section"><h2>WeekStrip</h2>{WeekStrip(week)}</section>
 
 <section class="sg-section"><h2>FactsBlock</h2><div class="sg-pair">
-  {FactsBlock([('Date', day_date(sample['date'])), ('Time', fmt_time(sample['time']) + '–' + fmt_time(sample['end'])), ('Room', e(sample['room'])), ('Seats', seats_html(sample))], f"{rm(sample['price'])} <span class='small muted'>· pair {rm(sample['pair_price'])}</span>", 'studio')}
+  {FactsBlock([('Date', day_date(sample['date'])), ('Time', fmt_time(sample['time']) + '–' + fmt_time(sample['end'])), ('Room', e(sample['room'])), ('Seats', seats_html(sample))], session_price_line(sample), 'studio', price_class='tiered' if session_sentence(sample) else '')}
   {FactsBlock([('Ages', '5–9'), ('Class size', f"max {kids['cap']}"), ('Days', 'Mon–Fri'), ('Room', e(kids['room'])), ('Teacher', e(teacher_for(kids['id'])))], f"{rm(kids['price_month'])}/month <span class='small muted'>· {per_class(kids)}</span>", 'academy')}</div></section>
 
 <section class="sg-section"><h2>BookingEmbed + ConsentFields</h2><div class="sg-pair">
@@ -687,6 +728,80 @@ PUB = [s for s in WS['sessions'] if s['public'] and s.get('type') != 'course' an
 WORKSHOP_FORMATS = [f for f in WS['formats'] if f.get('type') != 'course' and f.get('status') != 'paused']
 POL = WS['policies']
 TRIAL = CL['trial']
+
+
+def prices_from_date():
+    """Sessions on this date onward use the new prices. Earlier sessions keep the current price."""
+    return dt.date.fromisoformat(POL.get('prices_from') or '2026-12-07')
+
+
+NEW_PRICES_ON = TODAY >= prices_from_date()
+
+
+def apply_catalogue_cutover():
+    """Pages built before the cutover show the current price. expand_sessions prices each session by its date."""
+    if NEW_PRICES_ON:
+        return
+    for f in WS['formats']:
+        if 'price_before' not in f:
+            continue
+        f['price_after'] = f.get('price')
+        f['pair_price_after'] = f.get('pair_price')
+        f['early_bird_after'] = f.get('early_bird')
+        f['late_price_after'] = f.get('late_price')
+        f['late_pair_price_after'] = f.get('late_pair_price')
+        f['price'] = f['price_before']
+        if 'pair_price_before' in f:
+            f['pair_price'] = f['pair_price_before']
+        f.pop('early_bird', None)
+        f.pop('late_price', None)
+        f.pop('late_pair_price', None)
+    if TRIAL.get('price_before') is not None:
+        TRIAL['price_after'] = TRIAL['price']
+        TRIAL['price'] = TRIAL['price_before']
+    voucher = POL.get('trial_voucher') or {}
+    if voucher.get('value_before') is not None:
+        voucher['value_after'] = voucher['value']
+        voucher['value'] = voucher['value_before']
+    studio_pass = (POL.get('pricing_window') or {}).get('studio_pass') or {}
+    if studio_pass.get('launch_before') is not None:
+        studio_pass['launch_after'] = studio_pass['launch']
+        studio_pass['launch'] = studio_pass['launch_before']
+
+
+apply_catalogue_cutover()
+BUSINESS['priceRange'] = f"RM{TRIAL['price']}–RM{max(g.get('price') or 0 for g in WS['groups']['packages']):,}"
+
+
+def cutover_sentence():
+    if NEW_PRICES_ON:
+        return ''
+    when = prices_from_date()
+    last = when - dt.timedelta(days=1)
+    rule = POL.get('early_bird') or {}
+    sample = next((f for f in WS['formats'] if isinstance(f.get('early_bird_after'), dict)), None)
+    bits = []
+    if sample:
+        eb = sample['early_bird_after']
+        if eb.get('pair_price') and sample.get('late_pair_price_after'):
+            bits.append(f"early bird {rm(eb['price'])} (pair {rm(eb['pair_price'])}), then {rm(sample['late_price_after'])} (pair {rm(sample['late_pair_price_after'])})")
+        else:
+            bits.append(f"early bird {rm(eb['price'])}, then {rm(sample['late_price_after'])}")
+    bake = FORMATS.get('bake-lab')
+    if bake and bake.get('price_after'):
+        bits.append(f"Bake Lab {rm(bake['price_after'])}, pair {rm(bake['pair_price_after'])}, specialty bakes {rm(bake.get('price_specialty'))}")
+    crochet = FORMATS.get('crochet-bag')
+    if crochet and crochet.get('price_after'):
+        bits.append(f"Chunky Crochet {rm(crochet['price_after'])}, pair {rm(crochet['pair_price_after'])}")
+    if TRIAL.get('price_after') is not None:
+        bits.append(f"Trial class {rm(TRIAL['price_after'])}")
+    studio_pass = (POL.get('pricing_window') or {}).get('studio_pass') or {}
+    if studio_pass.get('launch_after') is not None:
+        bits.append(f"Studio Pass {rm(studio_pass['launch_after'])}")
+    return (f" Prices in this table are for sessions up to and including {last.strftime('%a')} {last.day} {last.strftime('%b %Y')}. "
+            f"From sessions on {when.strftime('%a')} {when.day} {when.strftime('%b %Y')}: {'. '.join(bits)}. "
+            f"Early bird runs until {fmt_time(rule.get('until_time', '19:00'))}, {rule.get('days_before', 7)} days before the session, "
+            f"or the first {rule.get('seats', 15)} seats, whichever comes first.")
 PROGS = [p for p in CL['programmes'] if p.get('status') != 'paused']
 EMPTY_WEEK = '<div class="empty">New workshop dates will be up shortly.</div>'
 DAY_FULL = {'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thursday', 'Fri': 'Friday', 'Sat': 'Saturday', 'Sun': 'Sunday'}
@@ -738,7 +853,69 @@ def slot_text(p):
 def money_from(fmt):
     if fmt.get('bundle'):
         return rm(fmt['bundle']['price'])
-    return rm(fmt['price']) + (f" {fmt['price_unit']}" if fmt.get('price_unit') else '')
+    amount = rm(fmt['price']) + (f" {fmt['price_unit']}" if fmt.get('price_unit') else '')
+    if isinstance(fmt.get('early_bird'), dict):
+        return f'from {amount}'
+    return amount
+
+
+def until_label(iso):
+    d = dt.datetime.fromisoformat(iso)
+    return f"{d.strftime('%a')} {d.day} {d.strftime('%b')}, {fmt_time(d.strftime('%H:%M'))}"
+
+
+def early_sentence(fmt, until_iso=None):
+    eb = fmt.get('early_bird') if isinstance(fmt.get('early_bird'), dict) else None
+    if not eb or eb.get('price') is None or fmt.get('late_price') is None:
+        return ''
+    when = f" until {until_label(until_iso)}" if until_iso else " until 7 days before the session, 7pm"
+    return f"Early bird {rm(eb['price'])}{when}. Then {rm(fmt['late_price'])}."
+
+
+def pair_then(fmt):
+    eb = fmt.get('early_bird') if isinstance(fmt.get('early_bird'), dict) else None
+    if eb and eb.get('pair_price') and fmt.get('late_pair_price'):
+        return f"Pair {rm(eb['pair_price'])}, then {rm(fmt['late_pair_price'])}."
+    return ''
+
+
+def session_sentence(s):
+    if s.get('early_bird_until') and s.get('early_bird_price') is not None and s.get('late_price') is not None:
+        return f"Early bird {rm(s['early_bird_price'])} until {until_label(s['early_bird_until'])}. Then {rm(s['late_price'])}."
+    return ''
+
+
+def session_pair_sentence(s):
+    if s.get('early_bird_pair_price') and s.get('late_pair_price'):
+        return f"Pair {rm(s['early_bird_pair_price'])}, then {rm(s['late_pair_price'])}."
+    return ''
+
+
+def session_price_line(s):
+    sent = session_sentence(s)
+    if sent:
+        pair = session_pair_sentence(s)
+        return e(sent) + (f" <small>{e(pair)}</small>" if pair else '')
+    if s.get('bundle'):
+        return f"{rm(s['price'])} <small>{e(s['bundle']['name'])}, adult + child · extra child {rm(s['bundle']['extra_child'])}</small>"
+    line = rm(s['price']) + (f" <small>{e(s['price_unit'])}</small>" if s.get('price_unit') else '')
+    if s.get('pair_word') and s.get('pair_price'):
+        return two_pax_price(s)
+    if s.get('pair_price'):
+        line += f" <small>· pair {rm(s['pair_price'])}</small>"
+    return line
+
+
+def pair_fact(f):
+    if not f.get('pair_price'):
+        return ''
+    eb = f.get('early_bird') if isinstance(f.get('early_bird'), dict) else None
+    if eb and eb.get('pair_price') and f.get('late_pair_price'):
+        return f"A pair is {rm(eb['pair_price'])} on the early bird, then {rm(f['late_pair_price'])}"
+    two = (f.get('price') or 0) * 2
+    if two and f['pair_price'] == round(two * (1 - POL['pair_discount'])):
+        return f"Two of you get {int(POL['pair_discount'] * 100)}% off"
+    return f"A pair ticket is {rm(f['pair_price'])}"
 
 
 def length(fmt):
@@ -846,16 +1023,22 @@ def coming_sunday():
 
 def FormatCard(f):
     nxt = next((s for s in by_format(f['id']) if s['seats_left'] != 0), None)
-    pair = f'<small>Pair {rm(f["pair_price"])}</small>' if f.get('pair_price') else ''
+    sent = early_sentence(f)
     if f.get('bundle'):
-        pair = f'<small>{e(f["bundle"]["name"])}: adult + child · extra child {rm(f["bundle"]["extra_child"])}</small>'
+        price_html = f'<div class="price">{rm(f["bundle"]["price"])} <small>{e(f["bundle"]["name"])}: adult + child · extra child {rm(f["bundle"]["extra_child"])}</small></div>'
+    elif sent:
+        pair = pair_then(f)
+        price_html = f'<div class="price"><span class="tier">{e(sent)}</span>{f"<small>{e(pair)}</small>" if pair else ""}</div>'
+    else:
+        pair = f'<small>Pair {rm(f["pair_price"])}</small>' if f.get('pair_price') else ''
+        price_html = f'<div class="price">{money_from(f)} {pair}</div>'
     when = f'<b>Next: {day_date(nxt["date"])} · {fmt_time(nxt["time"])}</b>' if nxt else '<b>New dates soon</b>'
     badge = '<span class="badge dine">Dine + workshop available</span>' if f.get('dine_addon') else ''
     return f'''<article class="card v-studio">
   {photo(f['id'])}
   <div class="body">
     <h3>{e(f['name'])}</h3><div class="sub">{e(first_sentence(f['summary']))}</div>
-    <div class="price">{money_from(f)} {pair}</div>
+    {price_html}
     <div class="meta">{when}<span>{e(length(f))} · {e(f['room'])}</span></div>
     <div class="badges">{badge}</div>
     <div class="actions"><a class="btn" href="/workshops/{f['id']}/">See dates</a></div>
@@ -992,6 +1175,10 @@ def build_format(f):
     msg = f"Hi, I'd like to book {f['name']}. Which dates have seats? Source: {{source}}."
     if f.get('bundle'):
         facts = f'<span>{e(f["bundle"]["name"])} <b>{rm(f["bundle"]["price"])}</b></span><span>Extra child <b>{rm(f["bundle"]["extra_child"])}</b></span>'
+    elif isinstance(f.get('early_bird'), dict) and f.get('late_price') is not None:
+        facts = f'<span>Early bird <b>{rm(f["early_bird"]["price"])}</b></span><span>Then <b>{rm(f["late_price"])}</b></span>'
+        if f['early_bird'].get('pair_price'):
+            facts += f'<span>Pair <b>{rm(f["early_bird"]["pair_price"])}</b>, then <b>{rm(f["late_pair_price"])}</b></span>'
     else:
         facts = f'<span><b>{money_from(f)}</b></span>' + (f'<span>Pair <b>{rm(f["pair_price"])}</b></span>' if f.get('pair_price') else '')
         if f.get('price_specialty'):
@@ -1008,7 +1195,7 @@ def build_format(f):
                 + ''.join(SessionCard(s) for s in rest) + '</div></div></details>')
     make = [('clock', f"{e(length(f))} · {e(f['room'])}"),
              ('palette', f"{e(POL['included'].capitalize())} included"),
-             ('users', f"Two of you get {int(POL['pair_discount'] * 100)}% off" if f.get('pair_price') else ''),
+             ('users', pair_fact(f)),
              ('star', 'Beginners welcome: a teacher takes you through it step by step'),
              ('bag', 'Take it home the same day')]
     if f.get('dine_addon'):
@@ -1017,8 +1204,10 @@ def build_format(f):
         b = f['bundle']
         make.append(('users', f"{e(b['name'])}: {rm(b['price'])} for {e(b['includes'])}; extra child {rm(b['extra_child'])}"))
     team = TeacherCards(f['id'])
+    sent = early_sentence(f)
+    tier = f'<p>{e(sent)}{(" " + e(pair_then(f))) if pair_then(f) else ""}</p>' if sent else ''
     body += f'''<section class="sec v-studio" id="dates"><div class="wrap">
-  <div class="sec-head"><span class="eyebrow">Next dates</span><h2>Pick a <em>date</em></h2><p>Seats are limited to {f['cap']}{' ' + e(f['cap_unit']) if f.get('cap_unit') else ''} a session.</p></div>
+  <div class="sec-head"><span class="eyebrow">Next dates</span><h2>Pick a <em>date</em></h2><p>Seats are limited to {f['cap']}{' ' + e(f['cap_unit']) if f.get('cap_unit') else ''} a session.</p>{tier}</div>
   {SessionGrid(nxt4)}{more}
 </div></section>
 {PhotoRow(f['id'], 'What people <em>made</em>', 'studio')}
@@ -1044,19 +1233,29 @@ def event_ld(s, url):
     loc = place()
     if s.get('location_name'):
         loc = dict(loc, name=s['location_name'])
-    # A session with its own summary is named on its own. One Offer, matching the per-person price.
+    # A session with its own summary is named on its own. Early-bird sessions carry two Offers.
     if s.get('summary') and s.get('theme'):
         name, desc = s['theme'], s['summary']
     else:
         name = f"{s['name']}" + (f" · {s['theme']}" if s.get('theme') else '')
         desc = f['summary']
+    page_url = SITE['url'] + url
+    availability = 'https://schema.org/SoldOut' if s['seats_left'] == 0 else 'https://schema.org/InStock'
+    if s.get('early_bird_until') and s.get('early_bird_price') is not None and s.get('late_price') is not None:
+        offers = [
+            {'@type': 'Offer', 'name': 'Early bird', 'price': s['early_bird_price'], 'priceCurrency': 'MYR',
+             'validThrough': s['early_bird_until'], 'url': page_url, 'availability': availability},
+            {'@type': 'Offer', 'price': s['late_price'], 'priceCurrency': 'MYR',
+             'validFrom': s['early_bird_until'], 'url': page_url, 'availability': availability},
+        ]
+    else:
+        offers = {'@type': 'Offer', 'price': s['price'], 'priceCurrency': 'MYR', 'url': page_url, 'availability': availability}
     return {'@context': 'https://schema.org', '@type': 'Event', 'name': name,
             'description': desc, 'startDate': f"{s['date']}T{s['time']}:00+08:00", 'endDate': f"{s['date']}T{s['end']}:00+08:00",
             'eventStatus': 'https://schema.org/EventScheduled', 'eventAttendanceMode': 'https://schema.org/OfflineEventAttendanceMode',
             'location': loc, 'image': [SITE['url'] + '/' + PHOTOS[s['format']][0]] if s['format'] in PHOTOS and s['format'] not in STAND_INS else [],
             'organizer': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']},
-            'offers': {'@type': 'Offer', 'price': s['price'], 'priceCurrency': 'MYR', 'url': SITE['url'] + url,
-                       'availability': 'https://schema.org/SoldOut' if s['seats_left'] == 0 else 'https://schema.org/InStock'}}
+            'offers': offers}
 
 
 def build_session_day(slots):
@@ -1071,20 +1270,13 @@ def build_session_day(slots):
             for i, s in enumerate(slots)) + '</div>'
     blocks = []
     for s in slots:
-        if s.get('pair_word') and s.get('pair_price'):
-            price_line = two_pax_price(s)
-        else:
-            price_line = rm(s['price']) + (f" <small>{e(s['price_unit'])}</small>" if s.get('price_unit') else '')
-            if s.get('pair_price'):
-                price_line += f" <small>· pair {rm(s['pair_price'])}</small>"
-        if s.get('bundle'):
-            price_line = f"{rm(s['price'])} <small>{e(s['bundle']['name'])}, adult + child · extra child {rm(s['bundle']['extra_child'])}</small>"
+        price_line = session_price_line(s)
         items = [('Date', long_date(s['date'])), ('Time', f"{fmt_time(s['time'])}–{fmt_time(s['end'])}"), ('Length', e(length(f))),
                  ('Room', e(s['room'])), ('Seats', seats_html(s))]
         if s.get('public_holiday'):
             items.append(('Holiday', e(s['public_holiday']) + (' · no surcharge' if s.get('surcharge_waived') else '')))
         action = SoldOut(s) if s['seats_left'] == 0 else BookingEmbed(s)
-        blocks.append(f'<div class="slot" id="t{s["time"].replace(":", "")}">{FactsBlock(items, price_line, "studio")}<div style="margin-top:16px">{action}</div></div>')
+        blocks.append(f'<div class="slot" id="t{s["time"].replace(":", "")}">{FactsBlock(items, price_line, "studio", price_class="tiered" if session_sentence(s) else "")}<div style="margin-top:16px">{action}</div></div>')
     theme = next((s['theme'] for s in slots if s.get('theme')), None)
     blurb = next((s['summary'] for s in slots if s.get('summary')), f['summary'])
     t0 = fmt_time(s0['time']) if len(slots) == 1 else ' or '.join(fmt_time(s['time']) for s in slots)
@@ -1119,7 +1311,8 @@ def build_session_day(slots):
         if len(desc) > 155:
             raise SystemExit(f'seo description is {len(desc)} characters: {desc}')
     else:
-        desc = f"{f['name']} on {long_date(s0['date'])} at {t0}, {s0['room']}, Desa Sri Hartamas. {rm(s0['price'])}. {blurb}"
+        price_bit = session_sentence(s0) or rm(s0['price'])
+        desc = f"{f['name']} on {long_date(s0['date'])} at {t0}, {s0['room']}, Desa Sri Hartamas. {price_bit} {blurb}"
     page(url, title, desc,
          body, voice='studio', active='/workshops/', extra_head=head_ld,
          data_attrs=f' data-page="session" data-format="{e(f["id"])}"', wa={'msg': wa_studio(s0), 'fmt': f['id'], 'session': s0['id']})
@@ -1274,7 +1467,9 @@ def build_programme(p):
 def build_sessions_feed():
     """/assets/sessions.json: the public sessions only, for the create-checkout function (prices and caps are
     read server-side from here) and the admin Bookings list. data/ itself stays off the public site."""
-    keep = ('id', 'format', 'date', 'day', 'time', 'end', 'name', 'theme', 'cap', 'cap_unit', 'price', 'pair_price', 'price_unit', 'public', 'type')
+    keep = ('id', 'format', 'date', 'day', 'time', 'end', 'name', 'theme', 'cap', 'cap_unit', 'price', 'pair_price',
+            'early_bird_price', 'early_bird_pair_price', 'late_price', 'late_pair_price', 'early_bird_until', 'early_bird_seats',
+            'price_unit', 'public', 'type')
     feed = {'generated': dt.date.today().isoformat(), 'sessions': [{k: s[k] for k in keep if k in s} for s in PUB]}
     (ROOT / 'assets' / 'sessions.json').write_text(json.dumps(feed, ensure_ascii=False, separators=(',', ':')))
 
@@ -1518,7 +1713,14 @@ def build_gift_vouchers():
     opts = ''.join(f'<option value="RM{a} gift voucher">{rm(a)} voucher</option>' for a in gv.get('amounts', []))
     if gv.get('any_workshop'):
         for f in WORKSHOP_FORMATS:
-            if f.get('price') and not f.get('price_unit') and f.get('type') != 'class':
+            if isinstance(f.get('early_bird'), dict) and f.get('late_price') is not None and not f.get('price_unit') and f.get('type') != 'class':
+                eb = f['early_bird']
+                opts += f'<option value="{e(f["name"])} voucher (early bird {rm(eb["price"])})">{e(f["name"])} · early bird {rm(eb["price"])}</option>'
+                opts += f'<option value="{e(f["name"])} voucher ({rm(f["late_price"])})">{e(f["name"])} · {rm(f["late_price"])}</option>'
+                if eb.get('pair_price') and f.get('late_pair_price'):
+                    opts += f'<option value="{e(f["name"])} pair voucher (early bird {rm(eb["pair_price"])})">{e(f["name"])} for two · early bird {rm(eb["pair_price"])}</option>'
+                    opts += f'<option value="{e(f["name"])} pair voucher ({rm(f["late_pair_price"])})">{e(f["name"])} for two · {rm(f["late_pair_price"])}</option>'
+            elif f.get('price') and not f.get('price_unit') and f.get('type') != 'class':
                 opts += f'<option value="{e(f["name"])} voucher ({rm(f["price"])})">{e(f["name"])} · {rm(f["price"])}</option>'
                 if f.get('pair_price'):
                     opts += f'<option value="{e(f["name"])} pair voucher ({rm(f["pair_price"])})">{e(f["name"])} for two · {rm(f["pair_price"])}</option>'
@@ -1553,7 +1755,11 @@ def build_gift_vouchers():
 
 # --- Birthdays ------------------------------------------------------------------
 def birthday_price(pk):
-    """(headline price html, short text for tables)."""
+    """(headline price html, short text for tables, detail)."""
+    if pk.get('price_per_person'):
+        name = FORMATS[pk['price_format']]['name'] if pk.get('price_format') else pk['name']
+        n = pk['price_per_person']
+        return (f'{rm(n)} <small>a person · {pk["min"]} to {pk["max"]} people</small>', f"{rm(n)} a person", f"{pk['min']}–{pk['max']} people · {name}")
     if pk.get('price_format'):
         f = FORMATS[pk['price_format']]
         return (f'{rm(f["price"])} <small>a person · {pk["min"]} to {pk["max"]} people</small>', f"{rm(f['price'])} a person", f"{pk['min']}–{pk['max']} people · {f['name']}")
@@ -1724,6 +1930,7 @@ def build_terms():
             f"Each session runs with a minimum of {POL['minimum_to_run']} people. If a session doesn't reach it, we will offer you another date.",
             f"Sessions on public holidays are {int(POL['public_holiday_surcharge'] * 100)}% more, unless the page says otherwise.",
             f"Please arrive {POL['arrive_early_min']} minutes early. Prices shown are {e(pw['name'])} prices until {until.day} {until.strftime('%B %Y')}.",
+            (f"From sessions on {prices_from_date().day} {prices_from_date().strftime('%B %Y')}, where a workshop shows an early bird price, that price applies to the first {POL['early_bird']['seats']} seats or until {fmt_time(POL['early_bird']['until_time'])}, {POL['early_bird']['days_before']} days before the session, whichever comes first. After that, the later price on the page applies. Sessions before that date keep the price on the page for that date. The amount charged is the price in effect when you check out. The price on the page is the full price." if POL.get('early_bird') else ''),
             f"Dine + workshop is a meal at Savor downstairs, chosen from Savor's menu (from {rm(WS['addons']['dine']['price_from'])} a person), added to any workshop and paid online through Savor's menu link."]),
         ('Weekly classes (Master Artist Academy)', [
             f"A trial class is {rm(TRIAL['price'])}. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}. There is no obligation to continue.",
@@ -1939,9 +2146,9 @@ def build_404():
   if (m) location.replace('/post.html?slug=' + m[1]);
 })();
 </script>'''
-    doors = '''<section class="sec"><div class="wrap"><div class="doors">
+    doors = f'''<section class="sec"><div class="wrap"><div class="doors">
 <a class="door" href="/workshops/"><img src="/painting-1.jpg" alt="A painting workshop on the studio table"><span class="label">Studio Sessions</span><h3>Workshops</h3><p>Painting, baking, candles and crochet, on a weeknight or a Sunday.</p><span class="more">See workshops</span></a>
-<a class="door" href="/classes/"><img src="/art-photo-1.jpg" alt="Students with finished artwork"><span class="label">Academy</span><h3>Classes</h3><p>Weekly art, voice, photo and baking classes. A RM50 trial is credited to the first month.</p><span class="more">See classes</span></a>
+<a class="door" href="/classes/"><img src="/art-photo-1.jpg" alt="Students with finished artwork"><span class="label">Academy</span><h3>Classes</h3><p>Weekly art, voice, photo and baking classes. A {rm(TRIAL["price"])} trial is credited to the first month.</p><span class="more">See classes</span></a>
 <a class="door" href="/blog/"><img src="/baking-2.jpg" alt="A loaf from a baking workshop"><span class="label">From the studio</span><h3>Blog</h3><p>Notes on workshops, classes and baking in Desa Sri Hartamas.</p><span class="more">Read the blog</span></a>
 <a class="door" href="/about/#visit"><img src="/hero-1.jpg" alt="The Master Artist studio"><span class="label">Desa Sri Hartamas</span><h3>Contact</h3><p>Visit the studio above Savor, or WhatsApp +60 10-277 9426.</p><span class="more">Contact the studio</span></a>
 </div></div></section>'''
