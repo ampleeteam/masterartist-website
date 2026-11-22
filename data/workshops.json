@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-22T14:50:54",
+ "generated": "2026-11-22T19:53:27",
  "currency": "MYR",
  "formats": [
   {
@@ -381,7 +381,7 @@
     "15:00-17:30"
    ],
    "days": [
-    "Sun",
+    "Sun-afternoon-only",
     "Mon",
     "Tue",
     "Wed",
@@ -400,6 +400,11 @@
    {
     "day": "Sat",
     "all_day": true
+   },
+   {
+    "day": "Sun",
+    "until": "12:00",
+    "reason": "no workshops before 12:00 on Sunday"
    }
   ],
   "no_evening_workshops": [
@@ -458,35 +463,6 @@
   "days": 42
  },
  "sessions": [
-  {
-   "id": "crochet-bag-2026-11-22-1000",
-   "format": "crochet-bag",
-   "name": "Chunky Crochet",
-   "variant": null,
-   "discipline": "craft",
-   "date": "2026-11-22",
-   "day": "Sun",
-   "time": "10:00",
-   "end": "12:00",
-   "label": "Sun 22 Nov · 10am",
-   "room": "L2 front room",
-   "price": 110,
-   "pair_price": 198,
-   "price_set": "launch",
-   "price_unit": null,
-   "cap": 20,
-   "cap_unit": null,
-   "booked": 0,
-   "seats_left": 20,
-   "dine": true,
-   "dine_timing": "after",
-   "theme": "Chunky Yarn Bag",
-   "public_holiday": null,
-   "surcharge_waived": false,
-   "type": "workshop",
-   "public": true,
-   "next_session": "crochet-bag-2026-11-22-1500"
-  },
   {
    "id": "crochet-bag-2026-11-22-1500",
    "format": "crochet-bag",
@@ -603,35 +579,6 @@
    "type": "workshop",
    "public": true,
    "next_session": null
-  },
-  {
-   "id": "bake-lab-2026-11-29-1000",
-   "format": "bake-lab",
-   "name": "Bake Lab",
-   "variant": null,
-   "discipline": "baking",
-   "date": "2026-11-29",
-   "day": "Sun",
-   "time": "10:00",
-   "end": "12:00",
-   "label": "Sun 29 Nov · 10am",
-   "room": "L1 kitchen (Savor)",
-   "price": 95,
-   "pair_price": 171,
-   "price_set": "launch",
-   "price_unit": null,
-   "cap": 20,
-   "cap_unit": null,
-   "booked": 0,
-   "seats_left": 20,
-   "dine": true,
-   "dine_timing": "after",
-   "theme": "Christmas Gingerbread Cookies",
-   "public_holiday": null,
-   "surcharge_waived": false,
-   "type": "workshop",
-   "public": true,
-   "next_session": "bake-lab-2026-11-29-1500"
   },
   {
    "id": "bake-lab-2026-11-29-1500",

@@ -11,7 +11,7 @@ Rules (handoff 02-SITE-SPEC §2):
   if that is later); nothing before a format's live_from or an entry's from;
 - `alternate_weeks_with`: the entry's own format runs on its first week, the
   alternate format the next week, and so on;
-- weekly closures (Saturday; Friday from 12:30) and no evening (18:00+)
+- weekly closures (Saturday; Friday from 12:30; Sunday before 12:00) and no evening (18:00+)
   workshops on Mon/Wed/Fri/Sun;
 - session id = {format}-{yyyy-mm-dd}-{HHMM}; theme and booked seats are looked
   up by that id; seats_left = cap - booked;
@@ -66,14 +66,18 @@ def fmt_time(t):
 
 def closed(day, start, closures):
     """True when a session at `start` on `day` breaks a closure rule."""
+    start_min = hm_to_min(start)
     for c in closures.get('weekly', []):
         if c['day'] != day:
             continue
         if c.get('all_day'):
             return True
-        if 'from' in c and hm_to_min(start) >= hm_to_min(c['from']):
+        # `until` closes the morning (a 12:00 start is allowed); `from` closes the rest of the day.
+        if 'until' in c and start_min < hm_to_min(c['until']):
             return True
-    if day in closures.get('no_evening_workshops', []) and hm_to_min(start) >= 18 * 60:
+        if 'from' in c and start_min >= hm_to_min(c['from']):
+            return True
+    if day in closures.get('no_evening_workshops', []) and start_min >= 18 * 60:
         return True
     return False
 

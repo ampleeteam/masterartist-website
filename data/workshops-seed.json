@@ -381,7 +381,7 @@
         "15:00-17:30"
       ],
       "days": [
-        "Sun",
+        "Sun-afternoon-only",
         "Mon",
         "Tue",
         "Wed",
@@ -408,6 +408,11 @@
       {
         "day": "Sat",
         "all_day": true
+      },
+      {
+        "day": "Sun",
+        "until": "12:00",
+        "reason": "no workshops before 12:00 on Sunday"
       }
     ],
     "no_evening_workshops": [
@@ -484,14 +489,6 @@
       },
       {
         "date": "2026-11-08",
-        "time": "10:00",
-        "end": "12:00",
-        "format": "acrylic-canvas",
-        "theme": "Chasing Sunsets",
-        "room": "l2-front"
-      },
-      {
-        "date": "2026-11-08",
         "time": "15:00",
         "end": "17:00",
         "format": "acrylic-canvas",
@@ -524,14 +521,6 @@
       },
       {
         "date": "2026-11-15",
-        "time": "10:00",
-        "end": "12:00",
-        "format": "candle-making",
-        "theme": "Christmas Glow: Candle Making & Gifting",
-        "room": "l1-front"
-      },
-      {
-        "date": "2026-11-15",
         "time": "15:00",
         "end": "17:00",
         "format": "candle-making",
@@ -552,14 +541,6 @@
         "end": "21:00",
         "format": "glow-canvas",
         "theme": "Glow Lagoon: Jellyfish",
-        "room": "l2-front"
-      },
-      {
-        "date": "2026-11-22",
-        "time": "10:00",
-        "end": "12:00",
-        "format": "crochet-bag",
-        "theme": "Chunky Yarn Bag",
         "room": "l2-front"
       },
       {
@@ -585,14 +566,6 @@
         "format": "textured-canvas",
         "theme": "Golden Impasto Sky",
         "room": "l2-front"
-      },
-      {
-        "date": "2026-11-29",
-        "time": "10:00",
-        "end": "12:00",
-        "format": "bake-lab",
-        "theme": "Christmas Gingerbread Cookies",
-        "room": "l1-kitchen"
       },
       {
         "date": "2026-11-29",
