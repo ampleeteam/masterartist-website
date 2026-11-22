@@ -1,7 +1,8 @@
 # Connecting an AI blog tool
 
 Blog posts live in the Supabase table `blog_posts`. The website shows every row
-where `published = true` on **blog.html** (list) and **post.html?slug=…** (article).
+where `published = true` on **/blog/** (list) and **/blog/<slug>/** (article). A post published
+before the next static build also opens from **post.html?slug=…**.
 No website changes or redeploys are needed to publish a post.
 
 ## One-time setup
