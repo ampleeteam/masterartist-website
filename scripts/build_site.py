@@ -475,7 +475,7 @@ def ReviewList(voice, reviews=None):
 def HoursBlock():
     rows = ''.join(f'<tr><td>{e(h["days"])}</td><td>{"Closed" if h.get("closed") else fmt_time(h["open"]) + "–" + fmt_time(h["close"])}</td></tr>' for h in SITE['hours'])
     notes = ' '.join(SITE['hours_notes'])
-    return f'<div class="hours"><table>{rows}</table><p class="notes">{e(notes)} Fridays: no workshops after 12:30pm.</p></div>'
+    return f'<div class="hours"><table>{rows}</table><p class="notes">{e(notes)} Fridays: no workshops after 12:30pm. Sundays: no workshops before 12pm.</p></div>'
 
 
 # ------------------------------------------------------------------ shell
