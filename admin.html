@@ -1870,20 +1870,24 @@ async function crmDetail(id, panel){
 
   const rows = bk.data || [];
   const formats = (x.formats_attended || []).join(', ');
-  html += '<!--COL:RIGHT-->' + section('Bookings', `
-      <div class="bk-sum"><span>${bookingN || 0} bookings</span><span>${money(revenue)} revenue</span>${attended ? `<span>${attended} attended</span>` : ''}${lastBooked ? `<span>Last booking ${shortDate(lastBooked)}</span>` : ''}${x.last_workshop_name ? `<span>Last workshop: ${esc(x.last_workshop_name)}</span>` : ''}${formats ? `<span>Formats: ${esc(formats)}</span>` : ''}${x.became_customer_at ? `<span>Customer since payment ${shortDate(x.became_customer_at)}</span>` : ''}</div>
-      <div class="row">${inp('enrolled_since','Enrolled since','date')}${inp('monthly_fee','Monthly fee (RM)','number')}</div>
-      <div class="row"><div class="f" style="grid-column:1/-1"><label>Enrolled classes (comma-separated)</label><input id="crmProgs" value="${esc((x.enrolled_programmes || []).join(', '))}" ${dis}></div></div>
-      <div class="row">${inp('trial_date','Trial date','date')}${sel('trial_outcome','Trial outcome')}</div>
-      <p class="help" style="margin-top:12px"><b>Workshop bookings.</b> The person who pays is the customer. Who attends is listed when we have it. Participants is the head count on the booking.</p>
-      ${rows.length ? `<div class="bk-wrap"><table class="bk"><tr><th>Date</th><th>Workshop</th><th>Who attends</th><th>Participants</th><th>Amount</th><th>Status</th></tr>
+  const bookingTable = rows.length ? `<div class="bk-wrap"><table class="bk"><tr><th>Date</th><th>Workshop</th><th>Who attends</th><th>Participants</th><th>Amount</th><th>Status</th></tr>
         ${rows.map(b => `<tr class="${['requested','confirmed','paid','pending'].includes(b.status) ? '' : 'gone'}"><td>${esc(b.session_when)}</td><td>${esc(b.session_name)}</td>
           <td>${esc(attendeeNames(b))}</td><td>${b.people}</td><td>RM${b.amount}</td><td>${esc(b.status)}</td></tr>`).join('')}
-      </table></div>` : '<div class="empty" style="margin:0">No workshop bookings.</div>'}
-      <p class="help" style="margin-top:14px"><b>Trial class requests</b></p>
-      ${(tl.data || []).length ? `<div class="bk-wrap"><table class="bk"><tr><th>Received</th><th>Class</th><th>Who it's for</th><th>Status</th></tr>
+      </table></div>` : '<div class="empty" style="margin:0">No workshop bookings.</div>';
+  const trialTable = (tl.data || []).length ? `<div class="bk-wrap"><table class="bk"><tr><th>Received</th><th>Class</th><th>Who it's for</th><th>Status</th></tr>
         ${(tl.data || []).map(r => `<tr><td>${shortDate(r.created_at)}</td><td>${esc(r.programme_slug || '')}</td><td><small>${esc(r.message || '').replace(/\n/g, '<br>')}</small></td><td>${esc(r.status)}</td></tr>`).join('')}
-      </table></div>` : '<div class="empty" style="margin:0">No trial requests.</div>'}`);
+      </table></div>` : '<div class="empty" style="margin:0">No trial requests.</div>';
+  html += '<!--COL:LEFT-->' + section('Bookings and stats', `
+      <div class="bk-sum"><span>${bookingN || 0} bookings</span><span>${money(revenue)} paid</span>${attended ? `<span>${attended} attended</span>` : ''}${lastBooked ? `<span>Last booking ${shortDate(lastBooked)}</span>` : ''}${formats ? `<span>Formats: ${esc(formats)}</span>` : ''}</div>
+      <p class="help">Calculated from workshop bookings and trials. These figures are not edited here.${x.enrolled_programmes && x.enrolled_programmes.length ? ' Enrolled: ' + esc(x.enrolled_programmes.join(', ')) + '.' : ''}${x.monthly_fee ? ' Monthly fee ' + money(x.monthly_fee) + '.' : ''}</p>
+      ${bookingTable}
+      <p class="help" style="margin-top:14px"><b>Trial class requests</b></p>
+      ${trialTable}`);
+  html += '<!--COL:RIGHT-->' + `<div class="card"><div class="card-h"><span class="grip">Associations</span></div><div class="card-b">
+      <p><b>Bookings</b></p>${rows.length ? `<ul>${rows.slice(0, 6).map(b => `<li>${esc(b.session_when || '')} · ${esc(b.session_name || '')} · ${esc(b.status || '')}</li>`).join('')}</ul>` : '<p class="help">No bookings.</p>'}
+      ${parentHtml || '<p class="help">No other guardians linked.</p>'}
+      ${canRead('bookings') && me.role !== 'marketing' ? `<p><button class="btn sm" type="button" onclick="crmOpenInbox()">Open in the inbox</button></p>` : ''}
+    </div></div>`;
   const recParts = { top:'', left:'', middle:'', right:'' };
   let recCol = 'top';
   html.split(/<!--COL:(LEFT|MID|RIGHT)-->/).forEach(chunk => {
@@ -1988,8 +1992,8 @@ window.crmSave = async id => {
     document.querySelectorAll('[data-skill]').forEach(el => { if (el.value) skill[el.dataset.skill] = el.value; });
     v.skill_by_format = skill;
   }
-  v.tags = ($('crmTags').value || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 20);
-  v.enrolled_programmes = ($('crmProgs').value || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 10);
+  v.tags = ($('crmTags') ? $('crmTags').value : (before && before.tags || []).join(', ')).split(',').map(s => s.trim()).filter(Boolean).slice(0, 20);
+  if ($('crmProgs')) v.enrolled_programmes = $('crmProgs').value.split(',').map(s => s.trim()).filter(Boolean).slice(0, 10);
   ['contact_type', 'stage', 'lifecycle_stage', 'lead_status'].forEach(f => { if (!v[f]) delete v[f]; });
   if (v.unsubscribed_at && !String(v.unsubscribed_at).includes('T')) v.unsubscribed_at = new Date(v.unsubscribed_at + 'T00:00:00').toISOString();
   if (v.marketing_consent && !(before && before.marketing_consent)) v.consent_at = new Date().toISOString();

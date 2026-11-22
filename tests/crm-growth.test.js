@@ -72,6 +72,15 @@ test('tasks bucket by due date and the record frame has three columns', function
   assert.match(frame, /rec-r/);
 });
 
+test('the customer form lists every field group', function () {
+  const html = require('node:fs').readFileSync(require('node:path').join(__dirname, '../admin.html'), 'utf8');
+  ['Contact info', 'Lifecycle and lead status', 'Source and attribution', 'Marketing consent', 'Interests and tags', 'Family', 'Participants health', 'Bookings and stats', 'Academy credit and referrals', 'Social handles', 'Custom fields'].forEach(function (title) {
+    assert.ok(html.includes("section('" + title + "'") || html.includes('section("' + title + '"'), title);
+  });
+  assert.match(html, /Queue reply/);
+  assert.match(html, /Open full record/);
+});
+
 test('the CRM nav and record folds keep labels', function () {
   const nav = appNav([
     { label: 'CRM', items: [{ id: 'inbox', label: 'Inbox', icon: 'inbox', badge: '3', go: "goNav('inbox')" }, { id: 'customers', label: 'Customers', icon: 'customers', go: "goNav('customers')" }] }
