@@ -4,9 +4,16 @@
 begin;
 
 create table if not exists public.finance_viewers (
-  staff_id   uuid primary key,
+  staff_id   uuid primary key references public.profiles(id) on delete cascade,
   created_at timestamptz not null default now()
 );
+
+do $$ begin
+  alter table public.finance_viewers
+    add constraint finance_viewers_staff_fk foreign key (staff_id) references public.profiles(id) on delete cascade;
+exception when duplicate_object then
+  null;
+end $$;
 
 comment on table public.finance_viewers is
   'Staff, other than admins, who may read workshop profit and loss.';
@@ -135,6 +142,16 @@ drop policy if exists finance_read_payments on public.payments;
 create policy finance_read_payments on public.payments for select to authenticated using (private.can_see_finance());
 drop policy if exists finance_read_viewers on public.finance_viewers;
 create policy finance_read_viewers on public.finance_viewers for select to authenticated using (private.can_see_finance());
+drop policy if exists finance_viewers_admin_write on public.finance_viewers;
+create policy finance_viewers_admin_write on public.finance_viewers for all to authenticated
+  using (exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.active and p.role = 'admin'::user_role
+  ))
+  with check (exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.active and p.role = 'admin'::user_role
+  ));
 
 drop policy if exists event_costs_read on public.event_costs;
 create policy event_costs_read on public.event_costs for select to authenticated
@@ -219,11 +236,13 @@ left join lateral (
 left join lateral (
   select count(*) filter (where stage in ('paid', 'attended')) as seats
   from public.event_enrolments e where e.session_id = s.id
-) filled on true;
+) filled on true
+where private.can_see_finance();
 
 comment on view public.event_financials is
   'Per-session profit and loss. security_invoker, so only admins and finance_viewers can read the underlying rows.';
 
+revoke all on public.ad_entities, public.ad_event_links, public.ad_daily_metrics, public.payments, public.event_costs, public.cost_allocations, public.finance_viewers from anon, public;
 revoke all on public.event_financials from public, anon;
 grant select on public.event_financials to authenticated;
 

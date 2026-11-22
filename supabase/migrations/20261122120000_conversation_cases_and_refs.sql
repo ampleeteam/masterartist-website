@@ -191,6 +191,7 @@ drop policy if exists assignment_cursor_write on public.assignment_cursor;
 create policy assignment_cursor_write on public.assignment_cursor for all to authenticated
   using (private.can_bookings(true)) with check (private.can_bookings(true));
 
+revoke all on public.keyword_rules, public.ref_links, public.ad_mappings, public.assignment_cursor from anon, public;
 grant select, insert, update, delete on public.keyword_rules to authenticated;
 grant select, insert, update, delete on public.ref_links to authenticated;
 grant select, insert, update, delete on public.ad_mappings to authenticated;

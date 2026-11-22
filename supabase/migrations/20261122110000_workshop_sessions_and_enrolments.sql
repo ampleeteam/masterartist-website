@@ -109,6 +109,7 @@ create policy event_enrolments_write on public.event_enrolments for all to authe
   using (private.can_bookings(true) or private.can_section('customers', true))
   with check (private.can_bookings(true) or private.can_section('customers', true));
 
+revoke all on public.workshop_sessions, public.event_enrolments from anon, public;
 grant select, insert, update on public.workshop_sessions to authenticated;
 grant select, insert, update on public.event_enrolments to authenticated;
 

@@ -270,6 +270,36 @@ table.bk tr.click:hover td{background:var(--cream)}
 .inbox-row.on{background:var(--lav-pale)}
 .inbox-row b{display:block;color:var(--purple);font-weight:600}
 .inbox-row small{color:var(--muted)}
+.iv-bar{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.iv-actions{display:flex;gap:8px;flex-wrap:wrap}
+.iv-tabs{display:flex;gap:6px;overflow-x:auto;width:100%;padding-bottom:2px}
+.iv-tabs button{flex:0 0 auto;min-height:44px;border:1px solid var(--rule);background:var(--surface);color:var(--purple);border-radius:999px;padding:0 14px;font:600 14px var(--font-body);cursor:pointer}
+.iv-tabs button.on{background:var(--purple);color:var(--cream);border-color:var(--purple)}
+.iv-chips{display:flex;gap:6px;overflow-x:auto;margin:0 0 8px}
+.iv-chip{flex:0 0 auto;min-height:36px;border:0;border-radius:999px;background:var(--lavender-pale);color:var(--purple);padding:0 12px;font:600 13px var(--font-body);cursor:pointer}
+.iv-group{margin:0 0 12px;border:1px solid var(--rule);border-radius:var(--radius-sm);background:var(--surface)}
+.iv-group > summary,.iv-sub{padding:8px 10px;font-weight:600;color:var(--purple)}
+.iv-sub{font-size:13px;color:var(--gold-text);text-transform:capitalize}
+.iv-wait,.iv-warn{display:inline-flex;min-height:22px;align-items:center;border-radius:999px;padding:0 8px;font-size:12px;font-weight:700}
+.iv-wait{background:var(--gold-pale);color:var(--gold-text)}
+.iv-warn{background:var(--gold-pale);color:var(--warn)}
+.iv-board{display:flex;gap:10px;overflow-x:auto;align-items:flex-start;padding-bottom:8px}
+.iv-col{flex:0 0 240px;background:var(--cream);border-radius:var(--radius-sm);padding:8px}
+.iv-col h3{font-size:14px;margin:0 0 8px}
+.iv-card{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:8px;margin:0 0 8px}
+.iv-sheet[hidden]{display:none}
+.iv-sheet:not([hidden]){display:block;position:fixed;inset:0;z-index:70;background:rgba(42,18,64,.35)}
+.iv-sheet-card{position:absolute;left:0;right:0;bottom:0;max-height:85vh;overflow:auto;background:var(--surface);color:var(--ink);border-radius:var(--radius-card) var(--radius-card) 0 0;padding:12px 16px calc(16px + env(safe-area-inset-bottom))}
+.iv-sheet-card h2{font-size:18px}
+@media (min-width:768px){
+  .iv-stage{display:none}
+  .inbox.iv-pipeline{grid-template-columns:1fr}
+  .inbox.iv-pipeline .inbox-thread-col,.inbox.iv-pipeline .inbox-form-col{display:none}
+  .iv-col{flex:1 0 180px}
+}
+@media (max-width:767px){
+  .iv-sheet-card .f{margin-bottom:8px}
+}
 .ch{width:22px;height:22px;border-radius:50%;background:var(--purple);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex:none}
 .unread{min-width:18px;height:18px;border-radius:9px;background:var(--gold);color:var(--purple-deep);font-size:11px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
 .inbox-compose{border-top:1px solid var(--line);padding:10px;position:relative}
@@ -494,6 +524,7 @@ table.bk tr.click:hover td{background:var(--cream)}
 <script src="assets/crm-growth.js"></script>
 <script src="assets/crm-case.js"></script>
 <script src="assets/crm-events.js"></script>
+<script src="assets/crm-inbox-views.js"></script>
 <script src="assets/crm-shell.js"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
@@ -2447,20 +2478,39 @@ function previewStudio(){
     $('view').innerHTML = window.MaGrowth.recordFrame({ top: '', left: about, middle: mid, right: side });
     return;
   }
-  inboxRows = [{ id: 'c1', contact_id: 'p1', channel: 'whatsapp', status: 'open', priority: 'high', assigned_to: 'preview', unread_count: 1, last_message_preview: 'Is the Saturday class still open?', last_message_at: new Date().toISOString(), last_inbound_at: new Date().toISOString(), entry_label: "From ad: Children's Art Class – 10 sessions", contacts: { first_name: 'Hana', last_name: 'Parent', tags: ['kids'], ctwa_clid: 'ARtest' } }];
+  const soon = new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString();
+  const older = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+  inboxSessions = [
+    { id: 'children-2027', title: "Children's art", starts_at: '2026-11-29T02:00:00Z', capacity: 12, format: 'kids' },
+    { id: 'sourdough-past', title: 'Sourdough', starts_at: '2026-11-01T02:00:00Z', capacity: 8, format: 'baking' }
+  ];
+  inboxStaff = [{ id: 'preview', full_name: 'Maya Tan' }, { id: 'amir', full_name: 'Amir Lee' }];
+  inboxRows = [
+    { id: 'c1', contact_id: 'p1', channel: 'whatsapp', status: 'open', assigned_to: 'preview', unread_count: 1, last_direction: 'in', last_message_preview: 'Is the Saturday class still open?', last_message_at: new Date().toISOString(), last_inbound_at: soon, entry_kind: 'ad', entry_label: "From ad: Children's Art Class", headline: "Children's Art Class", stage: 'enquired', session_id: 'children-2027', starts_at: '2026-11-29T02:00:00Z', category: 'kids', tags: ['kids'], score: 72, bookings_count: 0, lifetime_spend_rm: 0, contacts: { first_name: 'Hana', last_name: 'Parent', tags: ['kids'], ctwa_clid: 'ARtest' } },
+    { id: 'c2', contact_id: 'p2', channel: 'instagram', status: 'open', assigned_to: null, unread_count: 2, last_direction: 'in', last_message_preview: 'Do you have a baking class?', last_message_at: older, last_inbound_at: older, stage: 'interested', session_id: 'children-2027', starts_at: '2026-11-29T02:00:00Z', category: 'kids', tags: ['baking'], score: 40, bookings_count: 3, lifetime_spend_rm: 640, contacts: { first_name: 'Farid', last_name: 'Lee', tags: ['baking'] } },
+    { id: 'c3', contact_id: 'p3', channel: 'whatsapp', status: 'pending', assigned_to: 'amir', unread_count: 0, last_direction: 'out', last_message_preview: 'Your seat is confirmed.', last_message_at: older, last_inbound_at: older, stage: 'paid', session_id: 'sourdough-past', starts_at: '2026-11-01T02:00:00Z', category: 'baking', tags: ['baking'], score: 20, bookings_count: 1, lifetime_spend_rm: 180, contacts: { first_name: 'Aina', last_name: 'Rahman', tags: ['baking'] } },
+    { id: 'c4', contact_id: 'p4', channel: 'website', status: 'open', assigned_to: 'preview', unread_count: 0, last_direction: 'in', last_message_preview: 'I found you on the website.', last_message_at: new Date().toISOString(), last_inbound_at: new Date().toISOString(), stage: '', session_id: '', tags: [], score: 10, bookings_count: 0, lifetime_spend_rm: 0, contacts: { first_name: 'Mei', last_name: 'Tan', tags: [] } }
+  ];
+  const viewFor = { event: 'event', needs: 'needs', pipeline: 'pipeline', filters: 'event', mine: 'mine' };
+  const filters = which === 'filters'
+    ? Object.assign(window.MaInboxViews.emptyFilters(), { channels: ['whatsapp'], stages: ['enquired'], sources: ['ad'], customer: 'new' })
+    : window.MaInboxViews.emptyFilters();
+  inboxViewState = { view: viewFor[which] || 'newest', filters: filters };
+  inboxSheet = which === 'filters';
   inboxOpen = 'c1';
-  inboxStaff = [{ id: 'preview', full_name: 'Maya Tan' }];
-  inboxCase = { status: 'open', priority: 'high', assigned_to: 'preview', tags: ['kids'], staff: inboxStaff, sessionTitle: "Children's art, January", stage: 'enquired', tasks: [{ title: 'Confirm Saturday seats', due_on: '2026-11-23' }] };
-  inboxPane = which === 'case' ? 'customer' : 'thread';
+  inboxCase = { status: 'open', priority: 'high', assigned_to: 'preview', tags: ['kids'], staff: inboxStaff, sessionTitle: "Children's art", stage: 'enquired', tasks: [{ title: 'Confirm Saturday seats', due_on: '2026-11-23' }] };
+  inboxPane = (which === 'case') ? 'customer' : (which === 'event' || which === 'needs' || which === 'filters' || which === 'pipeline' ? 'list' : 'thread');
   crmFormFor = 'p1';
   crmFormHtml = '<div class="card"><div class="card-h"><span class="grip">Contact info</span></div><div class="card-b rec-form"><div class="f"><label>First name</label><input value="Hana"></div><div class="f"><label>WhatsApp number</label><input value="+60173334444"></div></div></div>';
-  const open = inboxRows[0];
+  const open = which === 'event' || which === 'needs' || which === 'filters' || which === 'pipeline' ? null : inboxRows[0];
   const thread = { items: [{ occurredAt: new Date().toISOString(), channel: 'whatsapp', direction: 'in', body: 'Is the Saturday class still open?', senderName: 'Hana Parent', kind: 'message' }], queue: [] };
-  $('view').innerHTML = inboxShell([open], open, thread);
+  const arranged = window.MaInboxViews.arrange(inboxDecorated(), Object.assign({ meId: 'preview' }, inboxViewState), inboxSessions, new Date());
+  $('view').innerHTML = inboxShell(arranged, open, thread);
 }
 
 /* ---------- Shared inbox ---------- */
 let inboxFilter = 'all', inboxChannel = '', inboxTag = '', inboxOpen = null, inboxFocusContact = null, inboxShowSettings = false, inboxPane = 'list', inboxCase = null;
+let inboxViewState = null, inboxSheet = false, inboxSessions = [], inboxSaved = [], inboxEnrol = {}, inboxStats = {};
 let inboxRows = [], inboxReplies = [], inboxTemplates = [], inboxStaff = [], inboxSettings = null, inboxDraft = '', inboxScores = {}, inboxSort = 'recent';
 const INBOX_FILTERS = [['all','All'],['unassigned','Unassigned'],['mine','Assigned to me'],['needs','Needs reply'],['open','Open'],['closed','Closed']];
 const INBOX_CH = { whatsapp:'W', email:'E', instagram:'I', facebook:'F', website:'S', note:'N' };
@@ -2542,15 +2592,30 @@ views.inbox = async function(){
   inboxScores = {};
   const scoreRows = await sb.rpc('contact_lead_scores');
   if (!scoreRows.error) (scoreRows.data || []).forEach(s => { inboxScores[s.contact_id] = s; });
+  const [enrolRes, sessionRes, statRes, savedRes] = await Promise.all([
+    sb.from('event_enrolments').select('id, conversation_id, stage, session_id'),
+    sb.from('workshop_sessions').select('id, title, starts_at, capacity, format, status').order('starts_at'),
+    sb.from('customer_lifetime_stats').select('contact_id, bookings_count, lifetime_spend_rm'),
+    sb.from('inbox_saved_views').select('id, name, shared, definition, owner').order('name')
+  ]);
+  inboxEnrol = {};
+  (enrolRes.error ? [] : enrolRes.data || []).forEach(e => { if (e.conversation_id) inboxEnrol[e.conversation_id] = e; });
+  inboxSessions = sessionRes.error ? [] : (sessionRes.data || []);
+  inboxStats = {};
+  (statRes.error ? [] : statRes.data || []).forEach(s => { inboxStats[s.contact_id] = s; });
+  inboxSaved = savedRes.error ? [] : (savedRes.data || []);
+  if (!inboxViewState) inboxViewState = window.MaInboxViews ? window.MaInboxViews.readState(location.search) : { view: 'newest', filters: {} };
   if (inboxFocusContact) {
     const found = inboxRows.find(r => r.contact_id === inboxFocusContact && (!inboxChannel || r.channel === inboxChannel));
     if (found) inboxOpen = found.id;
     inboxFocusContact = null;
   }
-  const shown = inboxRows.filter(inboxPass).sort((a, b) => inboxSort === 'score'
-    ? (inboxScores[b.contact_id] ? inboxScores[b.contact_id].points : 0) - (inboxScores[a.contact_id] ? inboxScores[a.contact_id].points : 0)
-    : 0);
-  if (!inboxOpen && shown[0]) inboxOpen = shown[0].id;
+  const shown = inboxDecorated();
+  const arranged = window.MaInboxViews
+    ? window.MaInboxViews.arrange(shown, Object.assign({ meId: me.id }, inboxViewState), inboxSessions, new Date())
+    : { view: 'newest', rows: shown.filter(inboxPass) };
+  const flat = arranged.rows || [];
+  if (!inboxOpen && flat[0]) inboxOpen = flat[0].id;
   const open = inboxRows.find(r => r.id === inboxOpen) || null;
   let thread = { items: [], family: [], bookings: [], queue: [] };
   if (open) {
@@ -2582,30 +2647,198 @@ views.inbox = async function(){
   }
   if (inboxShowSettings) { $('view').innerHTML = inboxSettingsHtml(); return; }
   if (open && open.contact_id) await crmDetail(open.contact_id, true);
-  $('view').innerHTML = inboxShell(shown, open, thread);
+  $('view').innerHTML = inboxShell(arranged, open, thread);
   formSnap();
   const box = $('inboxBody'); if (box && inboxDraft) box.value = inboxDraft;
 };
-function inboxShell(shown, open, thread){
-  const tags = [...new Set(INBOX_TAGS.concat(inboxRows.flatMap(r => (r.contacts && r.contacts.tags) || [])))];
-  const list = shown.map(r => `<button type="button" class="inbox-row${r.id===inboxOpen?' on':''}" onclick="inboxOpenConv('${r.id}')">
+function inboxDecorated(){
+  return inboxRows.map(r => {
+    const enrol = inboxEnrol[r.id] || {};
+    const session = inboxSessions.find(s => s.id === enrol.session_id) || {};
+    const stat = inboxStats[r.contact_id] || {};
+    const score = inboxScores[r.contact_id];
+    const person = r.contacts || {};
+    return Object.assign({}, r, {
+      stage: enrol.stage || r.stage || '',
+      enrolment_id: enrol.id || r.enrolment_id || '',
+      session_id: enrol.session_id || r.session_id || '',
+      session_title: session.title || r.session_title || '',
+      starts_at: session.starts_at || r.starts_at || '',
+      category: session.format || r.category || '',
+      tags: person.tags || r.tags || [],
+      headline: r.headline || r.entry_label || '',
+      meta_ad_id: person.meta_ad_id || r.meta_ad_id || '',
+      ctwa_clid: r.ctwa_clid || person.ctwa_clid || '',
+      bookings_count: stat.bookings_count != null ? stat.bookings_count : r.bookings_count,
+      lifetime_spend_rm: stat.lifetime_spend_rm != null ? stat.lifetime_spend_rm : r.lifetime_spend_rm,
+      score: score ? score.points : (r.score != null ? r.score : null)
+    });
+  });
+}
+function inboxRowButton(r){
+  const V = window.MaInboxViews;
+  const win = V ? V.windowState(r, new Date()) : { closing:false };
+  const wait = inboxViewState && inboxViewState.view === 'needs' && V
+    ? (win.closing
+      ? `<span class="iv-warn">${Math.max(1, Math.ceil(win.msLeft / 3600000))}h left</span>`
+      : `<span class="iv-wait">${esc(V.waitingLabel(r.last_inbound_at, new Date()))}</span>`)
+    : '';
+  return `<button type="button" class="inbox-row${r.id===inboxOpen?' on':''}" onclick="inboxOpenConv('${r.id}')">
       <span class="ch" title="${esc(r.channel)}">${INBOX_CH[r.channel] || '?'}</span>
-      <span style="flex:1;min-width:0"><b>${esc(inboxName(r))}</b>${inboxScores[r.contact_id] ? ` <span class="tag">${inboxScores[r.contact_id].points}</span>` : ''}<small>${esc(r.last_message_preview || 'No message yet')}</small></span>
-      <span style="text-align:right">${r.unread_count ? `<span class="unread">${r.unread_count}</span>` : ''}<br><small>${esc(inboxWhen(r.last_message_at))}</small></span>
-    </button>`).join('') || '<div class="empty">No conversations in this folder.</div>';
-  return `<div class="inbox-h" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-      <div class="blog-tabs" style="margin:0">${INBOX_FILTERS.map(([k, label]) => `<button type="button" class="${inboxFilter===k?'on':''}" onclick="inboxFilterGo('${k}')">${label}</button>`).join('')}</div>
-      <select onchange="inboxChannelGo(this.value)"><option value="">Every channel</option>${Object.keys(INBOX_CH).map(c => `<option value="${c}" ${inboxChannel===c?'selected':''}>${c}</option>`).join('')}</select>
-      <select onchange="inboxTagGo(this.value)"><option value="">Every tag</option><option value="opt-in" ${inboxTag==='opt-in'?'selected':''}>Marketing opted in</option>${tags.map(t => `<option ${inboxTag===t?'selected':''}>${esc(t)}</option>`).join('')}</select>
-      <button class="btn sm" type="button" onclick="inboxSortScore()">Sort by lead score</button>
-      <button class="btn sm" type="button" onclick="inboxSettingsGo(true)">Inbox settings</button>
-    </div>
-    <div class="inbox pane-${inboxPane}">
-      <section class="inbox-col inbox-list-col"><div class="inbox-h"><b>${shown.length}</b> conversation${shown.length===1?'':'s'}</div><div class="inbox-list">${list}</div></section>
+      <span style="flex:1;min-width:0"><b>${esc(inboxName(r))}</b><small>${r.last_direction==='out' ? '✓ ' : ''}${esc(r.last_message_preview || 'No message yet')}</small></span>
+      <span style="text-align:right">${wait}${r.unread_count ? `<span class="unread">${r.unread_count}</span>` : ''}<br><small>${esc(inboxWhen(r.last_message_at))}</small></span>
+    </button>`;
+}
+function inboxListHtml(arranged){
+  if (!arranged) return '<div class="empty">No conversations in this view.</div>';
+  if (arranged.view === 'pipeline') {
+    return `<div class="iv-board">${(arranged.columns || []).map(col => `<section class="iv-col" ondragover="event.preventDefault()" ondrop="inboxDrop(event,'${col.stage}')"><h3>${esc(col.label || col.stage || 'No event')}</h3>${col.rows.map(r => `<article class="iv-card" draggable="true" ondragstart="inboxDrag(event,'${r.id}')"><button type="button" class="ix-link" onclick="inboxOpenConv('${r.id}')">${esc(inboxName(r))}</button><p class="help">${esc(r.session_title || r.channel)}</p><label class="iv-stage f">Stage<select onchange="inboxSetStage('${r.id}', this.value)">${[''].concat((window.MaInboxViews && window.MaInboxViews.STAGES) || []).map(s => `<option value="${s}" ${r.stage===s?'selected':''}>${esc(s || 'No event')}</option>`).join('')}</select></label></article>`).join('') || '<p class="help">None</p>'}</section>`).join('')}</div>`;
+  }
+  if (arranged.view === 'event') {
+    return (arranged.groups || []).map(group => `<details class="iv-group" ${group.past ? '' : 'open'}><summary>${esc(group.title)}</summary>${(group.sections || []).map(section => `${section.stage ? `<div class="iv-sub">${esc(section.stage)}</div>` : ''}${section.rows.map(inboxRowButton).join('')}`).join('')}</details>`).join('') || '<div class="empty">No conversations in this view.</div>';
+  }
+  const rows = arranged.rows || [];
+  return rows.map(inboxRowButton).join('') || '<div class="empty">No conversations in this view.</div>';
+}
+function inboxFilterSheet(){
+  const V = window.MaInboxViews;
+  if (!V) return '';
+  const f = (inboxViewState && inboxViewState.filters) || V.emptyFilters();
+  const picked = (list, value) => (list || []).indexOf(value) !== -1 ? 'checked' : '';
+  const boxes = (name, options) => options.map(o => {
+    const id = typeof o === 'string' ? o : o.id;
+    const label = typeof o === 'string' ? o : o.label;
+    return `<label class="help" style="display:flex;gap:6px;align-items:center;min-height:36px"><input type="checkbox" name="${name}" value="${esc(id)}" ${picked(f[name] || f[name + 's'] , id)}> ${esc(label)}</label>`;
+  }).join('');
+  return `<div class="iv-sheet" ${inboxSheet ? '' : 'hidden'} onclick="if(event.target===this)inboxSheetClose()"><div class="iv-sheet-card"><div class="ix-sheet-bar"><h2>Filter</h2><button type="button" class="ix-btn" onclick="inboxSheetClose()">Close</button></div>
+    <div class="f"><label>Channel</label>${boxes('channels', Object.keys(INBOX_CH))}</div>
+    <div class="f"><label>Event</label><select id="ivSession"><option value="">Any session</option>${inboxSessions.map(s => `<option value="${esc(s.id)}" ${f.sessionId===s.id?'selected':''}>${esc(s.title || s.id)}</option>`).join('')}</select></div>
+    <div class="f"><label>Workshop</label>${boxes('categories', V.CATEGORIES)}</div>
+    <div class="f"><label>Enrolment stage</label>${boxes('stages', V.STAGES)}</div>
+    <div class="f"><label>Status</label>${boxes('statuses', ['open','pending','closed'])}</div>
+    <div class="f"><label>Assignee</label><select id="ivAssignee"><option value="">Anyone</option>${inboxStaff.map(s => `<option value="${esc(s.id)}" ${f.assignee===s.id?'selected':''}>${esc(s.full_name)}</option>`).join('')}</select><label class="help"><input type="checkbox" id="ivUnassigned" ${f.unassigned?'checked':''}> Unassigned</label></div>
+    <div class="f"><label class="help"><input type="checkbox" id="ivUnread" ${f.unread?'checked':''}> Unread only</label></div>
+    <div class="f"><label>Tags</label><input id="ivTags" value="${esc((f.tags || []).join(', '))}" placeholder="kids, baking"></div>
+    <div class="f"><label>Source</label>${boxes('sources', V.SOURCES)}<input id="ivAd" value="${esc(f.adName || '')}" placeholder="Ad name"></div>
+    <div class="f"><label>Customer</label><select id="ivCustomer"><option value="">New or returning</option><option value="new" ${f.customer==='new'?'selected':''}>New</option><option value="returning" ${f.customer==='returning'?'selected':''}>Returning</option></select></div>
+    <div class="f"><label>Lead score</label><select id="ivScore"><option value="">Any</option>${V.SCORE_BANDS.map(b => `<option value="${b.id}" ${f.scoreBand===b.id?'selected':''}>${esc(b.label)}</option>`).join('')}</select></div>
+    <div class="f"><label>Lifetime spend</label><select id="ivSpend"><option value="">Any</option>${V.SPEND_BANDS.map(b => `<option value="${b.id}" ${f.spendBand===b.id?'selected':''}>${esc(b.label)}</option>`).join('')}</select></div>
+    <div class="f"><label>WhatsApp window</label><select id="ivWindow"><option value="">Any</option><option value="open" ${f.waWindow==='open'?'selected':''}>Open</option><option value="closed" ${f.waWindow==='closed'?'selected':''}>Closed</option></select></div>
+    <div class="row"><div class="f"><label>Received from</label><input type="date" id="ivFrom" value="${esc(f.receivedFrom || '')}"></div><div class="f"><label>To</label><input type="date" id="ivTo" value="${esc(f.receivedTo || '')}"></div></div>
+    <p><button type="button" class="ix-btn primary" onclick="inboxApplyFilters()">Apply</button> <button type="button" class="ix-btn" onclick="inboxClearFilters()">Clear</button></p>
+  </div></div>`;
+}
+function inboxShell(arranged, open, thread){
+  const V = window.MaInboxViews;
+  const state = inboxViewState || { view: 'newest', filters: V ? V.emptyFilters() : {} };
+  const seeds = V ? V.seedViews(new Date()) : [];
+  const tabs = (V ? V.VIEWS : []).concat(seeds.map(s => ({ id: s.id, label: s.name, saved: true }))).concat(inboxSaved.map(s => ({ id: s.id, label: s.name, saved: true })));
+  const active = state.saved || state.view;
+  const chipHtml = V ? V.chips(state.filters).map(c => `<button type="button" class="iv-chip" onclick="inboxDropChip('${esc(c.id)}')">${esc(c.label)} ×</button>`).join('') : '';
+  const count = (arranged && arranged.rows && arranged.rows.length) || 0;
+  return `<div class="iv-bar"><div class="iv-tabs" role="tablist">${tabs.map(t => `<button type="button" class="${active===t.id?'on':''}" onclick="inboxPickView('${esc(t.id)}', ${t.saved ? 'true' : 'false'})">${esc(t.label)}</button>`).join('')}</div>
+      <div class="iv-actions"><button type="button" class="ix-btn" onclick="inboxSheetOpen()">Filter</button>
+      <button type="button" class="ix-btn" onclick="inboxSaveView()">Save view</button>
+      <button class="btn sm" type="button" onclick="inboxSettingsGo(true)">Inbox settings</button></div></div>
+    ${chipHtml ? `<div class="iv-chips">${chipHtml}</div>` : ''}
+    ${inboxFilterSheet()}
+    <div class="inbox pane-${inboxPane}${arranged && arranged.view==='pipeline'?' iv-pipeline':''}">
+      <section class="inbox-col inbox-list-col"><div class="inbox-h"><b>${count}</b> conversation${count===1?'':'s'}</div><div class="inbox-list">${inboxListHtml(arranged)}</div></section>
       <section class="inbox-col inbox-thread-col">${open ? inboxThread(open, thread) : '<div class="empty">Choose a conversation.</div>'}</section>
       <section class="inbox-col inbox-form-col"><div class="inbox-side">${open ? inboxPanel(open, thread) : ''}</div></section>
     </div>`;
 }
+function inboxSyncUrl(){
+  if (!window.MaInboxViews || String(location.search).indexOf('preview') !== -1) return;
+  const next = window.MaInboxViews.writeState(inboxViewState, location.search);
+  history.replaceState(null, '', location.pathname + next + location.hash);
+}
+window.inboxPickView = (id, saved) => {
+  const V = window.MaInboxViews;
+  inboxViewState = inboxViewState || { view: 'newest', filters: V.emptyFilters() };
+  if (saved) {
+    const seed = V.seedViews(new Date()).find(s => s.id === id);
+    const stored = inboxSaved.find(s => s.id === id);
+    const def = (seed || stored || {}).definition || {};
+    inboxViewState = { view: def.view || 'newest', saved: id, filters: Object.assign(V.emptyFilters(), def.filters || {}) };
+  } else {
+    inboxViewState.view = id;
+    inboxViewState.saved = '';
+  }
+  inboxSheet = false;
+  inboxSyncUrl();
+  render();
+};
+window.inboxSheetOpen = () => { inboxSheet = true; render(); };
+window.inboxSheetClose = () => { inboxSheet = false; render(); };
+window.inboxApplyFilters = () => {
+  const V = window.MaInboxViews;
+  const checked = name => [...document.querySelectorAll('input[name="'+name+'"]:checked')].map(el => el.value);
+  const f = V.emptyFilters();
+  f.channels = checked('channels');
+  f.categories = checked('categories');
+  f.stages = checked('stages');
+  f.statuses = checked('statuses');
+  f.sources = checked('sources');
+  f.sessionId = ($('ivSession') && $('ivSession').value) || '';
+  f.assignee = ($('ivAssignee') && $('ivAssignee').value) || '';
+  f.unassigned = !!($('ivUnassigned') && $('ivUnassigned').checked);
+  f.unread = !!($('ivUnread') && $('ivUnread').checked);
+  f.tags = (($('ivTags') && $('ivTags').value) || '').split(',').map(t => t.trim()).filter(Boolean);
+  f.adName = ($('ivAd') && $('ivAd').value || '').trim();
+  f.customer = ($('ivCustomer') && $('ivCustomer').value) || '';
+  f.scoreBand = ($('ivScore') && $('ivScore').value) || '';
+  f.spendBand = ($('ivSpend') && $('ivSpend').value) || '';
+  f.waWindow = ($('ivWindow') && $('ivWindow').value) || '';
+  f.receivedFrom = ($('ivFrom') && $('ivFrom').value) || '';
+  f.receivedTo = ($('ivTo') && $('ivTo').value) || '';
+  inboxViewState.filters = f;
+  inboxViewState.saved = '';
+  inboxSheet = false;
+  inboxSyncUrl();
+  render();
+};
+window.inboxClearFilters = () => {
+  inboxViewState.filters = window.MaInboxViews.emptyFilters();
+  inboxViewState.saved = '';
+  inboxSheet = false;
+  inboxSyncUrl();
+  render();
+};
+window.inboxDropChip = id => {
+  inboxViewState.filters = window.MaInboxViews.dropChip(inboxViewState.filters, id);
+  inboxViewState.saved = '';
+  inboxSyncUrl();
+  render();
+};
+window.inboxSaveView = async () => {
+  const name = window.prompt('Name this view');
+  if (!name) return;
+  const shared = window.confirm('Share this view with the team? Cancel keeps it personal.');
+  const definition = { view: inboxViewState.view, filters: inboxViewState.filters };
+  const { error } = await sb.from('inbox_saved_views').insert({ name: name.trim(), owner: me.id, shared: !!shared, definition });
+  if (error) { toast(error.message || 'Saved views are added by supabase/migrations/20261122140000_inbox_views.sql'); return; }
+  toast(shared ? 'Shared with the team' : 'Saved for you');
+  await render();
+};
+window.inboxDrag = (event, id) => { event.dataTransfer.setData('text/plain', id); };
+window.inboxDrop = (event, stage) => { event.preventDefault(); const id = event.dataTransfer.getData('text/plain'); if (id) inboxSetStage(id, stage); };
+window.inboxSetStage = async (id, stage) => {
+  const row = inboxRows.find(r => r.id === id) || {};
+  const enrol = inboxEnrol[id] || {};
+  if (enrol.id) {
+    const { error } = await sb.from('event_enrolments').update({ stage: stage || 'enquired', updated_at: new Date().toISOString() }).eq('id', enrol.id);
+    if (error) { toast(error.message); return; }
+  } else if (row.contact_id && row.session_id) {
+    const { error } = await sb.from('event_enrolments').upsert({ contact_id: row.contact_id, session_id: row.session_id, conversation_id: id, stage: stage || 'enquired' });
+    if (error) { toast(error.message); return; }
+  } else {
+    toast('Link an event before moving this chat.');
+    return;
+  }
+  toast('Stage updated');
+  await render();
+};
 function inboxThread(open, thread){
   const person = open.contacts || {};
   const fromAd = !!(person.ctwa_clid);

@@ -295,63 +295,11 @@ create index if not exists trial_leads_contact_idx on public.trial_leads (contac
 -- Booking statuses: pending = sent to Stripe, waiting for payment; expired = left Stripe without paying
 alter table public.workshop_bookings drop constraint if exists wb_status;
 alter table public.workshop_bookings add constraint wb_status
-  check (status in ('pending', 'requested', 'confirmed', 'paid', 'expired', 'cancelled', 'refunded'));
+  check (status in ('pending', 'requested', 'confirmed', 'paid', 'expired', 'cancelled', 'refunded', 'no_show'));
 
--- ---------- match or create the customer, then keep their totals current ----------
-create or replace function private.upsert_contact(p_first text, p_last text, p_email text, p_phone text,
-  p_source text, p_consent boolean, p_children jsonb)
-returns uuid language plpgsql security definer set search_path = public as $$
-declare cid uuid; em text := nullif(lower(btrim(p_email)), '');
-begin
-  if em is not null then select id into cid from public.contacts where email = em; end if;
-  if cid is null and nullif(btrim(p_phone), '') is not null then
-    select id into cid from public.contacts where phone = btrim(p_phone) and (email is null or em is null) order by created_at limit 1;
-  end if;
-  if cid is null then
-    insert into public.contacts (first_name, last_name, email, phone, first_source, last_source, marketing_consent, email_consent,
-                                 whatsapp_consent, consent_at, children)
-    values (coalesce(nullif(btrim(p_first), ''), '?'), nullif(btrim(p_last), ''), em, nullif(btrim(p_phone), ''), p_source, p_source,
-            coalesce(p_consent, false), coalesce(p_consent, false), coalesce(p_consent, false), case when p_consent then now() end,
-            coalesce(p_children, '[]'))
-    returning id into cid;
-  else
-    update public.contacts set
-      first_name = coalesce(nullif(btrim(p_first), ''), first_name),
-      last_name = coalesce(nullif(btrim(p_last), ''), last_name),
-      email = coalesce(email, em),
-      phone = coalesce(nullif(btrim(p_phone), ''), phone),
-      children = case when jsonb_array_length(coalesce(p_children, '[]')) > 0 then p_children else children end,
-      marketing_consent = marketing_consent or coalesce(p_consent, false),
-      email_consent = email_consent or coalesce(p_consent, false),
-      whatsapp_consent = whatsapp_consent or coalesce(p_consent, false),
-      last_source = coalesce(p_source, last_source),
-      consent_at = case when not marketing_consent and p_consent then now() else consent_at end,
-      last_activity = now()
-    where id = cid;
-  end if;
-  return cid;
-end;
-$$;
-
-create or replace function private.refresh_contact(p_id uuid)
-returns void language sql security definer set search_path = public as $$
-  update public.contacts c set
-    bookings_count = (select count(*) from public.workshop_bookings b where b.contact_id = p_id and b.status in ('requested', 'confirmed', 'paid')),
-    total_paid     = coalesce((select sum(amount) from public.workshop_bookings b where b.contact_id = p_id and b.status = 'paid'), 0),
-    trials_count   = (select count(*) from public.trial_leads t where t.contact_id = p_id),
-    last_booking_date = (select max(session_date) from public.workshop_bookings b where b.contact_id = p_id
-                         and b.status in ('requested', 'confirmed', 'paid') and b.session_date <= current_date),
-    next_booking_date = (select min(session_date) from public.workshop_bookings b where b.contact_id = p_id
-                         and b.status in ('requested', 'confirmed', 'paid') and b.session_date > current_date),
-    -- the stage only moves forward by itself; staff set enrolled, paused, former student and lost
-    stage = case
-      when c.stage in ('lead', 'trial requested') and exists (select 1 from public.workshop_bookings b where b.contact_id = p_id and b.status = 'paid')
-        then 'workshop customer'
-      when c.stage = 'lead' and exists (select 1 from public.trial_leads t where t.contact_id = p_id) then 'trial requested'
-      else c.stage end,
-    contact_type = case when c.contact_type = 'individual' and jsonb_array_length(c.children) > 0 then 'parent' else c.contact_type end
-  where c.id = p_id;
-$$;
+-- private.upsert_contact, private.refresh_contact and private.contact_totals are NOT
+-- defined here. The live definitions are the ones in 20261120143000_crm_timeline_and_profile.sql.
+-- Re-applying the older bodies from crm.sql would roll those functions back.
 
 create or replace function private.booking_to_contact()
 returns trigger language plpgsql security definer set search_path = public as $$
@@ -394,16 +342,6 @@ drop trigger if exists trial_leads_contact on public.trial_leads;
 create trigger trial_leads_contact before insert on public.trial_leads
   for each row execute function private.trial_to_contact();
 
-create or replace function private.contact_totals()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if new.contact_id is not null then perform private.refresh_contact(new.contact_id); end if;
-  if tg_op = 'UPDATE' and old.contact_id is distinct from new.contact_id and old.contact_id is not null then
-    perform private.refresh_contact(old.contact_id);
-  end if;
-  return null;
-end;
-$$;
 drop trigger if exists workshop_bookings_totals on public.workshop_bookings;
 create trigger workshop_bookings_totals after insert or update of status, amount, contact_id on public.workshop_bookings
   for each row execute function private.contact_totals();
@@ -543,18 +481,6 @@ revoke all on public.events from anon;
 revoke all on public.events_public from anon, authenticated;
 grant select on public.events_public to anon, authenticated;
 
--- The October 2026 workshops already on the website
-insert into public.events (event_date, start_time, end_time, title, category, kind, description)
-select * from (values
-  (date '2026-10-04', time '15:00', time '17:00', 'Textured canvas painting', 'Workshop', 'Painting', 'Build up texture on canvas with paint and mixed media — a relaxed, hands-on painting workshop for all ages.'),
-  (date '2026-10-11', time '15:00', time '17:00', 'Plant-based cooking class', 'Workshop', 'Cooking', 'Cook simple, delicious plant-based dishes from scratch — a hands-on cooking workshop for all ages.'),
-  (date '2026-10-18', time '15:00', time '17:00', 'Painting on canvas — lemon theme (Sip & Paint)', 'Workshop', 'Painting', 'A guided Sip & Paint session painting a lemon-themed canvas — no experience needed.'),
-  (date '2026-10-25', time '15:00', time '17:00', 'Sourdough', 'Workshop', 'Baking', 'Learn the basics of sourdough bread and bake your own to take home.')
-) v(event_date, start_time, end_time, title, category, kind, description)
-where not exists (select 1 from public.events);
-
-
--- Check: should list 4 events, and anon/authenticated should have SELECT only
-select event_date, start_time, title from public.events_public;
+-- No sample events. A seed here would publish rows, including banned phrasing, on the public site.
 select grantee, string_agg(privilege_type, ', ') from information_schema.role_table_grants
 where table_schema = 'public' and table_name = 'events_public' and grantee in ('anon', 'authenticated') group by 1;
