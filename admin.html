@@ -225,6 +225,11 @@ table.bk tr.click:hover td{background:#faf6ee}
 .slash-pop button{display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid var(--line);padding:8px 10px;cursor:pointer}
 .win-closed{background:#fdf1ec;border-left:2px solid var(--warn);padding:8px 10px;font-size:13px;margin-bottom:8px}
 @media(max-width:980px){.inbox{grid-template-columns:1fr}}
+.kanban{display:grid;grid-template-columns:repeat(5,minmax(180px,1fr));gap:10px;overflow:auto}
+.kanban-col{background:#fff;border:1px solid var(--line);padding:8px;min-height:180px}
+.kanban-col h3{font-size:14px;margin:0 0 8px;color:var(--purple)}
+.deal{border:1px solid var(--line);padding:8px;margin:0 0 8px;background:var(--cream)}
+.deal select{width:100%;margin-top:6px}
 </style>
 </head>
 <body>
@@ -306,6 +311,7 @@ table.bk tr.click:hover td{background:#faf6ee}
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" crossorigin="anonymous"></script>
 <script src="assets/wa-export.js"></script>
 <script src="assets/inbox.js"></script>
+<script src="assets/crm-growth.js"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 
@@ -330,6 +336,9 @@ const SECTIONS = [
   { id:'bookings',     key:'bookings',     label:'Bookings',            ready:true },
   { id:'inbox',        key:'bookings',     label:'Inbox',               ready:true },
   { id:'customers',    key:'customers',    label:'Customers',           ready:true },
+  { id:'tasks',        key:'customers',    label:'My tasks',            ready:true },
+  { id:'groups',       key:'customers',    label:'Groups',              ready:true },
+  { id:'email',        key:'email',        label:'Marketing email',     ready:true },
   { id:'events',       key:'events',       label:'Events Calendar',     ready:true },
   { id:'fees',         key:'fees',         label:'Fees & Policies',     ready:true },
   { id:'gallery',      key:'gallery',      label:'Gallery',             ready:true },
@@ -489,13 +498,20 @@ async function boot(){
 }
 
 /* ---------- shell ---------- */
+function sectionAllowed(s){
+  if (!s || !me) return false;
+  if (s.id === 'inbox' && me.role === 'marketing') return false;
+  if (s.id === 'email') return me.role === 'admin' || me.role === 'marketing' || canRead('email') || canRead('customers');
+  if (s.id === 'tasks' || s.id === 'groups') return canRead('customers') || canRead('bookings');
+  return canRead(s.key);
+}
 async function render(){
   $('meBox').innerHTML =
     `<span class="av">${esc(initials(me.full_name))}</span>
      <span class="nm"><b>${esc(me.full_name)}</b><small>${esc(ROLE_LABEL[me.role]||me.role)}</small>
      <button class="signout" onclick="signOut()">Sign out</button></span>`;
 
-  const visible = SECTIONS.filter(s => canRead(s.key) && !(s.id === 'inbox' && me.role === 'marketing'));
+  const visible = SECTIONS.filter(sectionAllowed);
   $('nav').innerHTML = visible.map(s =>
     `<button class="snav${s.id===current?' on':''}${s.ready?'':' soon'}"
       ${s.ready?`onclick="goTo('${s.id}')"`:''}>
@@ -510,9 +526,9 @@ async function render(){
   const sec = SECTIONS.find(s => s.id === current);
   $('title').textContent = sec ? sec.label : '';
   const shell = document.querySelector('.bodyw');
-  if (shell) shell.style.maxWidth = current === 'inbox' ? 'none' : (current === 'customers' && crmOpen) ? '1100px' : '';
+  if (shell) shell.style.maxWidth = (current === 'inbox' || current === 'groups') ? 'none' : (current === 'customers' && crmOpen) ? '1100px' : '';
 
-  if (!sec || !canRead(sec.key)) {
+  if (!sec || !sectionAllowed(sec)) {
     $('view').innerHTML = `<div class="locked"><b>You don't have access to this section.</b><br>
       Your role is ${esc(ROLE_LABEL[me.role]||me.role)}. Ask an administrator if you need it.</div>`;
     return;
@@ -1190,6 +1206,7 @@ window.bkCsv = id => {
 
 /* ---------- Customers: the B2C CRM. Filled by the website (every booking and trial request) ---------- */
 let crmRows = [], crmQuery = '', crmFilter = 'all', crmOpen = null, crmMode = 'people', crmWhen = 'upcoming', crmPaidOnly = false;
+let crmScoreMap = {};
 let crmFamily = [], crmFamilyRemoved = [], crmFamilyReady = false, crmHealthVisible = false, crmHealthWrite = false;
 let crmParents = [], crmPeople = [], crmCurrent = null, crmTlItems = [], crmTlFilter = 'all', crmCanWrite = false;
 const CRM_MIGRATION = 'supabase/migrations/20261120143000_crm_timeline_and_profile.sql';
@@ -1202,11 +1219,13 @@ const shortDate = d => d ? new Date(d).toLocaleDateString('en-MY', { day:'numeri
 const schemaMissing = err => !!(err && /schema cache|does not exist|Could not find the/i.test(err.message || ''));
 const crmModes = () => `<div class="blog-tabs" style="margin-bottom:6px">
     <button class="${crmMode==='people'?'on':''}" onclick="crmModeGo('people')">People</button>
-    <button class="${crmMode==='workshops'?'on':''}" onclick="crmModeGo('workshops')">By workshop</button></div>`;
+    <button class="${crmMode==='workshops'?'on':''}" onclick="crmModeGo('workshops')">By workshop</button>
+    <button class="${crmMode==='lists'?'on':''}" onclick="crmModeGo('lists')">Lists</button></div>`;
 window.crmModeGo = async m => { crmMode = m; crmOpen = null; await render(); };
 views.customers = async function(){
   if (crmOpen) return crmDetail(crmOpen);
   if (crmMode === 'workshops') return crmWorkshops();
+  if (crmMode === 'lists') return crmLists();
   busy(true,'Loading…');
   const { data, error } = await sb.from('contacts').select('*').order('last_activity', { ascending:false }).limit(2000);
   const queued = await sb.from('unmatched_messages').select('phone_e164, phone_raw', { count:'exact' }).is('resolved_at', null).limit(5);
@@ -1217,6 +1236,9 @@ views.customers = async function(){
     return;
   }
   crmRows = data || [];
+  crmScoreMap = {};
+  const scores = await sb.rpc('contact_lead_scores');
+  if (!scores.error) (scores.data || []).forEach(s => { crmScoreMap[s.contact_id] = s; });
   const q = crmQuery.toLowerCase().trim();
   const shown = crmRows.filter(c => {
     if (crmFilter === 'news' && !c.marketing_consent) return false;
@@ -1251,7 +1273,7 @@ views.customers = async function(){
   else html += `<div class="card"><div class="card-b"><div class="bk-wrap"><table class="bk">
     <tr><th>Name</th><th>Stage</th><th>Contact</th><th>Children</th><th>Bookings</th><th>Trials</th><th>Paid</th><th>Last seen</th><th>Source</th></tr>
     ${shown.slice(0, 500).map(c => `<tr class="click" onclick="crmGo('${c.id}')">
-      <td><b>${esc(c.first_name)} ${esc(c.last_name || '')}</b>${c.marketing_consent ? ' <span class="tag">news</span>' : ''}${(c.tags || []).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</td>
+      <td><b>${esc(c.first_name)} ${esc(c.last_name || '')}</b>${crmScoreMap[c.id] ? ` <span class="tag" title="${esc((window.MaGrowth && window.MaGrowth.reasonText(crmScoreMap[c.id].reasons)) || '')}">${crmScoreMap[c.id].points}</span>` : ''}${c.marketing_consent ? ' <span class="tag">news</span>' : ''}${(c.tags || []).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</td>
       <td><small>${esc(c.lifecycle_stage || c.stage || '')}${c.lifecycle_stage && c.stage ? '<br>' + esc(c.stage) : ''}${c.follow_up_date && c.follow_up_date <= todayISO() ? '<br><b>follow up</b>' : ''}</small></td>
       <td><small>${esc(c.phone || '')}<br>${esc(c.email || '')}</small></td>
       <td><small>${(c.children || []).map(k => esc(k.name) + (kidAge(k) ? ' (' + esc(kidAge(k)) + ')' : '') + (k.school ? ', ' + esc(k.school) : '')).join('<br>')}</small></td>
@@ -1525,6 +1547,7 @@ async function crmDetail(id){
 
   let html = `<p style="margin-bottom:14px"><button class="btn sm" type="button" onclick="crmBack()">← ${crmMode==='workshops' ? 'All workshops' : 'All customers'}</button></p>
     <h2 style="margin:0 0 6px">${esc(x.preferred_name || x.first_name)} ${esc(x.last_name || '')}</h2>
+    ${crmScoreMap[x.id] ? `<p class="help">Lead score ${crmScoreMap[x.id].points}${window.MaGrowth ? ' · ' + esc(window.MaGrowth.reasonText(crmScoreMap[x.id].reasons)) : ''}</p>` : ''}
     ${profileReady ? '' : `<div class="msg info">The rest of the profile (lifecycle, WhatsApp in international form, family records, and the timeline) is in <b>${CRM_MIGRATION}</b>. Saving the fields already here still works before that file is run.</div>`}
     <div class="bk-sum"><span>${esc(x.lifecycle_stage || x.stage || '')}</span>${x.lead_status ? `<span>${esc(x.lead_status)}</span>` : ''}<span>${bookingN || 0} booking${bookingN===1?'':'s'}</span>
       <span>${money(revenue)} paid</span>${attended ? `<span>${attended} workshop${attended===1?'':'s'} attended</span>` : ''}${noShows ? `<span class="full">${noShows} no-show${noShows===1?'':'s'}</span>` : ''}
@@ -1546,7 +1569,7 @@ async function crmDetail(id){
       <div class="row">${inp('address','Address')}${inp('area','Area')}${inp('city','City')}${profileReady ? inp('state','State') : ''}${inp('postcode','Postcode')}${profileReady ? inp('country','Country') : ''}</div>
       <div class="row">${inp('company','Company')}${inp('job_title','Job title')}${profileReady ? chk('is_organiser','Organises group or corporate bookings') : ''}</div>
       <div class="row">${sel('stage','Studio stage')}${profileReady ? sel('lifecycle_stage','Lifecycle stage') : ''}${profileReady ? sel('lead_status','Lead status') : ''}</div>
-      <div class="row">${sel('owner','Contact owner', staffOpts)}${inp('follow_up_date','Follow up on','date')}${inp('follow_up_note','Follow-up about')}</div>
+      <div class="row">${sel('owner','Contact owner', staffOpts)}${inp('follow_up_date','Follow up on','date')}${inp('follow_up_note','Follow-up about')}${Object.prototype.hasOwnProperty.call(x, 'asked_price') ? chk('asked_price','Asked about the price') : ''}</div>
       <div class="row"><div class="f" style="grid-column:1/-1"><label>Tags (comma-separated)</label><input id="crmTags" value="${esc((x.tags || []).join(', '))}" ${dis}></div></div>
       ${area('notes','Notes','Preferences, conversations, anything the next person should know')}
       ${profileReady ? `<div class="f"><label>Custom fields (JSON object)</label><textarea ${fid('custom_fields')} rows="3" placeholder='{"locker":"12"}' ${dis}>${esc(customText)}</textarea><p class="help">For a property we have not named yet. Must be an object, not a list.</p></div>` : ''}
@@ -2059,7 +2082,7 @@ window.delPost = async id => {
 
 /* ---------- Shared inbox ---------- */
 let inboxFilter = 'all', inboxChannel = '', inboxTag = '', inboxOpen = null, inboxFocusContact = null, inboxShowSettings = false;
-let inboxRows = [], inboxReplies = [], inboxTemplates = [], inboxStaff = [], inboxSettings = null, inboxDraft = '';
+let inboxRows = [], inboxReplies = [], inboxTemplates = [], inboxStaff = [], inboxSettings = null, inboxDraft = '', inboxScores = {}, inboxSort = 'recent';
 const INBOX_FILTERS = [['all','All'],['unassigned','Unassigned'],['mine','Assigned to me'],['needs','Needs reply'],['open','Open'],['closed','Closed']];
 const INBOX_CH = { whatsapp:'W', email:'E', instagram:'I', facebook:'F', website:'S', note:'N' };
 const INBOX_TAGS = ['painting', 'baking', 'kids', 'adult', 'crochet', 'source ad', 'marketing opted-in'];
@@ -2085,6 +2108,7 @@ function inboxPass(row){
 }
 window.crmOpenInbox = async () => { inboxFocusContact = crmOpen; current = 'inbox'; await render(); };
 window.inboxFilterGo = async (key) => { inboxFilter = key; await render(); };
+window.inboxSortScore = async () => { inboxSort = inboxSort === 'score' ? 'recent' : 'score'; await render(); };
 window.inboxChannelGo = async (v) => { inboxChannel = v; await render(); };
 window.inboxTagGo = async (v) => { inboxTag = v; await render(); };
 window.inboxOpenConv = async (id) => { inboxOpen = id; inboxDraft = ''; await render(); };
@@ -2135,12 +2159,17 @@ views.inbox = async function(){
   inboxTemplates = templates.data || [];
   inboxStaff = staff.data || [];
   inboxSettings = settings.data || null;
+  inboxScores = {};
+  const scoreRows = await sb.rpc('contact_lead_scores');
+  if (!scoreRows.error) (scoreRows.data || []).forEach(s => { inboxScores[s.contact_id] = s; });
   if (inboxFocusContact) {
     const found = inboxRows.find(r => r.contact_id === inboxFocusContact && (!inboxChannel || r.channel === inboxChannel));
     if (found) inboxOpen = found.id;
     inboxFocusContact = null;
   }
-  const shown = inboxRows.filter(inboxPass);
+  const shown = inboxRows.filter(inboxPass).sort((a, b) => inboxSort === 'score'
+    ? (inboxScores[b.contact_id] ? inboxScores[b.contact_id].points : 0) - (inboxScores[a.contact_id] ? inboxScores[a.contact_id].points : 0)
+    : 0);
   if (!inboxOpen && shown[0]) inboxOpen = shown[0].id;
   const open = inboxRows.find(r => r.id === inboxOpen) || null;
   let thread = { items: [], family: [], bookings: [], queue: [] };
@@ -2167,13 +2196,14 @@ function inboxShell(shown, open, thread){
   const tags = [...new Set(INBOX_TAGS.concat(inboxRows.flatMap(r => (r.contacts && r.contacts.tags) || [])))];
   const list = shown.map(r => `<button type="button" class="inbox-row${r.id===inboxOpen?' on':''}" onclick="inboxOpenConv('${r.id}')">
       <span class="ch" title="${esc(r.channel)}">${INBOX_CH[r.channel] || '?'}</span>
-      <span style="flex:1;min-width:0"><b>${esc(inboxName(r))}</b><small>${esc(r.last_message_preview || 'No message yet')}</small></span>
+      <span style="flex:1;min-width:0"><b>${esc(inboxName(r))}</b>${inboxScores[r.contact_id] ? ` <span class="tag">${inboxScores[r.contact_id].points}</span>` : ''}<small>${esc(r.last_message_preview || 'No message yet')}</small></span>
       <span style="text-align:right">${r.unread_count ? `<span class="unread">${r.unread_count}</span>` : ''}<br><small>${esc(inboxWhen(r.last_message_at))}</small></span>
     </button>`).join('') || '<div class="empty">No conversations in this folder.</div>';
   return `<div class="inbox-h" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
       <div class="blog-tabs" style="margin:0">${INBOX_FILTERS.map(([k, label]) => `<button type="button" class="${inboxFilter===k?'on':''}" onclick="inboxFilterGo('${k}')">${label}</button>`).join('')}</div>
       <select onchange="inboxChannelGo(this.value)"><option value="">Every channel</option>${Object.keys(INBOX_CH).map(c => `<option value="${c}" ${inboxChannel===c?'selected':''}>${c}</option>`).join('')}</select>
       <select onchange="inboxTagGo(this.value)"><option value="">Every tag</option><option value="opt-in" ${inboxTag==='opt-in'?'selected':''}>Marketing opted in</option>${tags.map(t => `<option ${inboxTag===t?'selected':''}>${esc(t)}</option>`).join('')}</select>
+      <button class="btn sm" type="button" onclick="inboxSortScore()">Sort by lead score</button>
       <button class="btn sm" type="button" onclick="inboxSettingsGo(true)">Inbox settings</button>
     </div>
     <div class="inbox">
@@ -2345,6 +2375,183 @@ window.inboxSendTemplate = async (name) => {
 };
 
 
+/* ---------- tasks, lists, groups, email ---------- */
+async function crmLists(){
+  busy(true,'Loading…');
+  const { data, error } = await sb.from('saved_segments').select('*').order('name');
+  busy(false);
+  if (error) {
+    $('view').innerHTML = crmModes() + (schemaMissing(error)
+      ? `<div class="msg info">Saved lists are added by <b>supabase/migrations/20261122030000_saved_segments.sql</b>.</div>`
+      : `<div class="msg err">${esc(error.message)}</div>`);
+    return;
+  }
+  const fields = ['whatsapp_opt_in','email_opt_in','has_child','formats_attended','interests','tags','days_since_last_booking','lifecycle_stage','is_organiser','birthday_enquiry','asked_price'];
+  $('view').innerHTML = crmModes()
+    + `<div class="hint"><b>Saved lists.</b> Filters use contact fields, bookings and interests. WhatsApp queueing is opted-in people only, and it does not send.</div>`
+    + (window.MaGrowth ? window.MaGrowth.renderSegments(data || []) : '')
+    + `<div class="card"><div class="card-h"><span class="grip">New list</span></div><div class="card-b">
+        <div class="row"><div class="f"><label>Name</label><input id="segName" placeholder="Parents in Bangsar"></div>
+        <div class="f"><label>Field</label><select id="segField">${fields.map(f => `<option>${f}</option>`).join('')}</select></div>
+        <div class="f"><label>Value</label><input id="segValue" placeholder="true, baking, or 60"></div></div>
+        <button class="btn sm" type="button" onclick="segmentSave()">Save list</button></div></div>`;
+}
+window.segmentSave = async () => {
+  const name = ($('segName').value || '').trim();
+  const field = $('segField').value;
+  const raw = ($('segValue').value || '').trim();
+  if (!name || !raw) { toast('Add a name and a value.'); return; }
+  const op = (field === 'formats_attended' || field === 'interests' || field === 'tags') ? 'contains'
+    : field === 'days_since_last_booking' ? 'gte' : 'eq';
+  const value = raw === 'true' ? true : raw === 'false' ? false : (/^[0-9]+$/.test(raw) ? Number(raw) : raw);
+  const { error } = await sb.from('saved_segments').insert({ name, definition: { clauses: [{ field, op, value }] }, owner: me.id });
+  if (error) { toast(error.message); return; }
+  toast('List saved'); await render();
+};
+window.segmentExport = async (id) => {
+  const { data, error } = await sb.rpc('segment_contacts', { p_segment: id });
+  if (error) { toast(error.message); return; }
+  const ids = new Set((data || []).map(r => r.contact_id));
+  let people = crmRows.filter(c => ids.has(c.id));
+  if (!people.length && ids.size) {
+    const fetched = await sb.from('contacts').select('first_name, last_name, email, phone, whatsapp_e164, whatsapp_consent, email_consent').in('id', [...ids]);
+    people = fetched.data || [];
+  }
+  const cols = ['first_name','last_name','email','phone','whatsapp_e164','whatsapp_consent','email_consent'];
+  const cell = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = [cols.join(','), ...people.map(c => cols.map(k => cell(c[k])).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
+  a.download = 'segment.csv'; a.click();
+};
+window.segmentQueue = async (id) => {
+  const template = window.prompt('Approved template name', 'booking_confirmed');
+  if (!template) return;
+  const { data, error } = await sb.rpc('queue_segment_whatsapp', { p_segment: id, p_template: template });
+  if (error) { toast(error.message); return; }
+  toast('Queued ' + (data || 0) + '. Nothing was sent.');
+};
+views.tasks = async function(){
+  busy(true,'Loading…');
+  await sb.rpc('refresh_auto_tasks');
+  const [{ data, error }, notes] = await Promise.all([
+    sb.from('staff_tasks').select('id, title, detail, kind, due_on, status, assignee, contact_id, contacts(first_name, last_name)').eq('status', 'open').order('due_on'),
+    sb.from('staff_notifications').select('id, title, read_at').is('read_at', null).eq('staff_id', me.id).limit(20)
+  ]);
+  busy(false);
+  if (error) {
+    $('view').innerHTML = schemaMissing(error)
+      ? `<div class="msg info">Tasks are added by <b>supabase/migrations/20261122020000_staff_tasks.sql</b>.</div>`
+      : `<div class="msg err">${esc(error.message)}</div>`;
+    return;
+  }
+  const tasks = (data || []).map(t => ({ ...t, contact_name: t.contacts ? [t.contacts.first_name, t.contacts.last_name].filter(Boolean).join(' ') : '' }));
+  const mine = tasks.filter(t => !t.assignee || t.assignee === me.id);
+  $('view').innerHTML = `<div class="hint"><b>My tasks.</b> Yours are listed first. A task title is the rule, not a copy of a WhatsApp message. Notices stay in the admin.</div>`
+    + ((notes.data || []).length ? `<p>${(notes.data || []).map(n => `<span class="tag">${esc(n.title)}</span>`).join(' ')}</p>` : '')
+    + (window.MaGrowth ? window.MaGrowth.renderTasks(mine.length ? mine : tasks) : '')
+    + `<div class="card"><div class="card-h"><span class="grip">Add a task</span></div><div class="card-b">
+        <div class="row"><div class="f"><label>Title</label><input id="taskTitle" placeholder="Call about Sunday"></div>
+        <div class="f"><label>Due</label><input id="taskDue" type="date"></div></div>
+        <button class="btn sm" type="button" onclick="taskAdd()">Add</button></div></div>`;
+};
+window.taskDone = async (id) => {
+  const { error } = await sb.from('staff_tasks').update({ status: 'done', done_at: new Date().toISOString() }).eq('id', id);
+  if (error) { toast(error.message); return; }
+  toast('Done'); await render();
+};
+window.taskAdd = async () => {
+  const title = ($('taskTitle').value || '').trim();
+  if (!title) { toast('Add a title.'); return; }
+  const { error } = await sb.from('staff_tasks').insert({ title, kind: 'manual', due_on: $('taskDue').value || null, assignee: me.id, created_by: me.id });
+  if (error) { toast(error.message); return; }
+  toast('Task added'); await render();
+};
+views.groups = async function(){
+  busy(true,'Loading…');
+  const { data, error } = await sb.from('group_deals').select('*').order('created_at', { ascending: false });
+  busy(false);
+  if (error) {
+    $('view').innerHTML = schemaMissing(error)
+      ? `<div class="msg info">The group pipeline is added by <b>supabase/migrations/20261122040000_group_deals.sql</b>.</div>`
+      : `<div class="msg err">${esc(error.message)}</div>`;
+    return;
+  }
+  $('view').innerHTML = `<div class="hint"><b>Groups and companies.</b> Team-building, birthday parties and school groups. A won card is not a workshop booking and does not change a price.</div>`
+    + `<div class="card"><div class="card-b"><div class="row">
+        <div class="f"><label>Title</label><input id="dealTitle" placeholder="Hartamas school, 20 children"></div>
+        <div class="f"><label>Kind</label><select id="dealKind"><option value="team_building">Team-building</option><option value="birthday">Birthday</option><option value="school">School</option><option value="other">Other</option></select></div>
+        <div class="f"><label>Value (RM)</label><input id="dealValue" type="number" min="0" value="0"></div>
+        <div class="f"><label>Headcount</label><input id="dealHead" type="number" min="1"></div>
+        <div class="f"><label>Expected</label><input id="dealWhen" type="date"></div>
+      </div><button class="btn sm" type="button" onclick="dealAdd()">Add enquiry</button></div></div>`
+    + (window.MaGrowth ? window.MaGrowth.renderDeals(data || []) : '');
+};
+window.dealAdd = async () => {
+  const title = ($('dealTitle').value || '').trim();
+  if (!title) { toast('Add a title.'); return; }
+  const { error } = await sb.from('group_deals').insert({
+    title, kind: $('dealKind').value, value_rm: Number($('dealValue').value || 0),
+    headcount: $('dealHead').value ? Number($('dealHead').value) : null,
+    expected_on: $('dealWhen').value || null, owner: me.id, created_by: me.id, stage: 'enquiry'
+  });
+  if (error) { toast(error.message); return; }
+  toast('Enquiry added'); await render();
+};
+window.dealStage = async (id, stage) => {
+  const { error } = await sb.from('group_deals').update({ stage, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) { toast(error.message); return; }
+  await render();
+};
+views.email = async function(){
+  busy(true,'Loading…');
+  const [camps, flows, templates, segments, revenue] = await Promise.all([
+    sb.from('email_campaigns').select('*').order('created_at', { ascending: false }),
+    sb.from('email_flows').select('name, trigger, active').order('name'),
+    sb.from('email_templates').select('id, name, subject').order('name'),
+    sb.from('saved_segments').select('id, name').order('name'),
+    sb.from('email_campaign_revenue').select('*')
+  ]);
+  busy(false);
+  const missing = [camps, flows, templates].find(r => r.error && schemaMissing(r.error));
+  if (missing) {
+    $('view').innerHTML = `<div class="msg info">Email marketing is added by <b>supabase/migrations/20261122050000_email_marketing.sql</b>. No customer mail is sent. Resend DNS and the API key are not set.</div>`;
+    return;
+  }
+  if (camps.error) { $('view').innerHTML = `<div class="msg err">${esc(camps.error.message)}</div>`; return; }
+  const moneyById = {};
+  (revenue.data || []).forEach(r => { moneyById[r.campaign_id] = r.revenue_rm; });
+  const rows = (camps.data || []).map(c => ({ ...c, revenue_rm: moneyById[c.id] || 0 }));
+  $('view').innerHTML = `<div class="hint"><b>Marketing email.</b> Campaigns and flows queue messages for people who opted in. Nothing is delivered: RESEND_API_KEY and the domain DNS are not set, and the sender stays off until EMAIL_SEND_ENABLED is true.</div>`
+    + `<div class="card"><div class="card-h"><span class="grip">New campaign</span></div><div class="card-b"><div class="row">
+        <div class="f"><label>Name</label><input id="emName" placeholder="Sunday baking, November"></div>
+        <div class="f"><label>List</label><select id="emSegment">${(segments.data || []).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div>
+        <div class="f"><label>Template</label><select id="emTemplate">${(templates.data || []).map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div>
+      </div><p class="help">Preview uses the first name "Aina" and does not email anyone. A test send is not available until Resend is switched on.</p>
+      <p><button class="btn sm" type="button" onclick="emailPreview()">Preview</button>
+         <button class="btn sm" type="button" onclick="emailSchedule()">Schedule queue</button></p>
+      <div id="emPreview"></div></div></div>`
+    + (window.MaGrowth ? window.MaGrowth.renderEmail(rows, flows.data || []) : '');
+};
+window.emailPreview = () => {
+  const name = $('emTemplate').selectedOptions[0] ? $('emTemplate').selectedOptions[0].textContent : '';
+  $('emPreview').innerHTML = `<div class="card"><div class="card-b"><p><b>${esc(name)}</b></p><p>Hello Aina,</p><p>This is a preview with sample data. No email was sent.</p><p class="help">Master Artist, 38-2, Jalan 28/70A, Desa Sri Hartamas, 50480 Kuala Lumpur<br>Unsubscribe link is added on every message.</p></div></div>`;
+};
+window.emailSchedule = async () => {
+  const name = ($('emName').value || '').trim();
+  const segment = $('emSegment').value;
+  const template = $('emTemplate').value;
+  if (!name || !segment || !template) { toast('Choose a name, a list and a template.'); return; }
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'campaign';
+  const ins = await sb.from('email_campaigns').insert({ name, slug, segment_id: segment, template_id: template, status: 'draft', created_by: me.id }).select('id').single();
+  if (ins.error) { toast(ins.error.message); return; }
+  const queued = await sb.rpc('enqueue_email_campaign', { p_campaign: ins.data.id });
+  if (queued.error) { toast(queued.error.message); return; }
+  toast('Queued ' + (queued.data || 0) + ' emails. None were sent.');
+  await render();
+};
+
+/* ---------- studio details ---------- */
 /* ---------- studio details ---------- */
 views.settings = async function(){
   busy(true,'Loading…');
