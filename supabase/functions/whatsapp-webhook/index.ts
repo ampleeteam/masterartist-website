@@ -17,6 +17,7 @@ import {
   verifySignature,
   verifySubscription,
 } from "../_shared/atrium-port.mjs";
+import { extractAdRef, matchAdLink } from "../../../attribution.mjs";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -48,6 +49,7 @@ Deno.serve(async (req) => {
 
   const sb = createClient(Deno.env.get("SUPABASE_URL") || "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "");
   const ads = await sb.from("ad_mappings").select("source_id, session_id, campaign_name, headline");
+  const adLinks = await sb.from("ad_links").select("ad_id, ref_code, platform, campaign_name, ad_name, target_type, target_id, active");
   const refs = await sb.from("ref_links").select("code, label, session_id");
   const catalog = {
     ads: (ads.data || []).map((row) => ({
@@ -76,10 +78,23 @@ Deno.serve(async (req) => {
       continue;
     }
     inboundBodies.push(event.body || "");
+    const refCode = extractAdRef(event.body) || (event.referral ? null : extractRefCode(event.body));
+    const linked = matchAdLink({
+      sourceId: event.referral && event.referral.sourceId,
+      refCode,
+    }, (adLinks.data || []).map((row) => ({
+      ad_id: row.ad_id,
+      ref_code: row.ref_code,
+      platform: row.platform,
+      campaign_name: row.campaign_name,
+      target_type: row.target_type,
+      target_id: row.target_id,
+      active: row.active !== false,
+    })));
     const entry = resolveEntry({
       body: event.body,
       referral: event.referral,
-      refCode: event.referral ? null : extractRefCode(event.body),
+      refCode,
     }, catalog);
     const stored = applyAttribution(null, entry);
     const phone = phoneFromWaId(event.waId);
@@ -99,7 +114,11 @@ Deno.serve(async (req) => {
         source_id: stored.sourceId,
         ctwa_clid: stored.ctwaClid,
         intent: stored.intent,
-        session_id: stored.sessionId,
+        session_id: (linked && linked.link.target_id) || stored.sessionId,
+        attribution_method: linked ? linked.method : entry.kind === "ad" ? "ad_referral" : refCode ? "ref_code" : "direct",
+        platform: linked && linked.link.platform,
+        campaign: linked && linked.link.campaign_name,
+        ref_code: refCode,
       },
     });
     saved.push(error ? { error: error.message } : { id: data, entry: stored.entryLabel });

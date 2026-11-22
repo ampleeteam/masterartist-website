@@ -322,6 +322,10 @@
         html += '<div class="tl-day"><span>' + esc(day) + '</span></div>';
         lastDay = day;
       }
+      if (item.kind === 'system') {
+        html += '<p class="tl-switch">' + esc(item.body || '') + '</p>';
+        return;
+      }
       var channel = item.channel || '';
       if (item.kind !== 'booking' && channel && channel !== 'note' && lastChannel && channel !== lastChannel) {
         html += '<p class="tl-switch">Continued on ' + esc(channelInfo(channel).label) + '</p>';
@@ -343,6 +347,7 @@
       else if (item.direction !== 'out' && multi && item.senderName) who = item.senderName;
       var media = mediaLabel(item.media);
       html += '<article class="tl-item ' + cls + '">'
+        + (item.senderType === 'bot' ? '<div class="tl-note">Bot</div>' : '')
         + (item.channel === 'note' ? '<div class="tl-note">Note</div>' : '')
         + (who ? '<div class="tl-who">' + esc(who) + '</div>' : '')
         + (body ? '<div class="tl-body">' + esc(body).replace(/\n/g, '<br>') + '</div>' : '')

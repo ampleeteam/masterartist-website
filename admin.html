@@ -254,9 +254,28 @@ table.bk tr.click:hover td{background:var(--cream)}
 .tl-switch{text-align:center;color:var(--muted);font-size:12px;margin:4px 0}
 .tl-item{border:0;border-radius:16px;padding:8px 10px 4px;background:var(--surface);max-width:min(82%,420px);box-shadow:var(--shadow)}
 .tl-item.in{align-self:flex-start;border-radius:4px 16px 16px 16px}
-.tl-item.out{align-self:flex-end;margin-left:auto;background:var(--gold-pale);border-radius:16px 4px 16px 16px}
-.tl-item.bot{background:var(--gold-pale)}
-.tl-item.note{background:var(--surface);border:1.5px dashed var(--muted);align-self:center;max-width:min(90%,420px)}
+.tl-item.out{align-self:flex-end;margin-left:auto;background:var(--purple);color:var(--cream);border-radius:16px 4px 16px 16px}
+.tl-item.out .tl-who,.tl-item.out .tl-time{color:rgba(246,241,232,.8)}
+.tl-item.in{background:#E7E2DA}
+.tl-item.bot{background:var(--gold-pale);color:var(--ink)}
+.tl-item.bot .tl-who,.tl-item.bot .tl-time{color:var(--gold-text)}
+.tl-item.note{background:var(--gold-pale);color:var(--ink);border:1.5px dashed var(--gold-deep);align-self:center;max-width:min(90%,420px)}
+.mc{display:grid;grid-template-columns:168px 280px minmax(280px,1fr) 300px;gap:10px;min-height:calc(100vh - 220px)}
+.mc-rail{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-card);padding:8px;overflow:auto}
+.mc-rail button{display:flex;width:100%;justify-content:space-between;align-items:center;min-height:40px;border:0;background:transparent;color:var(--ink);border-radius:10px;padding:0 8px;font:500 13px var(--font-body);cursor:pointer;text-align:left}
+.mc-rail button.on{background:var(--lavender-pale);color:var(--purple);font-weight:700}
+.mc-rail small{color:var(--muted)}
+.mc-k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-text);margin:10px 8px 4px}
+.mc-av{position:relative;width:36px;height:36px;border-radius:50%;background:var(--purple);color:var(--cream);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none}
+.mc-av .ch-badge{position:absolute;right:-6px;bottom:-4px;padding:0 4px}
+.mc-own{width:22px;height:22px;border-radius:50%;background:var(--gold);color:var(--purple-deep);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.mc-folders-m{display:none}
+@media(max-width:767px){
+  .mc{display:block}
+  .mc-rail{display:none}
+  .mc-folders-m{display:block;margin-bottom:8px}
+  .inbox.pane-list .mc-rail,.inbox.pane-thread .mc-rail,.inbox.pane-customer .mc-rail{display:none}
+}
 .tl-note{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .tl-who{font-weight:600;color:var(--purple);font-size:12px}
 .tl-body{margin-top:2px}
@@ -327,10 +346,45 @@ table.bk tr.click:hover td{background:var(--cream)}
 .slash-pop button{display:block;width:100%;text-align:left;background:var(--surface);border:0;border-bottom:1px solid var(--line);padding:8px 10px;cursor:pointer}
 .win-closed{background:var(--gold-pale);border-left:2px solid var(--warn);color:var(--warn);padding:8px 10px;font-size:13px;margin-bottom:8px}
 @media(max-width:980px){.inbox{grid-template-columns:1fr}}
-.kanban{display:grid;grid-template-columns:repeat(5,minmax(180px,1fr));gap:10px;overflow:auto}
-.kanban-col{background:var(--cream);border:1px solid var(--rule);border-radius:var(--radius-card);padding:8px;min-height:180px}
-.kanban-col h3{font-size:14px;margin:0 0 8px;color:var(--purple)}
-.deal{border:1px solid var(--rule);border-radius:var(--radius-sm);padding:8px;margin:0 0 8px;background:var(--surface)}
+.pipe{display:flex;gap:12px;overflow-x:auto;align-items:stretch;min-height:calc(100vh - 280px);padding-bottom:12px}
+.pipe-col{flex:0 0 260px;display:flex;flex-direction:column;background:var(--cream);border:1px solid var(--rule);border-radius:var(--radius-card);min-height:420px;box-shadow:var(--shadow);overflow:hidden}
+.pipe-col header{padding:12px 12px 8px;border-top:4px solid var(--stage, var(--gold));background:var(--surface)}
+.pipe-col header b{display:block;font-family:var(--font-head);color:var(--purple);font-size:15px}
+.pipe-col header span{color:var(--muted);font-size:13px}
+.pipe-cards{padding:8px;overflow:auto;flex:1}
+.pipe-card{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:12px;margin:0 0 8px;box-shadow:var(--shadow);cursor:pointer;text-align:left}
+.pipe-card b{display:block;color:var(--purple);font-size:15px}
+.pipe-card.rotten{border-color:var(--gold-deep);background:var(--gold-pale)}
+.pipe-who,.pipe-val{margin:4px 0;color:var(--muted);font-size:13px}
+.pipe-val{color:var(--ink);font-weight:600}
+.pipe-meta{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.pipe-date,.pipe-kind{border-radius:999px;padding:2px 8px;font-size:12px;font-weight:600}
+.pipe-date{background:var(--cream);color:var(--purple)}
+.kind-school{background:var(--lavender-pale);color:var(--purple)}
+.kind-team_building{background:var(--gold-pale);color:var(--gold-text)}
+.kind-birthday{background:#F3E4C4;color:var(--purple-deep)}
+.kind-other{background:var(--cream-deep);color:var(--muted)}
+.pipe-card footer{display:flex;align-items:center;gap:8px;margin-top:8px}
+.pipe-av{width:28px;height:28px;border-radius:50%;background:var(--purple);color:var(--cream);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.pipe-act{margin-left:auto;width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+.act-soon{background:#E5F3EA;color:var(--ok)}
+.act-over{background:#F8E6DF;color:var(--warn)}
+.act-none{background:var(--gold-pale);color:var(--gold-text)}
+.pipe-rot{font-size:11px;font-weight:700;color:var(--gold-text)}
+.pipe-move{display:none}
+.pipe-empty{color:var(--muted);font-size:13px;padding:16px 8px;text-align:center}
+.pipe-top{display:flex;gap:12px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.pipe-metrics{display:flex;gap:10px;flex-wrap:wrap}
+.pipe-metrics div{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:10px 14px;min-width:140px;box-shadow:var(--shadow)}
+.pipe-metrics span{display:block;font-size:12px;color:var(--muted)}
+.pipe-metrics b{font-family:var(--font-em);font-weight:500;font-size:22px;color:var(--purple)}
+.pipe-seg{display:inline-flex;border:1px solid var(--rule);border-radius:999px;overflow:hidden;background:var(--surface)}
+.pipe-seg button{min-height:40px;border:0;background:transparent;padding:0 14px;font:600 14px var(--font-body);color:var(--purple);cursor:pointer}
+.pipe-seg button.on{background:var(--purple);color:var(--cream)}
+@media(max-width:767px){
+  .pipe-col{flex-basis:78vw;min-height:calc(100vh - 340px)}
+  .pipe-move{display:inline-flex;margin-left:auto}
+}
 .deal select{width:100%;margin-top:6px}
 
 /* ---------- HubSpot-style index, record, Mailchimp-style email ---------- */
@@ -524,7 +578,7 @@ table.bk tr.click:hover td{background:var(--cream)}
   </nav>
   <div class="more-sheet" id="moreSheet" hidden>
     <div class="ix-sheet-bar"><b>More</b><button type="button" class="ix-btn" onclick="moreSheet(false)">Done</button></div>
-    <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('groups')">Deals</button>
+    <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('groups')">Group Bookings</button>
     <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('lists')">Lists</button>
     <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('campaigns')">Email</button>
     <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('reports')">Reports</button>
@@ -542,6 +596,7 @@ table.bk tr.click:hover td{background:var(--cream)}
 <script src="assets/crm-case.js"></script>
 <script src="assets/crm-events.js"></script>
 <script src="assets/crm-inbox-views.js"></script>
+<script src="assets/crm-ads.js"></script>
 <script src="assets/crm-shell.js"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
@@ -568,7 +623,8 @@ const SECTIONS = [
   { id:'inbox',        key:'bookings',     label:'Inbox',               ready:true },
   { id:'customers',    key:'customers',    label:'Customers',           ready:true },
   { id:'tasks',        key:'customers',    label:'My tasks',            ready:true },
-  { id:'groups',       key:'customers',    label:'Groups',              ready:true },
+  { id:'groups',       key:'customers',    label:'Group Bookings',      ready:true },
+  { id:'adlinks',      key:'customers',    label:'Ad links',            ready:true },
   { id:'email',        key:'email',        label:'Marketing email',     ready:true },
   { id:'events',       key:'events',       label:'Events Calendar',     ready:true },
   { id:'fees',         key:'fees',         label:'Fees & Policies',     ready:true },
@@ -788,7 +844,8 @@ function paintNav(){
     crm.push({ id:'tasks', label:'Tasks', icon:'tasks', badge: navBadges.tasks ? String(navBadges.tasks) : '', go: go('tasks') });
     crm.push({ id:'lists', label:'Lists', icon:'lists', go: go('lists') });
     crm.push({ id:'sessions', label:'Events', icon:'deals', go: go('sessions') });
-    crm.push({ id:'groups', label:'Deals', icon:'deals', go: go('groups') });
+    crm.push({ id:'groups', label:'Group Bookings', icon:'deals', go: go('groups') });
+    crm.push({ id:'adlinks', label:'Ad links', icon:'reports', go: go('adlinks') });
   }
   if (me.role === 'admin' || me.role === 'marketing' || canRead('email') || canRead('customers')) {
     crm.push({ id:'email', label:'Email', icon:'email', go: go('campaigns'), children:[
@@ -2433,6 +2490,27 @@ window.delPost = async id => {
   toast('Deleted'); await render();
 };
 
+views.adlinks = async function(){
+  const q = await sb.from('ad_links').select('*').order('campaign_name');
+  const rows = q.error ? [] : (q.data || []);
+  $('view').innerHTML = (q.error ? '<div class="msg info">Ad links are added by <b>supabase/migrations/20261122180000_ad_links_and_attribution.sql</b>. The form below is ready for when that file is applied.</div>' : '')
+    + (window.MaAds ? window.MaAds.linksPage(rows) : '');
+};
+window.adLinkSave = async () => {
+  const ref = ($('adRef') && $('adRef').value || '').trim().toUpperCase();
+  const row = {
+    platform: $('adPlatform').value,
+    campaign_name: $('adCampaign').value || null,
+    ad_name: $('adName').value || null,
+    ad_id: $('adId').value || null,
+    ref_code: ref || null,
+    target_type: $('adTarget').value
+  };
+  const { error } = await sb.from('ad_links').insert(row);
+  if (error) { toast(error.message); return; }
+  toast('Ad link saved');
+  await render();
+};
 views.sessions = async function(){
   busy(true, 'Loading…');
   const sessions = await sb.from('workshop_sessions').select('id, title, format, starts_at, capacity, price_rm, status').order('starts_at');
@@ -2518,6 +2596,78 @@ function previewStudio(){
     $('view').innerHTML = '<p><button class="btn sm" type="button" onclick="inboxSettingsGo(false)">← Inbox</button></p>' + assignmentCard(inboxStaff);
     return;
   }
+  if (which === 'admeta' || which === 'adgoogle' || which === 'adphone') {
+    current = 'inbox';
+    appArea = 'crm';
+    $('title').textContent = 'Inbox';
+    paintNav();
+    inboxStaff = [{ id: 'preview', full_name: 'Maya Tan' }];
+    inboxSessions = [{ id: 'gingerbread', title: 'Gingerbread Bake Lab', starts_at: '2026-11-29T02:00:00Z', capacity: 16, format: 'baking' }];
+    const meta = { platform: 'meta', campaign_name: 'Children Jan', ad_name: "Children's Art Class", creative_label: 'Saturday mornings', ref_code: 'MA-GB1129-M1' };
+    const google = { platform: 'google', campaign_name: 'Gingerbread', ad_name: 'Gingerbread Bake Lab', ref_code: 'MA-GB1129-G1' };
+    const source = which === 'adgoogle' ? google : meta;
+    inboxRows = [{ id: 'c1', contact_id: 'p1', channel: 'whatsapp', status: 'open', assigned_to: 'preview', unread_count: 1, last_direction: 'in', last_message_preview: which === 'adgoogle' ? 'Hi! I am interested in Gingerbread Bake Lab' : 'Is the Saturday class still open?', last_message_at: new Date().toISOString(), last_inbound_at: new Date().toISOString(), entry_label: source.ad_name, stage: 'enquired', session_id: 'gingerbread', contacts: { first_name: 'Hana', last_name: 'Parent', tags: [source.platform], phone: '+60173334444', whatsapp_e164: '+60173334444' }, ad_source: source, ad_method: which === 'adgoogle' ? 'ref_code' : 'ad_referral', ad_target: which === 'adgoogle' ? 'Gingerbread Bake Lab' : "Children's art, 29 Nov", ctwa_clid: which === 'adgoogle' ? '' : 'ARtest-ctwa' }];
+    inboxEnrol = { c1: { stage: 'enquired', session_id: 'gingerbread' } };
+    inboxStats = { p1: { lifetime_spend_rm: 0, bookings_count: 0 } };
+    inboxViewState = { view: 'newest', filters: window.MaInboxViews.emptyFilters() };
+    inboxOpen = 'c1';
+    inboxPane = which === 'adphone' ? 'customer' : 'thread';
+    inboxCase = { status: 'open', priority: 'normal', assigned_to: 'preview', tags: [source.platform], staff: inboxStaff, sessionTitle: inboxRows[0].ad_target, stage: 'enquired', tasks: [] };
+    const openRow = inboxRows[0];
+    const thread = { items: [{ occurredAt: new Date().toISOString(), channel: 'whatsapp', direction: 'in', body: openRow.last_message_preview, senderName: 'Hana Parent', kind: 'message' }, { occurredAt: new Date().toISOString(), kind: 'system', body: which === 'adgoogle' ? 'Linked from ref MA-GB1129-G1' : 'Linked from Meta click-to-WhatsApp' }], queue: [] };
+    $('view').innerHTML = inboxShell(window.MaInboxViews.arrange(inboxDecorated(), Object.assign({ meId: 'preview' }, inboxViewState), inboxSessions, new Date()), openRow, thread);
+    return;
+  }
+  if (which === 'ads-tab') {
+    current = 'sessions';
+    appArea = 'crm';
+    $('title').textContent = 'Events';
+    paintNav();
+    const sample = { title: 'Gingerbread Bake Lab', ad_spend_rm: 420, cost_per_conversation_rm: 14, cpa_rm: 70, net_revenue_rm: 1800, roas: 4.3, gross_profit_rm: 900, margin: 0.5, fill_rate: 0.5, cost_materials_rm: 200, cost_instructor_rm: 400, cost_venue_rm: 0, cost_overhead_rm: 0, cost_food_rm: 80, cost_printing_rm: 0, cost_other_rm: 0 };
+    const ads = [
+      { platform: 'meta', campaign_name: 'Gingerbread', ad_name: 'Saturday bake', chats: 30, enquired: 12, booked: 6, paid: 4, attended: 3, spend_rm: 420, revenue_rm: 1200 },
+      { platform: 'google', campaign_name: 'Gingerbread', ad_name: 'Search bake lab', chats: 18, enquired: 7, booked: 3, paid: 2, attended: 1, spend_rm: null, revenue_rm: 600 },
+      { platform: 'tiktok', campaign_name: 'Gingerbread', ad_name: 'Reel dough', chats: 9, enquired: 2, booked: 0, paid: 0, attended: 0, spend_rm: null, revenue_rm: 0 }
+    ];
+    $('view').innerHTML = '<h2>Gingerbread Bake Lab</h2><p class="help">Ads for this workshop. Spend is shown only where ads-sync has numbers.</p>' + window.MaEvents.pnlCard(sample) + window.MaAds.adsTab(ads);
+    return;
+  }
+  if (which === 'adlinks') {
+    current = 'adlinks';
+    appArea = 'crm';
+    $('title').textContent = 'Ad links';
+    paintNav();
+    const rows = [
+      { platform: 'meta', campaign_name: 'Children Jan', ad_name: "Children's Art Class", ref_code: 'MA-GB1129-M1', target_type: 'session', target_title: "Children's art", tracking_url: 'https://masterartist.co/workshops/?utm_source=facebook&utm_medium=paid&utm_campaign=children-jan&ref=MA-GB1129-M1' },
+      { platform: 'google', campaign_name: 'Gingerbread', ad_name: 'Search bake lab', ref_code: 'MA-GB1129-G1', target_type: 'session', target_title: 'Gingerbread Bake Lab', tracking_url: 'https://masterartist.co/workshops/?utm_source=google&utm_medium=cpc&utm_campaign=gingerbread&ref=MA-GB1129-G1' },
+      { platform: 'tiktok', campaign_name: 'Gingerbread', ad_name: 'Reel dough', ref_code: 'MA-GB1129-T1', target_type: 'session', target_title: 'Gingerbread Bake Lab', tracking_url: 'https://masterartist.co/workshops/?utm_source=tiktok&utm_medium=paid&utm_campaign=gingerbread&ref=MA-GB1129-T1' }
+    ];
+    $('view').innerHTML = window.MaAds.linksPage(rows);
+    return;
+  }
+  if (which === 'deals' || which === 'deal') {
+    current = 'groups';
+    appArea = 'crm';
+    $('title').textContent = 'Group Bookings';
+    staffNames = { maya: 'Maya Tan', alysha: 'Alysha', sabrina: 'Sabrina' };
+    dealMode = 'board';
+    dealShowLost = false;
+    dealPreview = which === 'deal' ? 'd3' : '';
+    dealTasks = { d3: [{ title: 'Send the revised quote', due_on: '2026-11-18', status: 'open' }] };
+    dealRows = [
+      { id:'d1', title:'Mont Kiara art day', company:'SK Mont Kiara', kind:'school', value_rm:2400, headcount:28, expected_on:'2026-12-06', stage:'enquiry', owner:'maya', updated_at:'2026-11-21', next_due:'2026-11-25' },
+      { id:'d2', title:'Team painting afternoon', company:'Aether Studio', kind:'team_building', value_rm:1800, headcount:12, expected_on:'2026-12-12', stage:'qualified', owner:'maya', updated_at:'2026-11-10' },
+      { id:'d3', title:'Birthday canvas party', company:'The Rahman family', kind:'birthday', value_rm:900, headcount:10, expected_on:'2026-11-29', stage:'proposal_sent', owner:'alysha', updated_at:'2026-11-21', notes:'They want a lemon canvas, not a themed party.' },
+      { id:'d4', title:'Bank team day', company:'A local bank', kind:'team_building', value_rm:5200, headcount:24, expected_on:'2027-01-16', stage:'negotiating', owner:'sabrina', updated_at:'2026-11-19', next_due:'2026-11-24' },
+      { id:'d5', title:'Holiday workshop', company:'Garden International', kind:'school', value_rm:3600, headcount:40, expected_on:'2026-12-18', stage:'enquiry', owner:'alysha', updated_at:'2026-11-22', next_due:'2026-11-22' },
+      { id:'d6', title:'Offsite bread day', company:'A tech team', kind:'team_building', value_rm:4100, headcount:18, expected_on:'2026-11-28', stage:'won', owner:'sabrina', updated_at:'2026-11-15' },
+      { id:'d7', title:'Community centre class', company:'Bangsar CC', kind:'other', value_rm:700, headcount:15, expected_on:'2026-11-20', stage:'lost', owner:'maya', updated_at:'2026-11-08', lost_reason:'The date did not work.' },
+      { id:'d8', title:'Year 4 add-on', company:'SK Bukit Damansara', kind:'school', value_rm:1500, headcount:32, expected_on:'2026-12-02', stage:'proposal_sent', owner:'maya', updated_at:'2026-11-12', next_due:'2026-11-30' }
+    ];
+    paintNav();
+    paintDeals();
+    return;
+  }
   if (which === 'customer') {
     const stat = { lifetime_spend_rm: 860, attended_count: 4, upcoming_count: 1, last_attended_at: '2026-11-01', first_booking_at: '2026-01-18', avg_spend: 215 };
     const hist = [{ title: "Children's art", when_label: '2026-11-29 · 10:00', attendees: 'Aina, Adam', status_chip: 'upcoming', amount_paid_rm: 300 }, { title: 'Sourdough', when_label: '2026-11-01 · 15:00', attendees: 'Hana', status_chip: 'attended', amount_paid_rm: 180 }];
@@ -2555,12 +2705,17 @@ function previewStudio(){
   inboxSheet = which === 'filters';
   inboxOpen = 'c1';
   inboxCase = { status: 'open', priority: 'high', assigned_to: 'preview', tags: ['kids'], staff: inboxStaff, sessionTitle: "Children's art", stage: 'enquired', tasks: [{ title: 'Confirm Saturday seats', due_on: '2026-11-23' }] };
-  inboxPane = (which === 'case') ? 'customer' : (which === 'list' || which === 'event' || which === 'needs' || which === 'filters' || which === 'pipeline' ? 'list' : 'thread');
+  if (which === 'mc-closed') {
+    inboxRows[0].last_inbound_at = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    inboxTemplates = [{ name: 'booking_confirmed' }, { name: 'reminder_dayof' }];
+  }
+  inboxPane = (which === 'case' || which === 'mc-contact') ? 'customer' : (which === 'list' || which === 'mc-list' || which === 'event' || which === 'needs' || which === 'filters' || which === 'pipeline' ? 'list' : 'thread');
   crmFormFor = 'p1';
   crmFormHtml = '<div class="card"><div class="card-h"><span class="grip">Contact info</span></div><div class="card-b rec-form"><div class="f"><label>First name</label><input value="Hana"></div><div class="f"><label>WhatsApp number</label><input value="+60173334444"></div></div></div>';
-  const open = which === 'list' || which === 'event' || which === 'needs' || which === 'filters' || which === 'pipeline' ? null : inboxRows[0];
+  const open = which === 'list' || which === 'mc-list' || which === 'event' || which === 'needs' || which === 'filters' || which === 'pipeline' ? null : inboxRows[0];
   const thread = { items: [
     { occurredAt: '2026-11-18T02:15:00Z', channel: 'whatsapp', direction: 'in', body: 'Is the Saturday class still open?', senderName: 'Hana Parent', kind: 'message', status: '' },
+    { occurredAt: '2026-11-18T02:18:00Z', kind: 'system', body: 'Assigned to Maya Tan' },
     { occurredAt: '2026-11-18T02:20:00Z', channel: 'whatsapp', direction: 'out', senderType: 'staff', senderName: 'Maya Tan', body: 'Yes, two seats are free.', kind: 'message', status: 'read' },
     { occurredAt: '2026-11-20T03:05:00Z', channel: 'instagram', direction: 'in', body: 'Can I send the payment here instead?', senderName: 'Hana Parent', kind: 'message' },
     { occurredAt: '2026-11-20T03:10:00Z', channel: 'note', direction: 'out', senderType: 'staff', senderName: 'Maya Tan', body: 'Asked for a bank transfer.', kind: 'message' },
@@ -2573,6 +2728,7 @@ function previewStudio(){
 /* ---------- Shared inbox ---------- */
 let inboxFilter = 'all', inboxChannel = '', inboxTag = '', inboxOpen = null, inboxFocusContact = null, inboxShowSettings = false, inboxPane = 'list', inboxCase = null;
 let inboxViewState = null, inboxSheet = false, inboxSessions = [], inboxSaved = [], inboxEnrol = {}, inboxStats = {};
+let inboxFolder = 'all', inboxListMode = 'open', inboxSortDir = 'newest', inboxListQuery = '', inboxAsNote = false;
 let rosterState = { rows: [], filter: 'All', sort: 'name' };
 let inboxDuty = {}, inboxRules = [];
 let inboxRows = [], inboxReplies = [], inboxTemplates = [], inboxStaff = [], inboxSettings = null, inboxDraft = '', inboxScores = {}, inboxSort = 'recent';
@@ -2674,7 +2830,7 @@ views.inbox = async function(){
     if (found) inboxOpen = found.id;
     inboxFocusContact = null;
   }
-  const shown = inboxDecorated();
+  const shown = inboxFolderRows(inboxDecorated());
   const arranged = window.MaInboxViews
     ? window.MaInboxViews.arrange(shown, Object.assign({ meId: me.id }, inboxViewState), inboxSessions, new Date())
     : { view: 'newest', rows: shown.filter(inboxPass) };
@@ -2747,12 +2903,14 @@ function inboxRowButton(r){
       ? `<span class="iv-warn">${Math.max(1, Math.ceil(win.msLeft / 3600000))}h left</span>`
       : `<span class="iv-wait">${esc(V.waitingLabel(r.last_inbound_at, new Date()))}</span>`)
     : '';
-  const badge = window.MaCrm && window.MaCrm.channelBadge ? window.MaCrm.channelBadge(r.channel) : `<span class="ch">${INBOX_CH[r.channel] || '?'}</span>`;
+  const badge = window.MaCrm && window.MaCrm.channelBadge ? window.MaCrm.channelBadge(r.channel) : '';
   const when = window.MaCrm && window.MaCrm.listStamp ? window.MaCrm.listStamp(r.last_message_at, new Date()) : inboxWhen(r.last_message_at);
+  const owner = (inboxStaff.find(s => s.id === r.assigned_to) || {}).full_name || '';
+  const initials = owner ? owner.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase() : '';
   return `<button type="button" class="inbox-row${r.id===inboxOpen?' on':''}" onclick="inboxOpenConv('${r.id}')">
-      ${badge}
+      <span class="mc-av">${esc(inboxName(r).slice(0,1))}${badge}</span>
       <span style="flex:1;min-width:0"><b>${esc(inboxName(r))}</b><small>${r.last_direction==='out' ? '✓ ' : ''}${esc(r.last_message_preview || 'No message yet')}</small></span>
-      <span style="text-align:right">${wait}${r.unread_count ? `<span class="unread">${r.unread_count}</span>` : ''}<br><small>${esc(when)}</small></span>
+      <span style="text-align:right">${wait}${r.unread_count ? `<span class="unread">${r.unread_count}</span>` : ''}<br><small>${esc(when)}</small>${initials ? `<span class="mc-own" title="${esc(owner)}">${esc(initials)}</span>` : ''}</span>
     </button>`;
 }
 function inboxListHtml(arranged){
@@ -2808,12 +2966,72 @@ function inboxShell(arranged, open, thread){
       <button class="btn sm" type="button" onclick="inboxSettingsGo(true)">Inbox settings</button></div></div>
     ${chipHtml ? `<div class="iv-chips">${chipHtml}</div>` : ''}
     ${inboxFilterSheet()}
-    <div class="inbox pane-${inboxPane}${arranged && arranged.view==='pipeline'?' iv-pipeline':''}">
-      <section class="inbox-col inbox-list-col"><div class="inbox-h"><b>${count}</b> conversation${count===1?'':'s'}</div><div class="inbox-list">${inboxListHtml(arranged)}</div></section>
+    <div class="mc-folders-m"><label class="f">Folder<select onchange="inboxFolderGo(this.value)">${inboxFolderOptions()}</select></label></div>
+    <div class="inbox mc pane-${inboxPane}${arranged && arranged.view==='pipeline'?' iv-pipeline':''}">
+      <aside class="mc-rail">${inboxRail()}</aside>
+      <section class="inbox-col inbox-list-col"><div class="inbox-h">
+        <div class="pipe-seg"><button type="button" class="${inboxListMode==='open'?'on':''}" onclick="inboxListModeGo('open')">Open</button><button type="button" class="${inboxListMode==='done'?'on':''}" onclick="inboxListModeGo('done')">Done</button></div>
+        <select onchange="inboxSortDir=this.value;render()"><option value="newest" ${inboxSortDir==='newest'?'selected':''}>Newest</option><option value="oldest" ${inboxSortDir==='oldest'?'selected':''}>Oldest</option></select>
+        <input placeholder="Search" value="${esc(inboxListQuery)}" onchange="inboxListQuery=this.value;render()" style="width:100%;height:36px;border:1px solid var(--line);border-radius:999px;padding:0 10px">
+      </div><div class="inbox-list">${inboxListHtml(arranged)}</div></section>
       <section class="inbox-col inbox-thread-col">${open ? inboxThread(open, thread) : '<div class="empty">Choose a conversation.</div>'}</section>
-      <section class="inbox-col inbox-form-col"><div class="inbox-side">${open ? inboxPanel(open, thread) : ''}</div></section>
+      <section class="inbox-col inbox-form-col"><div class="inbox-side">${open ? inboxPanel(open, thread) : '<p class="help">Contact details open with a chat.</p>'}</div></section>
     </div>`;
 }
+function inboxFolderRows(rows){
+  const now = Date.now();
+  const q = inboxListQuery.toLowerCase();
+  return (rows || []).filter(r => {
+    const snoozed = r.snoozed_until && new Date(r.snoozed_until).getTime() > now;
+    if (inboxFolder === 'snoozed') { if (!snoozed) return false; }
+    else if (inboxListMode === 'done') { if (r.status !== 'closed') return false; }
+    else { if (r.status === 'closed' || snoozed) return false; }
+    if (inboxFolder === 'unassigned' && r.assigned_to) return false;
+    if (inboxFolder === 'mine' && r.assigned_to !== me.id) return false;
+    if (inboxFolder.indexOf('staff:') === 0 && r.assigned_to !== inboxFolder.slice(6)) return false;
+    if (q && (inboxName(r) + ' ' + (r.last_message_preview || '')).toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  }).sort((a, b) => {
+    const d = new Date(a.last_message_at || 0) - new Date(b.last_message_at || 0);
+    return inboxSortDir === 'oldest' ? d : -d;
+  });
+}
+function inboxCounts(){
+  const rows = inboxDecorated();
+  const now = Date.now();
+  const open = rows.filter(r => r.status !== 'closed' && !(r.snoozed_until && new Date(r.snoozed_until) > now));
+  const n = pred => open.filter(pred).length;
+  return {
+    all: open.length,
+    unassigned: n(r => !r.assigned_to),
+    mine: n(r => r.assigned_to === me.id),
+    done: rows.filter(r => r.status === 'closed').length,
+    snoozed: rows.filter(r => r.snoozed_until && new Date(r.snoozed_until) > now).length,
+    staff: inboxStaff.map(s => ({ id: s.id, name: s.full_name, n: n(r => r.assigned_to === s.id) }))
+  };
+}
+function inboxFolderOptions(){
+  const c = inboxCounts();
+  const opts = [['all','All'],['unassigned','Unassigned'],['mine','Assigned to me'],['open','Open'],['done','Done'],['snoozed','Snoozed']].concat(c.staff.map(s => ['staff:'+s.id, s.name]));
+  return opts.map(([id, label]) => `<option value="${esc(id)}" ${inboxFolder===id?'selected':''}>${esc(label)}</option>`).join('');
+}
+function inboxRail(){
+  const c = inboxCounts();
+  const btn = (id, label, n) => `<button type="button" class="${inboxFolder===id?'on':''}" onclick="inboxFolderGo('${id}')"><span>${esc(label)}</span><small>${n}</small></button>`;
+  const seeds = (window.MaInboxViews ? window.MaInboxViews.seedViews(new Date()) : []).concat(inboxSaved.map(s => ({ id:s.id, name:s.name })));
+  return `<p class="mc-k">Inbox</p>${btn('unassigned','Unassigned', c.unassigned)}${btn('mine','Assigned to me', c.mine)}${btn('all','All', c.all)}
+    <p class="mc-k">Team</p>${c.staff.map(s => btn('staff:'+s.id, s.name, s.n)).join('') || '<p class="help">No teammates yet.</p>'}
+    <p class="mc-k">Status</p>${btn('open','Open', c.all)}${btn('done','Done', c.done)}${btn('snoozed','Snoozed', c.snoozed)}
+    <p class="mc-k">Saved views</p>${seeds.map(s => `<button type="button" onclick="inboxPickView('${esc(s.id)}', true)"><span>${esc(s.name)}</span></button>`).join('')}`;
+}
+window.inboxFolderGo = id => {
+  inboxFolder = id;
+  if (id === 'done') inboxListMode = 'done';
+  else if (id !== 'snoozed') inboxListMode = 'open';
+  inboxPane = 'list';
+  render();
+};
+window.inboxListModeGo = mode => { inboxListMode = mode; inboxFolder = mode === 'done' ? 'done' : 'all'; render(); };
 function inboxSyncUrl(){
   if (!window.MaInboxViews || String(location.search).indexOf('preview') !== -1) return;
   const next = window.MaInboxViews.writeState(inboxViewState, location.search);
@@ -2918,11 +3136,13 @@ function inboxThread(open, thread){
     ? `<span class="${win.open ? 'iv-wait' : 'iv-warn'}">${esc(win.open ? win.label : 'Window closed · templates only')}</span>` : '';
   return `<div class="inbox-h"><button type="button" class="ix-btn ix-back" onclick="inboxPaneGo('list')">Back</button> <b>${esc(inboxName(open))}</b>
       <div class="chat-badges">${badges} ${winLine}</div>
-      ${paused ? `<span class="pill">Automation paused until ${esc(inboxWhen(open.automation_paused_until))}</span>` : ''}
+      ${paused ? `<span class="pill">Automation paused</span>` : ''}
       <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
-        <select onchange="inboxAssign(this.value)">${staffOpts.map(([id, name]) => `<option value="${id}" ${open.assigned_to===id?'selected':''}>${esc(name)}</option>`).join('')}</select>
-        <button class="btn sm ix-back" type="button" onclick="inboxPaneGo('customer')">Customer</button>
-        <button class="btn sm" type="button" onclick="inboxToggle()">${open.status==='open'?'Close':'Reopen'}</button>
+        <select aria-label="Assign to" onchange="inboxAssign(this.value)">${staffOpts.map(([id, name]) => `<option value="${id}" ${open.assigned_to===id?'selected':''}>${esc(name)}</option>`).join('')}</select>
+        <button class="btn sm" type="button" onclick="inboxMarkDone()">${open.status==='closed'?'Reopen':'Mark as done'}</button>
+        <select aria-label="Snooze" onchange="inboxSnooze(this.value)"><option value="">Snooze</option><option value="1h">1 hour</option><option value="tomorrow">Tomorrow</option><option value="custom">Custom</option></select>
+        <button class="btn sm" type="button" onclick="inboxPause()">${paused?'Resume automation':'Pause automation'}</button>
+        <button class="btn sm ix-back" type="button" onclick="inboxPaneGo('customer')">Contact</button>
       </span></div>
     <div class="inbox-thread">${window.MaCrm ? window.MaCrm.timelineHtml(thread.items) : ''}</div>
     <div class="inbox-compose">
@@ -2932,15 +3152,35 @@ function inboxThread(open, thread){
         : `<p class="help" style="margin:0 0 6px">${esc(win.label || 'Session window open')}${win.note ? ' ' + esc(win.note) : ''}</p>`}
       ${(thread.queue || []).length ? `<p class="help">Queue: ${thread.queue.map(q => esc(q.kind) + ' (' + esc(q.status) + ')').join(', ')}. Sending to WhatsApp is not connected yet.</p>` : ''}
       <textarea id="inboxBody" ${closed ? 'disabled data-closed="1"' : ''} placeholder="${closed ? 'The 24-hour window is closed' : 'Write a reply. Type / for a saved reply.'}" oninput="inboxComposeInput(this)"></textarea>
-      <p style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label class="help" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="inboxNote" onchange="inboxNoteToggle(this)"> Internal note</label>
+      <div class="pipe-seg"><button type="button" id="replyTab" class="on" onclick="inboxComposeTab(false)">Reply</button><button type="button" id="noteTab" onclick="inboxComposeTab(true)">Note</button></div>
+      <p style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button type="button" class="ix-btn" onclick="inboxEmoji()">Emoji</button>
+        <button type="button" class="ix-btn" onclick="inboxAttach('file')">Attachment</button>
+        <button type="button" class="ix-btn" onclick="inboxAttach('image')">Image</button>
+        <button type="button" class="ix-btn" onclick="inboxAiDraft()">AI draft</button>
         <button class="btn sm" type="button" onclick="inboxSend()">Send</button></p>
     </div>`;
 }
 function inboxPanel(open){
   if (!open.contact_id) return '<p class="help">This conversation has no customer yet.</p>';
-  const caseHtml = window.MaCase ? window.MaCase.renderCase(inboxCase || { status: open.status, priority: open.priority, assigned_to: open.assigned_to, tags: (open.contacts && open.contacts.tags) || [], staff: inboxStaff, sessionTitle: open.entry_label || '' }) : '';
-  return caseHtml + `<p class="ix-back"><button class="ix-btn" type="button" onclick="inboxPaneGo('thread')">Back to chat</button></p><p><button class="btn sm" type="button" onclick="crmFromBooking('${open.contact_id}')">Open full record</button></p>`
-    + (crmFormFor === open.contact_id ? crmFormHtml : '<p class="help">Loading the customer form…</p>');
+  const person = open.contacts || {};
+  const stat = inboxStats[open.contact_id] || {};
+  const enrol = inboxEnrol[open.id] || {};
+  const tags = (person.tags || []).map(t => `<span class="tag">${esc(t)} <button type="button" onclick="inboxDropTag('${esc(t)}')">×</button></span>`).join(' ');
+  const caseHtml = window.MaCase ? window.MaCase.renderCase(inboxCase || { status: open.status, priority: open.priority, assigned_to: open.assigned_to, tags: person.tags || [], staff: inboxStaff, sessionTitle: open.entry_label || enrol.session_id || '', stage: enrol.stage || '' }) : '';
+  const spend = me.role === 'marketing' ? '' : `<p class="help">Lifetime spend ${stat.lifetime_spend_rm == null ? '—' : 'RM' + stat.lifetime_spend_rm} · ${stat.bookings_count || 0} bookings</p>`;
+  return `<p class="ix-back"><button class="ix-btn" type="button" onclick="inboxPaneGo('thread')">Back to chat</button></p>
+    ${open.ad_source && window.MaAds ? window.MaAds.sourceCard(open.ad_source, { method: open.ad_method, target_title: open.ad_target }) : ''}
+    <details open class="iv-group"><summary>${esc(inboxName(open))}</summary><div style="padding:8px">
+      <p class="help">${esc(person.whatsapp_e164 || person.phone || 'No phone')} · ${esc(open.channel)}</p>
+      <div class="chat-badges">${window.MaCrm && window.MaCrm.channelBadge ? window.MaCrm.channelBadge(open.channel) : ''}</div>
+      ${spend}
+      <p>${tags || '<span class="help">No tags</span>'}</p>
+      <p><input id="inboxTagAdd" placeholder="Add a tag" onkeydown="if(event.key==='Enter')inboxAddTag()"><button type="button" class="ix-btn" onclick="inboxAddTag()">Add</button></p>
+      <p class="help">${esc(open.entry_label || 'No workshop linked')}${enrol.stage ? ' · ' + esc(enrol.stage) : ''}</p>
+      ${open.ad_suggestion ? `<p class="help">Suggestion: ${esc(open.ad_suggestion.title)} (${Math.round(open.ad_suggestion.confidence * 100)}%). Confirm it in this panel.</p>` : ''}
+      <p><button class="btn sm" type="button" onclick="crmFromBooking('${open.contact_id}')">Open full record</button></p>
+    </div></details>` + caseHtml;
 }
 window.caseSave = async () => {
   const row = inboxRows.find(r => r.id === inboxOpen);
@@ -3052,6 +3292,65 @@ window.inboxAssign = async (staffId) => {
   if (error) { toast(error.message); return; }
   toast(staffId ? 'Assigned' : 'Unassigned'); await render();
 };
+window.inboxComposeTab = (note) => {
+  inboxAsNote = !!note;
+  const box = $('inboxBody');
+  if (box && box.dataset.closed === '1') box.disabled = !inboxAsNote;
+  const reply = $('replyTab'), tab = $('noteTab');
+  if (reply) reply.classList.toggle('on', !inboxAsNote);
+  if (tab) tab.classList.toggle('on', inboxAsNote);
+};
+window.inboxMarkDone = async () => {
+  const row = inboxRows.find(r => r.id === inboxOpen);
+  if (!row) return;
+  const status = row.status === 'closed' ? 'open' : 'closed';
+  const { error } = await sb.from('conversations').update({ status }).eq('id', row.id);
+  if (error && !String(location.search).includes('preview')) { toast(error.message); return; }
+  row.status = status;
+  toast(status === 'closed' ? 'Marked as done' : 'Reopened');
+  if (String(location.search).includes('preview')) { render(); return; }
+  await render();
+};
+window.inboxSnooze = async (choice) => {
+  if (!choice) return;
+  const row = inboxRows.find(r => r.id === inboxOpen);
+  if (!row) return;
+  const until = new Date();
+  if (choice === '1h') until.setHours(until.getHours() + 1);
+  else if (choice === 'tomorrow') { until.setDate(until.getDate() + 1); until.setHours(9, 0, 0, 0); }
+  else {
+    const custom = window.prompt('Snooze until (YYYY-MM-DD HH:MM)', '');
+    if (!custom) return;
+    until.setTime(new Date(custom.replace(' ', 'T')).getTime());
+  }
+  row.snoozed_until = until.toISOString();
+  const { error } = await sb.from('conversations').update({ snoozed_until: row.snoozed_until }).eq('id', row.id);
+  if (error && !String(location.search).includes('preview')) toast('Snooze is stored when supabase/migrations/20261122170000_conversation_snooze.sql has been applied.');
+  toast('Snoozed');
+  inboxFolder = 'snoozed';
+  render();
+};
+window.inboxPause = async () => {
+  const row = inboxRows.find(r => r.id === inboxOpen);
+  if (!row) return;
+  const paused = row.automation_paused_until && new Date(row.automation_paused_until) > new Date();
+  const until = paused ? null : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  row.automation_paused_until = until;
+  await sb.from('conversations').update({ automation_paused_until: until }).eq('id', row.id);
+  toast(paused ? 'Automation resumed' : 'Automation paused for this chat');
+  render();
+};
+window.inboxEmoji = () => { const box = $('inboxBody'); if (box && !box.disabled) { box.value += ' 😊'; inboxDraft = box.value; } };
+window.inboxAttach = (kind) => { toast(kind === 'image' ? 'Image is attached for staff. Nothing is sent until WhatsApp is connected.' : 'File is attached for staff. Nothing is sent until WhatsApp is connected.'); };
+window.inboxAiDraft = () => {
+  const box = $('inboxBody');
+  if (!box || box.disabled) { toast('The 24-hour window is closed. Send a template instead.'); return; }
+  const draft = 'Hello, thanks for writing to Master Artist. How can we help with the workshop?';
+  if (window.MaInbox && !window.MaInbox.copyAllowed(draft)) return;
+  box.value = draft;
+  inboxDraft = draft;
+  toast('Draft only. Nothing was sent.');
+};
 window.inboxToggle = async () => {
   const row = inboxRows.find(r => r.id === inboxOpen);
   if (!row) return;
@@ -3115,7 +3414,7 @@ window.inboxDeleteReply = async (id) => {
   toast('Reply deleted'); await render();
 };
 window.inboxSend = async () => {
-  const note = $('inboxNote') && $('inboxNote').checked;
+  const note = inboxAsNote;
   const body = ($('inboxBody') && $('inboxBody').value) || '';
   const mentions = note && window.MaInbox ? window.MaInbox.mentionsIn(body, inboxStaff).map(s => s.id) : [];
   busy(true);
@@ -3161,7 +3460,14 @@ let taskPage = 0;
 let taskSelected = {};
 let dealRows = [];
 let dealTab = 'all';
-let dealMode = 'table';
+let dealMode = 'board';
+let dealShowLost = false;
+let dealOwnerF = '';
+let dealKindF = '';
+let dealFrom = '';
+let dealTo = '';
+let dealRot = 7;
+let dealTasks = {};
 let dealQuery = '';
 let dealSort = { key:'value', dir:'desc' };
 let dealPage = 0;
@@ -3399,41 +3705,53 @@ function paintLists(){
 function paintDeals(){
   const G = window.MaGrowth;
   const q = dealQuery.toLowerCase().trim();
+  const today = todayISO();
   const shown = dealRows.filter(d => {
-    if (dealTab === 'mine' && d.owner !== me.id) return false;
-    if (dealTab === 'open' && (d.stage === 'won' || d.stage === 'lost')) return false;
+    if (dealOwnerF && d.owner !== dealOwnerF) return false;
+    if (dealKindF && d.kind !== dealKindF) return false;
+    if (dealFrom && (d.expected_on || '') < dealFrom) return false;
+    if (dealTo && (d.expected_on || '') > dealTo) return false;
     if (!q) return true;
     return [d.title, d.kind, d.company, d.stage].join(' ').toLowerCase().includes(q);
-  });
-  const rows = shown.map(d => ({
-    id:d.id,
-    cells:{ name:d.title, stage:G.STAGE_LABEL[d.stage] || d.stage, kind:d.kind, value:String(d.value_rm || 0), close:d.expected_on || '', people:String(d.headcount || ''), owner:(staffNames && staffNames[d.owner]) || '' },
-    sort:{ name:d.title, stage:d.stage, value:d.value_rm || 0, close:d.expected_on || '9999-99-99', people:d.headcount || 0 },
-    html:{
-      name:`<b>${esc(d.title)}</b>`,
-      stage:G.stagePill(d.stage),
-      value: money(d.value_rm || 0)
-    }
-  }));
-  const win = G.pageWindow(rows.length, dealPage, 25);
-  dealPage = win.page;
-  ixPageIds.deals = G.sortRows(rows, dealSort.key, dealSort.dir).slice(win.start, win.end).map(r => r.id);
-  $('view').innerHTML = G.indexHtml({
-    scope:'deals',
-    tabs:[{ id:'all', label:'All deals' }, { id:'mine', label:'My deals' }, { id:'open', label:'Open' }],
-    tab:dealTab, query:dealQuery, placeholder:'Search deals',
-    note:'A won deal is not a workshop booking and does not change a price.',
-    modes:[{ id:'table', label:'Table' }, { id:'board', label:'Board' }], mode:dealMode,
-    columns:[{ key:'name', label:'Deal' }, { key:'stage', label:'Stage' }, { key:'kind', label:'Type' }, { key:'value', label:'Amount' }, { key:'close', label:'Close date' }, { key:'people', label:'Headcount' }, { key:'owner', label:'Owner' }],
-    rows, sort:dealSort, page:dealMode === 'board' ? 0 : dealPage, pageSize: dealMode === 'board' ? 200 : 25, selected:dealSelected,
-    board: dealMode === 'board' ? G.dealBoard(shown) : '',
-    bulk:[{ id:'stage', label:'Change stage' }, { id:'export', label:'Export CSV' }],
-    bulkExtra:`<select id="ixDealStage" class="ix-mini">${G.STAGES.map(s => `<option value="${s}">${esc(G.STAGE_LABEL[s])}</option>`).join('')}</select>`,
-    tools:`<div class="ix-tools"><input id="dealTitle" placeholder="New enquiry" style="height:32px;border:1px solid var(--line);padding:0 8px"><select id="dealKind"><option value="team_building">Team-building</option><option value="birthday">Birthday</option><option value="school">School</option><option value="other">Other</option></select><input id="dealValue" type="number" min="0" value="0" style="width:90px;height:32px;border:1px solid var(--line);padding:0 8px" title="RM"><input id="dealHead" type="number" min="1" placeholder="People" style="width:80px;height:32px;border:1px solid var(--line);padding:0 8px"><input id="dealWhen" type="date" style="height:32px;border:1px solid var(--line)"><button type="button" class="ix-btn primary" onclick="dealAdd()">Add</button></div>`,
-    empty:'No deals in this view.'
-  });
+  }).map(d => Object.assign({}, d, { next_due: (dealTasks[d.id] || []).filter(t => t.status !== 'done').map(t => t.due_on).sort()[0] || d.next_due || '' }));
+  const sum = G.dealSummary(shown, today);
+  const owners = Object.entries(staffNames || {}).map(([id, name]) => `<option value="${id}" ${dealOwnerF===id?'selected':''}>${esc(name)}</option>`).join('');
+  const head = `<div class="pipe-top"><div><p class="help" style="margin:0 0 6px">Schools, team building, birthdays</p><div class="pipe-metrics">
+      <div><span>Open pipeline</span><b>${esc(G.rm(sum.openValue))}</b></div>
+      <div><span>Weighted forecast</span><b>${esc(G.rm(sum.weighted))}</b></div>
+      <div><span>Won this month</span><b>${esc(G.rm(sum.won))}</b></div>
+    </div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div class="pipe-seg"><button type="button" class="${dealMode==='board'?'on':''}" onclick="ixMode('deals','board')">Board</button><button type="button" class="${dealMode==='table'?'on':''}" onclick="ixMode('deals','table')">Table</button></div>
+      <button type="button" class="ix-btn" onclick="dealShowLost=!dealShowLost;paintDeals()">${dealShowLost?'Hide lost':'Show lost'}</button>
+      <button type="button" class="ix-btn primary" onclick="dealAddOpen()">+ Add deal</button>
+    </div></div>
+    <div class="iv-chips" style="margin-bottom:10px">
+      <input id="dealQueryBox" value="${esc(dealQuery)}" placeholder="Search deals" onchange="dealQuery=this.value;paintDeals()" style="height:40px;border:1px solid var(--line);border-radius:999px;padding:0 12px">
+      <select onchange="dealOwnerF=this.value;paintDeals()"><option value="">Any owner</option>${owners}</select>
+      <select onchange="dealKindF=this.value;paintDeals()"><option value="">Any type</option><option value="school" ${dealKindF==='school'?'selected':''}>School</option><option value="team_building" ${dealKindF==='team_building'?'selected':''}>Team building</option><option value="birthday" ${dealKindF==='birthday'?'selected':''}>Birthday</option></select>
+      <input type="date" value="${esc(dealFrom)}" onchange="dealFrom=this.value;paintDeals()" aria-label="Close from">
+      <input type="date" value="${esc(dealTo)}" onchange="dealTo=this.value;paintDeals()" aria-label="Close to">
+      <label class="help">Idle after <input id="dealRot" type="number" min="1" value="${dealRot}" style="width:52px" onchange="dealRot=Number(this.value||7)"> days</label>
+    </div>
+    <div id="dealAdd" hidden class="card"><div class="card-b"><div class="row"><div class="f"><label>Deal name</label><input id="dealTitle"></div><div class="f"><label>Type</label><select id="dealKind"><option value="school">School</option><option value="team_building">Team building</option><option value="birthday">Birthday</option><option value="other">Other</option></select></div></div>
+      <div class="row"><div class="f"><label>Value (RM)</label><input id="dealValue" type="number" min="0" value="0"></div><div class="f"><label>People</label><input id="dealHead" type="number" min="1"></div><div class="f"><label>Event date</label><input id="dealWhen" type="date"></div></div>
+      <p><button type="button" class="ix-btn primary" onclick="dealAdd()">Save deal</button></p></div></div>`;
+  let body = '';
+  if (dealMode === 'board') {
+    body = G.dealBoard(shown.filter(d => dealShowLost || d.stage !== 'lost'), { today, owners: staffNames || {}, rotDays: dealRot, showLost: dealShowLost });
+  } else {
+    const rows = shown.map(d => ({
+      id:d.id,
+      cells:{ name:d.title, stage:G.STAGE_LABEL[d.stage] || d.stage, kind:G.KIND_LABEL[d.kind] || d.kind, value:String(d.value_rm || 0), close:d.expected_on || '', people:String(d.headcount || ''), owner:(staffNames && staffNames[d.owner]) || '' },
+      sort:{ name:d.title, stage:d.stage, value:d.value_rm || 0, close:d.expected_on || '9999-99-99' },
+      html:{ name:`<b>${esc(d.title)}</b>`, stage:G.stagePill(d.stage), value: G.rm(d.value_rm || 0) }
+    }));
+    body = G.indexHtml({ scope:'deals', selectable:false, columns:[{ key:'name', label:'Deal' }, { key:'stage', label:'Stage' }, { key:'kind', label:'Type' }, { key:'value', label:'Amount' }, { key:'close', label:'Close date' }, { key:'people', label:'Headcount' }, { key:'owner', label:'Owner' }], rows, sort:dealSort, page:dealPage, selected:dealSelected, empty:'No deals yet. Add one to start the pipeline.' });
+  }
+  $('view').innerHTML = head + body + `<div class="iv-sheet" id="dealMove" hidden onclick="if(event.target===this)dealMoveClose()"><div class="iv-sheet-card"><div class="ix-sheet-bar"><h2>Move to stage</h2><button type="button" class="ix-btn" onclick="dealMoveClose()">Close</button></div><div id="dealMoveList"></div></div></div>`;
   const deal = dealPreview && dealRows.find(d => d.id === dealPreview);
-  if (deal && dealMode !== 'board') {
+  if (deal) {
     const owners = Object.entries(staffNames || {}).map(([id, name]) => `<option value="${id}" ${deal.owner===id?'selected':''}>${esc(name)}</option>`).join('');
     const stages = G.STAGES.map(s => `<option value="${s}" ${deal.stage===s?'selected':''}>${esc(G.STAGE_LABEL[s])}</option>`).join('');
     const kinds = ['team_building','birthday','school','other'].map(k => `<option value="${k}" ${deal.kind===k?'selected':''}>${esc(k)}</option>`).join('');
@@ -3441,6 +3759,8 @@ function paintDeals(){
       { title:'Deal', open:true, body:`<div class="f"><label>Title</label><input data-f="${deal.id}.title" value="${esc(deal.title)}"></div><div class="f"><label>Type</label><select data-f="${deal.id}.kind">${kinds}</select></div><div class="f"><label>Stage</label><select data-f="${deal.id}.stage">${stages}</select></div>` },
       { title:'Value and date', open:true, body:`<div class="f"><label>Value (RM)</label><input type="number" min="0" data-f="${deal.id}.value_rm" value="${esc(deal.value_rm || 0)}"></div><div class="f"><label>Headcount</label><input type="number" min="1" data-f="${deal.id}.headcount" value="${esc(deal.headcount || '')}"></div><div class="f"><label>Expected</label><input type="date" data-f="${deal.id}.expected_on" value="${esc((deal.expected_on || '').slice(0,10))}"></div>` },
       { title:'Association', body:`<div class="f"><label>Company</label><input data-f="${deal.id}.company" value="${esc(deal.company || '')}"></div><div class="f"><label>Owner</label><select data-f="${deal.id}.owner"><option value="">Unassigned</option>${owners}</select></div>${deal.contact_id ? `<p><button type="button" class="ix-link" onclick="crmFromBooking('${deal.contact_id}')">Open customer</button></p>` : ''}` },
+      { title:'Tasks', open:true, body:`<ul>${(dealTasks[deal.id] || []).map(t => `<li>${esc(t.title)}${t.due_on ? ' · ' + esc(t.due_on) : ''}</li>`).join('') || '<li class="help">No open tasks.</li>'}</ul>` },
+      { title:'Activity', body:`<p class="help">${esc((deal.updated_at || deal.created_at || '').slice(0, 10) || 'Today')} · ${esc(G.STAGE_LABEL[deal.stage] || deal.stage)}</p>${deal.notes ? `<p>${esc(deal.notes)}</p>` : '<p class="help">No notes yet.</p>'}` },
       { title:'Notes', body:`<div class="f"><label>Notes</label><textarea data-f="${deal.id}.notes">${esc(deal.notes || '')}</textarea></div><div class="f"><label>Lost reason</label><input data-f="${deal.id}.lost_reason" value="${esc(deal.lost_reason || '')}"></div>` }
     ])}<div class="form-bar"><button type="button" class="ix-btn" onclick="ixPreview('deals','')">Close</button><button type="button" class="ix-btn primary" onclick="dealSave('${deal.id}')">Save</button></div></div>`;
     $('view').innerHTML = `<div class="ix-with-form"><div class="ix-main">${$('view').innerHTML}</div><aside class="sideform"><h2>${esc(deal.title)}</h2>${form}</aside></div>`;
@@ -3772,8 +4092,22 @@ views.groups = async function(){
   }
   await loadStaff();
   dealRows = data || [];
+  const taskQ = await sb.from('staff_tasks').select('title, due_on, status, deal_id').eq('status', 'open');
+  dealTasks = {};
+  if (!taskQ.error) (taskQ.data || []).forEach(t => { if (t.deal_id) (dealTasks[t.deal_id] = dealTasks[t.deal_id] || []).push(t); });
   paintDeals();
 };
+window.dealAddOpen = () => { const el = $('dealAdd'); if (el) el.hidden = !el.hidden; };
+window.dealDrag = (event, id) => { event.dataTransfer.setData('text/plain', id); event.stopPropagation(); };
+window.dealDrop = (event, stage) => { event.preventDefault(); const id = event.dataTransfer.getData('text/plain'); if (id) dealStage(id, stage); };
+window.dealMoveOpen = (id) => {
+  const G = window.MaGrowth;
+  const list = $('dealMoveList');
+  if (!list || !G) return;
+  list.innerHTML = G.STAGES.map(s => `<button type="button" class="ix-btn" style="display:flex;width:100%;margin:6px 0" onclick="dealStage('${id}','${s}');dealMoveClose()">${esc(G.STAGE_LABEL[s])}</button>`).join('');
+  $('dealMove').hidden = false;
+};
+window.dealMoveClose = () => { if ($('dealMove')) $('dealMove').hidden = true; };
 window.dealAdd = async () => {
   const title = ($('dealTitle').value || '').trim();
   if (!title) { toast('Add a title.'); return; }

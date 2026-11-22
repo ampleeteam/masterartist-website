@@ -264,31 +264,89 @@
       + '</div></div>';
   }
 
-  var STAGES = ['enquiry', 'proposal_sent', 'negotiating', 'won', 'lost'];
-  var STAGE_LABEL = { enquiry: 'Enquiry', proposal_sent: 'Proposal sent', negotiating: 'Negotiating', won: 'Won', lost: 'Lost' };
-  var STAGE_TONE = { enquiry: 'muted', proposal_sent: 'warn', negotiating: 'info', won: 'ok', lost: 'bad' };
+  var STAGES = ['enquiry', 'qualified', 'proposal_sent', 'negotiating', 'won', 'lost'];
+  var STAGE_LABEL = {
+    enquiry: 'New enquiry', qualified: 'Qualified', proposal_sent: 'Proposal sent',
+    negotiating: 'Negotiating', won: 'Booked', lost: 'Lost'
+  };
+  var STAGE_TONE = { enquiry: 'muted', qualified: 'info', proposal_sent: 'warn', negotiating: 'info', won: 'ok', lost: 'bad' };
+  var STAGE_WEIGHT = { enquiry: 0.2, qualified: 0.4, proposal_sent: 0.6, negotiating: 0.8, won: 1, lost: 0 };
+  var STAGE_BAR = {
+    enquiry: '#E6B44C', qualified: '#C6B7E2', proposal_sent: '#7E5A10',
+    negotiating: '#3B1C5A', won: '#2E6B4A', lost: '#A3401E'
+  };
+  var KIND_LABEL = { school: 'School', team_building: 'Team building', birthday: 'Birthday', other: 'Other' };
 
   function stagePill(stage) {
     return pill(STAGE_LABEL[stage] || stage || '—', STAGE_TONE[stage] || 'muted');
   }
 
-  function dealBoard(deals) {
+  function rm(n) {
+    return 'RM' + Number(n || 0).toLocaleString('en-MY', { maximumFractionDigits: 0 });
+  }
+
+  function initials(name) {
+    var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '·';
+    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+  }
+
+  function idleDays(deal, today) {
+    var from = (deal.updated_at || deal.created_at || '').slice(0, 10);
+    if (!from || !today) return 0;
+    return Math.floor((Date.parse(today) - Date.parse(from)) / 86400000);
+  }
+
+  function activityState(deal, today) {
+    if (!deal.next_due) return { cls: 'act-none', label: 'No next activity' };
+    if (deal.next_due < today) return { cls: 'act-over', label: 'Overdue' };
+    if (deal.next_due === today) return { cls: 'act-soon', label: 'Due today' };
+    return { cls: 'act-soon', label: 'Upcoming task' };
+  }
+
+  function dealCard(d, opts) {
+    var today = opts.today;
+    var owner = (opts.owners && opts.owners[d.owner]) || '';
+    var idle = idleDays(d, today);
+    var rotten = d.stage !== 'won' && d.stage !== 'lost' && idle >= (opts.rotDays || 7);
+    var act = activityState(d, today);
+    var when = (d.expected_on || '').slice(0, 10);
+    return '<article class="pipe-card' + (rotten ? ' rotten' : '') + '" draggable="true" data-id="' + esc(d.id) + '" ondragstart="dealDrag(event,\'' + esc(d.id) + '\')" onclick="ixPreview(\'deals\',\'' + esc(d.id) + '\')">'
+      + '<b>' + esc(d.title) + '</b>'
+      + '<p class="pipe-who">' + esc(d.company || d.contact_name || 'No contact yet') + '</p>'
+      + '<p class="pipe-val">' + esc(rm(d.value_rm)) + ' · ' + esc(d.headcount || '—') + ' people</p>'
+      + '<p class="pipe-meta"><span class="pipe-date">' + esc(when || 'No date') + '</span>'
+      + '<span class="pipe-kind kind-' + esc(d.kind || 'other') + '">' + esc(KIND_LABEL[d.kind] || d.kind || 'Other') + '</span></p>'
+      + '<footer><span class="pipe-av" title="' + esc(owner || 'Unassigned') + '">' + esc(initials(owner)) + '</span>'
+      + '<span class="pipe-act ' + act.cls + '" title="' + esc(act.label) + '">◷</span>'
+      + (rotten ? '<span class="pipe-rot">' + idle + 'd idle</span>' : '')
+      + '<button type="button" class="pipe-move" onclick="event.stopPropagation();dealMoveOpen(\'' + esc(d.id) + '\')">Move</button>'
+      + '</footer></article>';
+  }
+
+  function dealBoard(deals, opts) {
+    var o = opts || {};
     var rows = deals || [];
-    return '<div class="kanban">' + STAGES.map(function (stage) {
+    var stages = STAGES.filter(function (stage) { return stage !== 'lost' || o.showLost; });
+    return '<div class="pipe">' + stages.map(function (stage) {
       var mine = rows.filter(function (d) { return d.stage === stage; });
       var sum = mine.reduce(function (n, d) { return n + Number(d.value_rm || 0); }, 0);
-      return '<section class="kanban-col"><h3>' + esc(STAGE_LABEL[stage]) + ' <small>' + mine.length + ' · RM' + sum + '</small></h3>'
-        + (mine.length ? mine.map(function (d) {
-          return '<article class="deal"><b>' + esc(d.title) + '</b><p>RM' + esc(d.value_rm || 0) + ' · ' + esc(d.headcount || '—') + ' people</p><p class="help">'
-            + esc(d.kind || '') + (d.expected_on ? ' · ' + esc(d.expected_on) : '') + '</p>'
-            + '<select onchange="dealStage(\'' + esc(d.id) + '\', this.value)">'
-            + STAGES.map(function (s) {
-              return '<option value="' + s + '"' + (s === d.stage ? ' selected' : '') + '>' + esc(STAGE_LABEL[s]) + '</option>';
-            }).join('')
-            + '</select></article>';
-        }).join('') : '<p class="help">Empty</p>')
+      return '<section class="pipe-col" style="--stage:' + STAGE_BAR[stage] + '" ondragover="event.preventDefault()" ondrop="dealDrop(event,\'' + stage + '\')">'
+        + '<header><b>' + esc(STAGE_LABEL[stage]) + '</b><span>' + mine.length + ' · ' + esc(rm(sum)) + '</span></header>'
+        + '<div class="pipe-cards">' + (mine.length ? mine.map(function (d) { return dealCard(d, o); }).join('') : '<p class="pipe-empty">No deals yet. Drag one here.</p>') + '</div>'
         + '</section>';
     }).join('') + '</div>';
+  }
+
+  function dealSummary(deals, today) {
+    var open = (deals || []).filter(function (d) { return d.stage !== 'won' && d.stage !== 'lost'; });
+    var openValue = open.reduce(function (n, d) { return n + Number(d.value_rm || 0); }, 0);
+    var weighted = open.reduce(function (n, d) { return n + Number(d.value_rm || 0) * (STAGE_WEIGHT[d.stage] || 0); }, 0);
+    var month = (today || '').slice(0, 7);
+    var won = (deals || []).filter(function (d) {
+      return d.stage === 'won' && ((d.updated_at || d.expected_on || '').slice(0, 7) === month);
+    }).reduce(function (n, d) { return n + Number(d.value_rm || 0); }, 0);
+    return { openValue: openValue, weighted: Math.round(weighted), won: won };
   }
 
   function checklistState(draft) {
@@ -459,6 +517,9 @@
     folds: folds,
     icon: icon,
     STAGES: STAGES,
-    STAGE_LABEL: STAGE_LABEL
+    STAGE_LABEL: STAGE_LABEL,
+    KIND_LABEL: KIND_LABEL,
+    dealSummary: dealSummary,
+    rm: rm
   };
 });

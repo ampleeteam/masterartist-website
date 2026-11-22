@@ -7,6 +7,7 @@ var SHELL = [
   '/assets/crm-case.js',
   '/assets/crm-events.js',
   '/assets/crm-inbox-views.js',
+  '/assets/crm-ads.js',
   '/assets/inbox.js',
   '/assets/wa-export.js',
   '/logo.svg',

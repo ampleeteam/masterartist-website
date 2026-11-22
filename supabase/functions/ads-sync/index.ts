@@ -41,5 +41,5 @@ Deno.serve(async (req) => {
     });
     if (!error) upserted += 1;
   }
-  return json({ ok: true, upserted, account: ACCOUNT });
+  return json({ ok: true, upserted, account: ACCOUNT, tiktok: "stub" });
 });
