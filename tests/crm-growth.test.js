@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { leadScore, emailSendable, segmentMatch, reasonText, indexHtml, recordFrame, taskBucket, taskPriority, checklistState, sortRows, pageWindow, appNav, folds } = require('../assets/crm-growth.js');
+const { leadScore, emailSendable, segmentMatch, reasonText, indexHtml, recordFrame, taskBucket, taskPriority, checklistState, sortRows, pageWindow, appNav, folds, dealTable, inCreatedRange, klWhen } = require('../assets/crm-growth.js');
 
 test('lead score is explainable and does not need message text', function () {
   const full = leadScore({ adClick: true, replied: true, askedPrice: true, booked: true, openedLink: true, recencyDays: 3 });
@@ -102,4 +102,25 @@ test('email checklist ticks only the parts that are filled', function () {
   assert.equal(open.subject, false);
   assert.equal(open.send, true);
   assert.equal(open.content, false);
+});
+
+test('group bookings table shows created in KL time and can be filtered by that day', function () {
+  const early = { id: 'b', title: 'Bread day', stage: 'won', value_rm: 4100, headcount: 18, expected_on: '2026-11-28', created_at: '2026-10-28T02:00:00Z', owner: 'sabrina', updated_at: '2026-11-15' };
+  const later = { id: 'a', title: 'Art day', stage: 'enquiry', value_rm: 2400, headcount: 28, expected_on: '2026-12-06', created_at: '2026-11-22T02:00:00Z', owner: 'maya', updated_at: '2026-11-22' };
+  assert.equal(inCreatedRange(later, '2026-11-01', '2026-11-30'), true);
+  assert.equal(inCreatedRange(early, '2026-11-01', '2026-11-30'), false);
+  assert.match(klWhen(later.created_at), /22 Nov 2026/);
+  const html = dealTable([early, later], {
+    today: '2026-11-22',
+    owners: { maya: 'Maya Tan', sabrina: 'Sabrina' },
+    sort: { key: 'created', dir: 'asc' },
+    page: 0,
+    selected: { b: true }
+  });
+  assert.ok(html.indexOf('Bread day') < html.indexOf('Art day'));
+  assert.match(html, /RM4,100|RM4100/);
+  assert.match(html, /Created/);
+  assert.match(html, /1 selected/);
+  assert.match(html, /pipe-mcard/);
+  assert.match(html, /pipe-av/);
 });

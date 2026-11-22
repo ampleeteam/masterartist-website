@@ -7,10 +7,12 @@
   .app, .app.on { grid-template-columns: 1fr; }
   .side { display: none; }
   .top { padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top)); }
-  .top h1 { font-size: 20px; min-width: 0; flex: 0 1 auto; }
+  .top { flex-wrap: wrap; gap: 8px; }
+  .top h1 { font-size: 20px; min-width: 0; flex: 1 1 auto; }
   .status, .user-menu .nm { display: none; }
   .user-menu .av { width: 36px; height: 36px; }
-  .gsearch { max-width: none; min-width: 0; }
+  .gsearch { flex: 1 1 100%; max-width: none; min-width: 0; order: 3; }
+  .iv-tabs { flex-wrap: wrap; overflow: visible; }
   .bodyw, .bodyw.wide { padding: 12px 12px calc(76px + env(safe-area-inset-bottom)); }
   .tabbar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;

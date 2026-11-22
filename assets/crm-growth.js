@@ -291,6 +291,31 @@
     return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
   }
 
+  function klWhen(iso) {
+    if (!iso) return '';
+    var when = new Date(iso);
+    if (isNaN(when.getTime())) return '';
+    return when.toLocaleString('en-MY', {
+      timeZone: 'Asia/Kuala_Lumpur',
+      day: 'numeric', month: 'short', year: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+
+  function klDay(iso) {
+    if (!iso) return '';
+    var when = new Date(iso);
+    if (isNaN(when.getTime())) return String(iso).slice(0, 10);
+    return when.toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
+  }
+
+  function inCreatedRange(deal, from, to) {
+    var day = klDay(deal && deal.created_at);
+    if (from && (!day || day < from)) return false;
+    if (to && (!day || day > to)) return false;
+    return true;
+  }
+
   function idleDays(deal, today) {
     var from = (deal.updated_at || deal.created_at || '').slice(0, 10);
     if (!from || !today) return 0;
@@ -336,6 +361,101 @@
         + '<div class="pipe-cards">' + (mine.length ? mine.map(function (d) { return dealCard(d, o); }).join('') : '<p class="pipe-empty">No deals yet. Drag one here.</p>') + '</div>'
         + '</section>';
     }).join('') + '</div>';
+  }
+
+  function dealTable(deals, opts) {
+    var o = opts || {};
+    var today = o.today || '';
+    var owners = o.owners || {};
+    var sort = o.sort || { key: 'value', dir: 'desc' };
+    var selected = o.selected || {};
+    var columns = [
+      { key: 'name', label: 'Deal' },
+      { key: 'stage', label: 'Stage' },
+      { key: 'value', label: 'Value' },
+      { key: 'people', label: 'Headcount' },
+      { key: 'event', label: 'Event date' },
+      { key: 'created', label: 'Created' },
+      { key: 'owner', label: 'Owner' },
+      { key: 'idle', label: 'Idle days' }
+    ];
+    var rows = (deals || []).map(function (d) {
+      var owner = owners[d.owner] || '';
+      var idle = idleDays(d, today);
+      return {
+        id: d.id,
+        deal: d,
+        owner: owner,
+        idle: idle,
+        sort: {
+          name: d.title || '',
+          stage: STAGE_LABEL[d.stage] || d.stage || '',
+          value: Number(d.value_rm || 0),
+          people: Number(d.headcount || 0),
+          event: d.expected_on || '9999-99-99',
+          created: klDay(d.created_at) || '9999-99-99',
+          owner: owner || 'Unassigned',
+          idle: idle
+        }
+      };
+    });
+    var sorted = sortRows(rows, sort.key, sort.dir);
+    var win = pageWindow(sorted.length, o.page, 25);
+    var pageRows = sorted.slice(win.start, win.end);
+    o.page = win.page;
+    o.pageIds = pageRows.map(function (row) { return row.id; });
+    var allOn = pageRows.length > 0 && pageRows.every(function (row) { return selected[row.id]; });
+    var arrow = function (key) {
+      return sort.key === key ? (sort.dir === 'desc' ? ' ↓' : ' ↑') : '';
+    };
+    var head = '<th class="ix-checkcol"><input type="checkbox" aria-label="Select rows on this page" ' + (allOn ? 'checked' : '') + ' onchange="ixPagePick(\'deals\',this.checked)"></th>'
+      + columns.map(function (col) {
+        return '<th><button type="button" class="ix-sort" onclick="ixSort(\'deals\',\'' + col.key + '\')">' + esc(col.label) + arrow(col.key) + '</button></th>';
+      }).join('');
+    var body = pageRows.map(function (row) {
+      var d = row.deal;
+      var rotten = d.stage !== 'won' && d.stage !== 'lost' && row.idle >= (o.rotDays || 7);
+      return '<tr class="ix-row' + (selected[row.id] ? ' on' : '') + '" onclick="ixPreview(\'deals\',\'' + esc(row.id) + '\')">'
+        + '<td class="ix-checkcol" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Select ' + esc(d.title) + '" ' + (selected[row.id] ? 'checked' : '') + ' onchange="ixPick(\'deals\',\'' + esc(row.id) + '\',this.checked)"></td>'
+        + '<td><b>' + esc(d.title) + '</b><br><span class="pipe-who">' + esc(d.company || 'No contact yet') + '</span></td>'
+        + '<td>' + stagePill(d.stage) + '</td>'
+        + '<td>' + esc(rm(d.value_rm)) + '</td>'
+        + '<td>' + esc(d.headcount || '—') + '</td>'
+        + '<td>' + esc((d.expected_on || '').slice(0, 10) || '—') + '</td>'
+        + '<td>' + esc(klWhen(d.created_at) || '—') + '</td>'
+        + '<td><span class="pipe-av" title="' + esc(row.owner || 'Unassigned') + '">' + esc(initials(row.owner)) + '</span></td>'
+        + '<td>' + (rotten ? '<span class="pipe-rot">' + row.idle + 'd</span>' : esc(String(row.idle))) + '</td>'
+        + '</tr>';
+    }).join('') || '<tr><td class="ix-empty" colspan="9">No deals yet. Add one to start the pipeline.</td></tr>';
+    var cards = pageRows.map(function (row) {
+      var d = row.deal;
+      var rotten = d.stage !== 'won' && d.stage !== 'lost' && row.idle >= (o.rotDays || 7);
+      return '<article class="pipe-mcard' + (rotten ? ' rotten' : '') + (selected[row.id] ? ' on' : '') + '">'
+        + '<label onclick="event.stopPropagation()"><input type="checkbox" aria-label="Select ' + esc(d.title) + '" ' + (selected[row.id] ? 'checked' : '') + ' onchange="ixPick(\'deals\',\'' + esc(row.id) + '\',this.checked)"></label>'
+        + '<button type="button" onclick="ixPreview(\'deals\',\'' + esc(row.id) + '\')">'
+        + '<b>' + esc(d.title) + '</b>'
+        + '<span class="pipe-who">' + esc(d.company || 'No contact yet') + '</span>'
+        + stagePill(d.stage)
+        + '<span class="pipe-val">' + esc(rm(d.value_rm)) + ' · ' + esc(d.headcount || '—') + ' people</span>'
+        + '<span class="pipe-meta">Event ' + esc((d.expected_on || '').slice(0, 10) || '—') + '</span>'
+        + '<span class="pipe-meta">Created ' + esc(klWhen(d.created_at) || '—') + '</span>'
+        + '<footer><span class="pipe-av" title="' + esc(row.owner || 'Unassigned') + '">' + esc(initials(row.owner)) + '</span>'
+        + '<span class="' + (rotten ? 'pipe-rot' : 'pipe-who') + '">' + row.idle + 'd idle</span></footer>'
+        + '</button></article>';
+    }).join('') || '<p class="pipe-empty">No deals yet. Add one to start the pipeline.</p>';
+    var bulkCount = Object.keys(selected).filter(function (id) { return selected[id]; }).length;
+    var stageOpts = STAGES.map(function (stage) {
+      return '<option value="' + stage + '">' + esc(STAGE_LABEL[stage]) + '</option>';
+    }).join('');
+    var bulk = bulkCount
+      ? '<div class="ix-bulk"><b>' + bulkCount + ' selected</b><select id="ixDealStage" aria-label="Move to stage"><option value="">Stage…</option>' + stageOpts + '</select><button type="button" class="ix-btn" onclick="ixBulk(\'deals\',\'stage\')">Move stage</button><button type="button" class="ix-btn" onclick="ixBulk(\'deals\',\'export\')">Export</button></div>'
+      : '';
+    var sortOpts = columns.map(function (col) {
+      return '<option value="' + col.key + '"' + (sort.key === col.key ? ' selected' : '') + '>' + esc(col.label) + '</option>';
+    }).join('');
+    return bulk
+      + '<div class="pipe-table-wrap"><table class="ix-table pipe-table"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>'
+      + '<div class="pipe-mcards"><label class="pipe-sort-m">Sort <select aria-label="Sort deals" onchange="ixSort(\'deals\', this.value)">' + sortOpts + '</select></label>' + cards + '</div>';
   }
 
   function dealSummary(deals, today) {
@@ -506,6 +626,10 @@
     recordFrame: recordFrame,
     stagePill: stagePill,
     dealBoard: dealBoard,
+    dealTable: dealTable,
+    klWhen: klWhen,
+    klDay: klDay,
+    inCreatedRange: inCreatedRange,
     checklistState: checklistState,
     checklistHtml: checklistHtml,
     editorHtml: editorHtml,
