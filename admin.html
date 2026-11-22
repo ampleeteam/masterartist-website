@@ -70,10 +70,11 @@ a{color:var(--purple)}
 /* Hidden until signed in. Declared here (after .screen) because .app and
    .screen have equal specificity and the later rule would otherwise win,
    leaving the portal shell visible behind the sign-in box. */
-.app{display:none;grid-template-columns:250px 1fr;min-height:100vh}
+.app{display:none;grid-template-columns:232px 1fr;min-height:100vh}
 .app.on{display:grid}
-.side{background:var(--purple);color:var(--cream);padding:22px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
-.side .brand{display:flex;align-items:center;gap:10px;padding:0 22px 20px;border-bottom:1px solid rgba(198,183,226,.2)}
+.app.collapsed{grid-template-columns:68px 1fr}
+.side{background:var(--purple);color:var(--cream);padding:14px 0;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+.side .brand{display:flex;align-items:center;gap:10px;padding:0 14px 14px;border-bottom:1px solid rgba(198,183,226,.2)}
 .side .brand svg,.side .brand .brand-mark{width:30px;height:30px;object-fit:contain;display:block}
 .side .brand span{font-family:'Fraunces';font-size:16px}
 .me{display:flex;align-items:center;gap:10px;padding:18px 22px 16px}
@@ -84,12 +85,43 @@ a{color:var(--purple)}
 .signout{background:none;border:0;color:rgba(198,183,226,.7);font-size:11px;cursor:pointer;
   text-decoration:underline;padding:0;margin-top:2px}
 .signout:hover{color:var(--gold)}
-.snav{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
-  background:none;border:0;text-align:left;padding:11px 22px;cursor:pointer;
-  color:rgba(246,241,232,.72);font-size:13.5px;border-left:2px solid transparent;transition:.18s}
+.nav-collapse{margin-left:auto;background:transparent;border:1px solid rgba(198,183,226,.35);color:var(--cream);width:26px;height:26px;border-radius:2px;cursor:pointer}
+.nav-group{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(230,180,76,.85);padding:14px 16px 4px;margin:0}
+.nav-ic{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.nav-svg{width:18px;height:18px}
+.snav{display:flex;align-items:center;gap:8px;width:100%;
+  background:none;border:0;text-align:left;padding:8px 14px;cursor:pointer;
+  color:rgba(246,241,232,.78);font-size:13.5px;border-left:2px solid transparent;transition:.18s}
+.snav.sub{padding-left:44px;font-size:13px}
 .snav:hover{color:#fff;background:rgba(255,255,255,.05)}
 .snav.on{color:var(--gold);border-left-color:var(--gold);background:rgba(230,180,76,.08)}
-.snav .n{font-size:11px;background:rgba(198,183,226,.2);padding:1px 7px;border-radius:9px;color:var(--lavender)}
+.app.collapsed .nav-lb,.app.collapsed .nav-group,.app.collapsed .snav .n,.app.collapsed .side .brand span,.app.collapsed .foot{display:none}
+.app.collapsed .snav.sub{display:none}
+.app.collapsed .snav{justify-content:center;padding-left:0;padding-right:0}
+.gsearch{position:relative;flex:1;min-width:180px;max-width:460px}
+.gsearch input{width:100%;height:34px;border:1px solid var(--line);padding:0 10px;background:var(--cream)}
+.search-hits{position:absolute;top:36px;left:0;right:0;background:#fff;border:1px solid var(--line);z-index:30;box-shadow:0 8px 24px rgba(42,18,64,.08)}
+.search-hits button{display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid var(--line);padding:8px 10px;cursor:pointer}
+.search-hits button:hover{background:var(--lav-pale)}
+.user-menu{position:relative}
+.user-menu .nm{display:flex;flex-direction:column;line-height:1.2}
+.user-menu .nm b{display:block;color:var(--ink)}
+.user-menu .nm small{display:block;color:var(--muted)}
+.user-menu .me{padding:0}
+.user-pop{position:absolute;right:0;top:42px;background:#fff;border:1px solid var(--line);min-width:180px;z-index:30;padding:8px}
+.user-pop button{display:block;width:100%;text-align:left;background:#fff;border:0;padding:6px 4px;cursor:pointer}
+.fold{border-bottom:1px solid var(--line);background:#fff}
+.fold summary{cursor:pointer;padding:10px 2px;font-weight:600;color:var(--purple);list-style:none}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary:before{content:'▸ ';color:var(--gold-deep)}
+.fold[open] summary:before{content:'▾ '}
+.fold-b{padding:0 0 12px}
+.form-bar{display:flex;gap:8px;justify-content:flex-end;padding:8px 0 4px;position:sticky;bottom:0;background:#fff}
+.ix-with-form{display:flex;gap:12px;align-items:flex-start}
+.ix-with-form .ix-main{flex:1;min-width:0}
+.sideform{width:420px;flex:none;max-height:calc(100vh - 110px);overflow:auto;background:#fff;border:1px solid var(--line);padding:12px 14px}
+.sideform h2{font-size:22px;color:var(--purple);margin:0 0 8px}
+.snav .n{font-size:11px;background:rgba(198,183,226,.2);padding:1px 7px;border-radius:9px;color:var(--lavender);margin-left:auto}
 .snav.soon{opacity:.4;cursor:default}
 .snav.soon:hover{background:none;color:rgba(246,241,232,.72)}
 .side .foot{padding:16px 22px;border-top:1px solid rgba(198,183,226,.2);margin-top:12px;
@@ -209,7 +241,7 @@ table.bk tr.click:hover td{background:#faf6ee}
 .tl-compose,.tl-import{display:flex;flex-direction:column;gap:8px;margin-top:14px}
 .tl-compose textarea,.tl-import input[type=text]{width:100%;border:1px solid var(--line);background:#fff;padding:8px 10px}
 .kid-card{border:1px solid var(--line);padding:12px;margin:0 0 12px;background:#fff}
-.inbox{display:grid;grid-template-columns:280px minmax(320px,1fr) 300px;gap:12px;min-height:calc(100vh - 130px)}
+.inbox{display:grid;grid-template-columns:260px minmax(280px,1fr) 400px;gap:12px;min-height:calc(100vh - 130px)}
 .inbox-col{background:#fff;border:1px solid var(--line);display:flex;flex-direction:column;min-width:0;min-height:480px}
 .inbox-h{padding:10px 12px;border-bottom:1px solid var(--line);background:rgba(237,231,246,.45)}
 .inbox-list,.inbox-thread,.inbox-side{overflow:auto;flex:1}
@@ -403,9 +435,9 @@ table.bk tr.click:hover td{background:#faf6ee}
   <aside class="side">
     <div class="brand">
       <img class="brand-mark" src="logo.svg" alt="Master Artist logo">
-      <span>Content Admin</span>
+      <span id="brandName">CRM</span>
+      <button type="button" class="nav-collapse" id="navCollapse" aria-label="Collapse sidebar">‹</button>
     </div>
-    <div class="me" id="meBox"></div>
     <nav id="nav"></nav>
     <div class="foot" id="sideFoot"></div>
   </aside>
@@ -413,7 +445,12 @@ table.bk tr.click:hover td{background:#faf6ee}
   <div class="main">
     <div class="top">
       <h1 id="title">Announcement Banner</h1>
+      <div class="gsearch">
+        <input id="globalSearch" type="search" placeholder="Search customers and conversations" autocomplete="off">
+        <div id="searchHits" class="search-hits" hidden></div>
+      </div>
       <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">Saved</span></div>
+      <div class="user-menu" id="meBox"></div>
     </div>
     <div class="bodyw" id="view"></div>
   </div>
@@ -598,6 +635,8 @@ async function boot(){
 
   const first = SECTIONS.find(s => s.ready && canRead(s.key)) || SECTIONS.find(s => canRead(s.key));
   current = first ? first.id : 'banner';
+  if (canRead('bookings') && profile.role !== 'marketing') current = 'inbox';
+  else if (canRead('customers') || canRead('bookings')) current = 'customers';
   // Links from the blog agent's review email: admin.html#blog/<slug>
   const hm = location.hash.match(/^#blog(?:\/([a-z0-9-]+))?$/);
   if (hm && canRead('blog')) { current = 'blog'; blogOpenSlug = hm[1] || null; }
@@ -618,33 +657,121 @@ function sectionAllowed(s){
   if (s.id === 'tasks' || s.id === 'groups') return canRead('customers') || canRead('bookings');
   return canRead(s.key);
 }
+let navBadges = { inbox:0, tasks:0 };
+let appArea = 'crm';
+let formDirty = false;
+let formSnapshot = '';
+function formTouch(){ formDirty = true; }
+function formSnap(){
+  formDirty = false;
+  formSnapshot = [...document.querySelectorAll('.rec-form input, .rec-form textarea, .rec-form select')].map(el => (el.name || el.id || '') + ':' + (el.type === 'checkbox' ? el.checked : el.value)).join('|');
+}
+window.formCancel = () => {
+  if (formDirty && !confirm('Discard unsaved changes?')) return;
+  formDirty = false;
+  if (crmOpen) render();
+  else { crmPreview = ''; dealPreview = ''; taskPreview = ''; render(); }
+};
+window.addEventListener('beforeunload', e => { if (formDirty) { e.preventDefault(); e.returnValue = ''; } });
+function navActive(){
+  if (current === 'customers' && crmMode === 'lists') return 'lists';
+  if (current === 'email') return emailScreen === 'flows' ? 'flows' : emailScreen === 'templates' ? 'templates' : 'campaigns';
+  if (current === 'reports') return 'reports';
+  return current;
+}
+function crmAllowed(){
+  return canRead('customers') || canRead('bookings') || canRead('email') || me.role === 'admin' || me.role === 'marketing';
+}
+async function refreshBadges(){
+  navBadges = { inbox:0, tasks:0 };
+  if (me.role !== 'marketing' && canRead('bookings')) {
+    const q = await sb.from('conversations').select('unread_count').gt('unread_count', 0).limit(200);
+    if (!q.error) navBadges.inbox = (q.data || []).reduce((n, r) => n + (r.unread_count || 0), 0);
+  }
+  if (canRead('customers') || canRead('bookings')) {
+    const t = await sb.from('staff_tasks').select('id', { count:'exact', head:true }).eq('status', 'open').lte('due_on', todayISO());
+    if (!t.error) navBadges.tasks = t.count || 0;
+  }
+}
+function paintNav(){
+  const G = window.MaGrowth;
+  const go = id => `goNav('${id}')`;
+  const crm = [];
+  if (me.role !== 'marketing' && canRead('bookings')) crm.push({ id:'inbox', label:'Inbox', icon:'inbox', badge: navBadges.inbox ? String(navBadges.inbox) : '', go: go('inbox') });
+  if (canRead('customers') || canRead('bookings')) {
+    crm.push({ id:'customers', label:'Customers', icon:'customers', go: go('customers') });
+    crm.push({ id:'tasks', label:'Tasks', icon:'tasks', badge: navBadges.tasks ? String(navBadges.tasks) : '', go: go('tasks') });
+    crm.push({ id:'lists', label:'Lists', icon:'lists', go: go('lists') });
+    crm.push({ id:'groups', label:'Deals', icon:'deals', go: go('groups') });
+  }
+  if (me.role === 'admin' || me.role === 'marketing' || canRead('email') || canRead('customers')) {
+    crm.push({ id:'email', label:'Email', icon:'email', go: go('campaigns'), children:[
+      { id:'campaigns', label:'Campaigns', go: go('campaigns') },
+      { id:'flows', label:'Automations', go: go('flows') },
+      { id:'templates', label:'Templates', go: go('templates') }
+    ]});
+  }
+  if (canRead('customers') || canRead('bookings')) crm.push({ id:'reports', label:'Reports', icon:'reports', go: go('reports') });
+  const settingsKids = [];
+  if (sectionAllowed(SECTIONS.find(s => s.id === 'settings'))) settingsKids.push({ id:'settings', label:'Studio', go: go('settings') });
+  if (sectionAllowed(SECTIONS.find(s => s.id === 'people'))) settingsKids.push({ id:'people', label:'People and access', go: go('people') });
+  if (settingsKids.length) crm.push({ id:'settings', label:'Settings', icon:'settings', go: settingsKids[0].go, children: settingsKids });
+  const siteIds = ['banner','hero','programmes','classes','bookings','events','fees','gallery','teachers','testimonials','blog'];
+  const site = SECTIONS.filter(s => siteIds.includes(s.id) && sectionAllowed(s)).map(s => ({ id:s.id, label:s.label, icon:'website', go: go(s.id) }));
+  const groups = [];
+  if (appArea === 'website') { if (site.length) groups.push({ label:'Website', items: site }); }
+  else if (crm.length) groups.push({ label:'CRM', items: crm });
+  else if (site.length) groups.push({ label:'Website', items: site });
+  $('nav').innerHTML = G ? G.appNav(groups, navActive()) : '';
+  $('brandName').textContent = appArea === 'website' ? 'Website' : 'CRM';
+  const hidden = SECTIONS.filter(s => !sectionAllowed(s)).length;
+  $('sideFoot').innerHTML = `<button type="button" class="snav" onclick="switchApp('${appArea === 'crm' ? 'website' : 'crm'}')"><span class="nav-lb">${appArea === 'crm' ? 'Website admin' : 'Back to CRM'}</span></button>`
+    + (hidden ? `<p>${hidden} hidden for this role.</p>` : '');
+}
+window.switchApp = area => {
+  appArea = area;
+  if (area === 'website') {
+    const site = ['banner','hero','programmes','classes','bookings','events','fees','gallery','teachers','testimonials','blog'];
+    const first = SECTIONS.find(s => site.includes(s.id) && sectionAllowed(s));
+    if (first) current = first.id;
+  } else if (me.role !== 'marketing' && canRead('bookings')) current = 'inbox';
+  else current = 'customers';
+  render();
+};
+window.goNav = async id => {
+  if (formDirty && !confirm('Discard unsaved changes?')) return;
+  formDirty = false;
+  appArea = ['banner','hero','programmes','classes','bookings','events','fees','gallery','teachers','testimonials','blog'].includes(id) ? 'website' : 'crm';
+  if (id === 'lists') { current = 'customers'; crmMode = 'lists'; crmOpen = null; listOpen = null; }
+  else if (id === 'customers') { current = 'customers'; crmMode = 'people'; crmOpen = null; }
+  else if (id === 'campaigns' || id === 'flows' || id === 'templates') { current = 'email'; emailScreen = id === 'flows' ? 'flows' : id === 'templates' ? 'templates' : 'campaigns'; }
+  else { current = id; }
+  await render();
+  window.scrollTo(0, 0);
+};
+window.toggleNav = () => {
+  document.getElementById('appScreen').classList.toggle('collapsed');
+  try { localStorage.setItem('ma-nav', document.getElementById('appScreen').classList.contains('collapsed') ? '1' : '0'); } catch (e) {}
+};
+if ($('navCollapse')) $('navCollapse').addEventListener('click', () => window.toggleNav());
+try { if (localStorage.getItem('ma-nav') === '1') document.getElementById('appScreen').classList.add('collapsed'); } catch (e) {}
 async function render(){
   $('meBox').innerHTML =
-    `<span class="av">${esc(initials(me.full_name))}</span>
-     <span class="nm"><b>${esc(me.full_name)}</b><small>${esc(ROLE_LABEL[me.role]||me.role)}</small>
-     <button class="signout" onclick="signOut()">Sign out</button></span>`;
+    `<button type="button" class="snav" style="color:var(--ink);width:auto;border:0" onclick="userMenuToggle()"><span class="av">${esc(initials(me.full_name))}</span><span class="nm"><b>${esc(me.full_name)}</b><small>${esc(ROLE_LABEL[me.role]||me.role)}</small></span></button>
+     <div id="userPop" class="user-pop" hidden><p class="help" style="margin:0 0 6px">${esc(me.email || '')}</p><button type="button" onclick="signOut()">Sign out</button></div>`;
+  await refreshBadges();
+  paintNav();
 
-  const visible = SECTIONS.filter(sectionAllowed);
-  $('nav').innerHTML = visible.map(s =>
-    `<button class="snav${s.id===current?' on':''}${s.ready?'':' soon'}"
-      ${s.ready?`onclick="goTo('${s.id}')"`:''}>
-       <span>${esc(s.label)}</span>${s.ready?'':'<span class="n">soon</span>'}
-     </button>`).join('');
-
-  const hidden = SECTIONS.length - visible.length;
-  $('sideFoot').innerHTML = hidden > 0
-    ? `${hidden} section${hidden>1?'s':''} hidden — your role does not have access.`
-    : 'You have access to every section.';
-
-  const sec = SECTIONS.find(s => s.id === current);
+  const sec = SECTIONS.find(s => s.id === current) || (current === 'reports' ? { id:'reports', label:'Reports' } : null);
   $('title').textContent = sec ? sec.label : '';
   const shell = document.querySelector('.bodyw');
   if (shell) {
-    const wide = ['inbox', 'groups', 'customers', 'tasks', 'email'].includes(current);
+    const wide = ['inbox', 'groups', 'customers', 'tasks', 'email', 'reports'].includes(current);
     shell.style.maxWidth = wide ? 'none' : '';
     shell.classList.toggle('wide', wide);
   }
 
+  if (current === 'reports') { await views.reports(); return; }
   if (!sec || !sectionAllowed(sec)) {
     $('view').innerHTML = `<div class="locked"><b>You don't have access to this section.</b><br>
       Your role is ${esc(ROLE_LABEL[me.role]||me.role)}. Ask an administrator if you need it.</div>`;
@@ -1370,7 +1497,18 @@ let crmTimer = null;
 window.crmSearch = v => { crmQuery = v; clearTimeout(crmTimer); crmTimer = setTimeout(async () => { await render(); const b = $('crmQ'); if (b) { b.focus(); b.setSelectionRange(v.length, v.length); } }, 250); };
 window.crmTab = async k => { crmFilter = k; await render(); };
 window.crmGo = async id => { crmOpen = id; await render(); window.scrollTo(0,0); };
-window.crmBack = async () => { crmOpen = null; await render(); };
+window.crmBack = async () => { if (formDirty && !confirm('Discard unsaved changes?')) return; formDirty = false; crmOpen = null; await render(); };
+window.crmReplySend = async (id) => {
+  const body = ($('crmReply') && $('crmReply').value || '').trim();
+  if (!body) { toast('Write a reply first.'); return; }
+  if (me.role === 'marketing') { toast('Marketing cannot send WhatsApp.'); return; }
+  const conv = await sb.from('conversations').select('id').eq('contact_id', id).order('last_message_at', { ascending:false }).limit(1).maybeSingle();
+  if (conv.error || !conv.data) { toast('No conversation yet. Open the inbox after the first WhatsApp message.'); return; }
+  const { error } = await sb.rpc('send_conversation_message', { p_conversation: conv.data.id, p_body: body, p_template: null, p_as_note: false, p_mentions: [] });
+  if (error) { toast(error.message); return; }
+  toast('Reply queued. WhatsApp sending is not connected yet.');
+  if ($('crmReply')) $('crmReply').value = '';
+};
 window.crmFromBooking = async id => { crmOpen = id; current = 'customers'; await render(); window.scrollTo(0,0); };
 async function crmWorkshops(){
   busy(true,'Loading…');
@@ -1458,12 +1596,8 @@ function familyCards(){
     const sel = (field, opts, val) => `<select onchange="crmFam('${k}','${field}',this.value)" ${dis}>${opts.map(o => `<option value="${esc(o)}" ${String(val||'')===o?'selected':''}>${esc(o || '—')}</option>`).join('')}</select>`;
     const box = (field, label) => `<label style="font-weight:400;display:flex;gap:5px;align-items:center"><input type="checkbox" ${row[field]?'checked':''} ${dis} onchange="crmFam('${k}','${field}',this.checked)"> ${label}</label>`;
     const others = (row.other_parents || []).map(p => `${esc(p.name)} (${esc(p.relationship)}${p.is_primary ? ', primary' : ''}${p.pays ? ', pays' : ''}${p.receives_messages ? ', messages' : ''})${p.phone ? ' ' + esc(p.phone) : ''}`).join('<br>');
-    const linkOpts = crmPeople.filter(p => p.id !== crmOpen && !(row.other_parents || []).some(o => o.id === p.id));
-    const health = crmHealthVisible ? `<div class="row">${[['allergies','Allergies'],['medical_notes','Medical notes'],['special_needs','Special needs']].map(([f, label]) =>
-        `<div class="f"><label>${label}</label><input value="${esc(row[f] || '')}" ${hdis} oninput="crmFam('${k}','${f}',this.value)"></div>`).join('')}
-        <div class="f"><label>Emergency name</label><input value="${esc(row.emergency_name || '')}" ${hdis} oninput="crmFam('${k}','emergency_name',this.value)"></div>
-        <div class="f"><label>Emergency phone</label><input value="${esc(row.emergency_phone || '')}" ${hdis} oninput="crmFam('${k}','emergency_phone',this.value)"></div></div>`
-      : '<p class="help">Allergies, medical notes, and special needs are visible to admin and bookings staff only.</p>';
+    const linkOpts = crmPeople.filter(p => p.id !== (crmOpen || crmFormFor) && !(row.other_parents || []).some(o => o.id === p.id));
+    const health = crmHealthVisible ? '' : '<p class="help">Allergies and medical notes are in Participants health, visible to admin and bookings staff only.</p>';
     return `<div class="kid-card">
       <div class="row">
         <div class="f"><label>Full name</label><input value="${esc(row.full_name || '')}" ${dis} oninput="crmFam('${k}','full_name',this.value)"></div>
@@ -1548,10 +1682,21 @@ async function loadCustomerBookings(id){
   return q;
 }
 
-async function crmDetail(id){
+let crmFormHtml = '';
+let crmFormFor = '';
+let crmDetailPanel = false;
+let dealPreview = '';
+let taskPreview = '';
+async function crmDetail(id, panel){
+  crmDetailPanel = !!panel;
   busy(true,'Loading…');
   const c = await sb.from('contacts').select('*').eq('id', id).maybeSingle();
-  if (c.error || !c.data) { busy(false); $('view').innerHTML = `<div class="msg err">${esc((c.error && c.error.message) || 'Customer not found')}</div>`; return; }
+  if (c.error || !c.data) {
+    busy(false);
+    const msg = `<div class="msg err">${esc((c.error && c.error.message) || 'Customer not found')}</div>`;
+    if (panel) { crmFormHtml = msg; crmFormFor = id; crmDetailPanel = false; return; }
+    $('view').innerHTML = msg; return;
+  }
   const x = c.data;
   const profileReady = Object.prototype.hasOwnProperty.call(x, 'lifecycle_stage');
   crmCurrent = x;
@@ -1622,7 +1767,7 @@ async function crmDetail(id){
   const multi = (f, label) => `<div class="f" style="grid-column:1/-1"><label>${label}</label><div style="display:flex;flex-wrap:wrap;gap:6px 14px">${CRM_OPT[f].map(o =>
       `<label style="font-weight:400;display:flex;gap:5px;align-items:center"><input type="checkbox" data-multi="${f}" value="${esc(o)}" ${(x[f] || []).includes(o)?'checked':''} ${dis}>${esc(o)}</label>`).join('')}</div></div>`;
   const area = (f, label, ph) => `<div class="f" style="grid-column:1/-1"><label>${label}</label><textarea ${fid(f)} rows="3" placeholder="${ph || ''}" ${dis}>${esc(x[f] || '')}</textarea></div>`;
-  const section = (title, body) => `<div class="card"><div class="card-h"><span class="grip">${title}</span>${w ? `<button class="btn sm" type="button" onclick="crmSave('${x.id}')">Save</button>` : ''}</div><div class="card-b">${body}</div></div>`;
+  const section = (title, body) => window.MaGrowth ? window.MaGrowth.folds([{ title, body, open:true }]) : `<div class="card"><div class="card-h"><span class="grip">${title}</span></div><div class="card-b">${body}</div></div>`;
   const staffOpts = [['', '—']].concat((staff.data || []).map(s => [s.id, s.full_name]));
   const people = everyone.data || [];
   const customText = profileReady && x.custom_fields && Object.keys(x.custom_fields).length ? JSON.stringify(x.custom_fields, null, 2) : '';
@@ -1640,9 +1785,10 @@ async function crmDetail(id){
       ${x.last_contacted_at ? `<span>Last contacted ${shortDate(x.last_contacted_at)}</span>` : ''}${x.last_inbound_at ? `<span>Last message in ${shortDate(x.last_inbound_at)}</span>` : ''}
       ${x.credit_balance ? `<span>${money(x.credit_balance)} academy credit</span>` : ''}${x.do_not_contact ? '<span class="full">Do not contact</span>' : ''}</div>`;
 
-  html += '<!--COL:MID-->' + timelineCard(timeline.data, timeline.error, !queueQ.error ? (queueQ.count || 0) : 0);
+  html += '<!--COL:MID-->' + timelineCard(timeline.data, timeline.error, !queueQ.error ? (queueQ.count || 0) : 0)
+    + `<div class="tl-compose"><label class="help">Reply on WhatsApp</label><textarea id="crmReply" rows="3" placeholder="Write a reply. It is queued on their conversation. Nothing is delivered until WhatsApp is connected."></textarea><p><button class="btn sm" type="button" onclick="crmReplySend('${x.id}')">Queue reply</button></p></div>`;
 
-  html += '<!--COL:LEFT-->' + section('Contact', `
+  html += '<!--COL:LEFT-->' + section('Contact info', `
       <div class="row">${inp('first_name','First name')}${inp('last_name','Last name')}${inp('preferred_name','Preferred name')}</div>
       <div class="row">${sel('contact_type','Type')}${inp('birthday','Birthday','date')}${sel('language','Preferred language')}${profileReady ? sel('gender','Gender') : ''}</div>
       <div class="row">${inp('email','Email','email')}${inp('phone','Phone')}${inp('phone_2','Secondary phone')}</div>
@@ -1650,14 +1796,12 @@ async function crmDetail(id){
         <p class="help">WhatsApp is stored as +60…. Leave it blank to use the phone above. ${x.phone_e164 ? 'Phone in international form: ' + esc(x.phone_e164) + '.' : ''}</p>` : `<div class="row">${sel('preferred_channel','Prefers')}</div>`}
       ${x.phone ? `<p class="help"><a href="https://wa.me/${waNum(x.whatsapp_e164 || x.phone)}" target="_blank" rel="noopener">Message on WhatsApp</a></p>` : ''}
       <div class="row">${inp('address','Address')}${inp('area','Area')}${inp('city','City')}${profileReady ? inp('state','State') : ''}${inp('postcode','Postcode')}${profileReady ? inp('country','Country') : ''}</div>
-      <div class="row">${inp('company','Company')}${inp('job_title','Job title')}${profileReady ? chk('is_organiser','Organises group or corporate bookings') : ''}</div>
+      <div class="row">${inp('company','Company')}${inp('job_title','Job title')}${profileReady ? chk('is_organiser','Organises group or corporate bookings') : ''}</div>`)
+    + section('Lifecycle and lead status', `
       <div class="row">${sel('stage','Studio stage')}${profileReady ? sel('lifecycle_stage','Lifecycle stage') : ''}${profileReady ? sel('lead_status','Lead status') : ''}</div>
       <div class="row">${sel('owner','Contact owner', staffOpts)}${inp('follow_up_date','Follow up on','date')}${inp('follow_up_note','Follow-up about')}${Object.prototype.hasOwnProperty.call(x, 'asked_price') ? chk('asked_price','Asked about the price') : ''}</div>
-      <div class="row"><div class="f" style="grid-column:1/-1"><label>Tags (comma-separated)</label><input id="crmTags" value="${esc((x.tags || []).join(', '))}" ${dis}></div></div>
-      ${area('notes','Notes','Preferences, conversations, anything the next person should know')}
-      ${profileReady ? `<div class="f"><label>Custom fields (JSON object)</label><textarea ${fid('custom_fields')} rows="3" placeholder='{"locker":"12"}' ${dis}>${esc(customText)}</textarea><p class="help">For a property we have not named yet. Must be an object, not a list.</p></div>` : ''}
       <div class="row">${chk('archived','Archived (hidden from the list)')}</div>
-      <p class="help">Created ${shortDate(x.created_at)} · last activity ${shortDate(x.last_activity) || '—'}${x.first_source ? ' · first source recorded by the site: ' + esc(x.first_source) : ''}</p>`);
+      <p class="help">Created ${shortDate(x.created_at)} · last activity ${shortDate(x.last_activity) || '—'}</p>`);
 
   const parentHtml = crmParents.length ? `<p><b>Parents and guardians</b></p><ul>${crmParents.map(g => {
       const person = g.contacts || {};
@@ -1666,7 +1810,7 @@ async function crmDetail(id){
       const bits = [g.relationship, g.is_primary ? 'primary' : '', g.pays ? 'pays' : '', g.receives_messages ? 'gets messages' : ''].filter(Boolean);
       return `<li><a href="#customers" onclick="event.preventDefault();crmGo('${person.id}')">${esc(name)}</a> · ${esc(bits.join(', '))}${phone ? ` · <a href="https://wa.me/${waNum(phone)}" target="_blank" rel="noopener">${esc(phone)}</a>` : ''}</li>`;
     }).join('')}</ul>` : '';
-  html += '<!--COL:RIGHT-->' + section('Family', crmFamilyReady ? `${parentHtml}
+  html += '<!--COL:LEFT-->' + section('Family', crmFamilyReady ? `${parentHtml}
       <p class="help">A child can be a lightweight record, or also their own customer. One child can have more than one parent. Primary is who we call first.</p>
       <div id="crmFamilyBody">${familyCards()}</div>
       ${w ? `<p><button class="btn sm" type="button" onclick="crmFamAdd()">+ Add a child</button></p>` : ''}
@@ -1676,41 +1820,52 @@ async function crmDetail(id){
       ${w ? `<p style="margin-top:10px"><button class="btn sm" type="button" onclick="crmKidAdd()">+ Add a child</button></p>` : ''}
       <p class="help">This is the existing children list. After <b>${CRM_MIGRATION}</b> is run, each child becomes their own record with parents, pickup, and medical notes.</p>`);
 
-  html += '<!--COL:LEFT-->' + section('Preferences', `
+  const healthBody = !crmHealthVisible ? '' : (crmFamily.length ? crmFamily.map(row => `<div class="kid-card"><b>${esc(row.full_name || 'Child')}</b><div class="row">${[['allergies','Allergies'],['medical_notes','Medical notes'],['special_needs','Special needs']].map(([f, label]) =>
+      `<div class="f"><label>${label}</label><input value="${esc(row[f] || '')}" ${crmHealthWrite ? '' : 'disabled'} oninput="crmFam('${row.key}','${f}',this.value)"></div>`).join('')}
+      <div class="f"><label>Emergency name</label><input value="${esc(row.emergency_name || '')}" ${crmHealthWrite ? '' : 'disabled'} oninput="crmFam('${row.key}','emergency_name',this.value)"></div>
+      <div class="f"><label>Emergency phone</label><input value="${esc(row.emergency_phone || '')}" ${crmHealthWrite ? '' : 'disabled'} oninput="crmFam('${row.key}','emergency_phone',this.value)"></div></div></div>`).join('') : '<p class="help">No children yet. Add one under Family.</p>');
+  if (crmHealthVisible) html += section('Participants health', healthBody + '<p class="help">Marketing cannot open this section. Allergies stay off the customer list.</p>');
+
+  html += section('Interests and tags', `
       ${multi('interests','Interests and formats')}
-      <div class="row">${sel('skill_level','Overall level')}${sel('how_heard','How they heard about us')}${profileReady ? chk('birthday_enquiry','Birthday party enquiry') : ''}</div>
+      <div class="row">${sel('skill_level','Overall level')}${profileReady ? chk('birthday_enquiry','Birthday party enquiry') : ''}</div>
       <div class="f" style="grid-column:1/-1"><label>Dietary requirements and allergies (baking, Savor)</label><input ${fid('dietary')} value="${esc(x.dietary || '')}" ${dis}></div>
       ${multi('preferred_days','Preferred days')}${multi('preferred_times','Preferred times')}
-      ${profileReady ? `<p class="help" style="margin-top:8px">Skill by format</p><div class="row">${CRM_FORMATS.map(f => `<div class="f"><label>${esc(f)}</label><select data-skill="${esc(f)}" ${dis}>${CRM_LEVELS.map(l => `<option value="${esc(l)}" ${ (skill[f]||'')===l ? 'selected' : ''}>${esc(l || '—')}</option>`).join('')}</select></div>`).join('')}</div>` : ''}`);
+      ${profileReady ? `<p class="help" style="margin-top:8px">Skill by format</p><div class="row">${CRM_FORMATS.map(f => `<div class="f"><label>${esc(f)}</label><select data-skill="${esc(f)}" ${dis}>${CRM_LEVELS.map(l => `<option value="${esc(l)}" ${ (skill[f]||'')===l ? 'selected' : ''}>${esc(l || '—')}</option>`).join('')}</select></div>`).join('')}</div>` : ''}
+      <div class="row"><div class="f" style="grid-column:1/-1"><label>Tags (comma-separated)</label><input id="crmTags" value="${esc((x.tags || []).join(', '))}" ${dis}></div></div>
+      ${area('notes','Notes','Preferences, conversations, anything the next person should know')}`);
 
-  html += '<!--COL:LEFT-->' + section('Consent and safety', `
+  html += section('Consent and safety', `
       <div class="row">${sel('photo_consent','Photo consent (this adult)')}${profileReady ? inp('waiver_accepted_at','Waiver and terms accepted','date') : ''}</div>
       <div class="row">${inp('emergency_name','Emergency contact')}${inp('emergency_phone','Emergency phone')}${inp('emergency_relation','Relationship')}</div>
       <div class="row">${chk('do_not_contact','Do not contact at all')}${inp('data_deletion_requested','Asked to delete their data on','date')}</div>
-      <p class="help">Child allergies and who may collect a child are on the Family card, not here.</p>`);
-
-  html += '<!--COL:LEFT-->' + section('Marketing', `
+      <p class="help">Child allergies and who may collect a child are on Family and Participants health, not here.</p>`)
+    + section('Marketing consent', `
       <div class="row">${chk('marketing_consent','Agreed to news' + (x.consent_at ? ' (' + shortDate(x.consent_at) + ')' : ''))}${chk('email_consent','News by email')}${chk('whatsapp_consent','News by WhatsApp')}</div>
       ${profileReady ? `<div class="row">${inp('email_consent_source','Email opt-in source')}${inp('whatsapp_consent_source','WhatsApp opt-in source')}${chk('unsubscribed','Unsubscribed')}${inp('unsubscribed_at','Unsubscribed on','date')}</div>
-        <p class="help">WhatsApp marketing templates need a record of when they opted in and where that came from (website, staff, or WhatsApp). ${x.email_consent_at ? 'Email opt-in ' + shortDate(x.email_consent_at) + '. ' : ''}${x.whatsapp_consent_at ? 'WhatsApp opt-in ' + shortDate(x.whatsapp_consent_at) + '.' : ''}</p>`
-        : `<div class="row">${inp('unsubscribed_at','Unsubscribed on','date')}</div>`}
-      <div class="row">${profileReady ? sel('original_source','Original source') : ''}${profileReady ? inp('source_detail','Source detail') : ''}${sel('referred_by','Referred by', [['', '—']].concat(people.filter(r => r.id !== x.id).map(r => [r.id, `${r.first_name} ${r.last_name || ''}`.trim()])))}</div>
-      ${profileReady ? `<div class="row">${inp('referral_code','Their referral code')}${inp('utm_source','UTM source')}${inp('utm_medium','UTM medium')}${inp('utm_campaign','UTM campaign')}</div>
+        <p class="help">${x.email_consent_at ? 'Email opt-in ' + shortDate(x.email_consent_at) + '. ' : ''}${x.whatsapp_consent_at ? 'WhatsApp opt-in ' + shortDate(x.whatsapp_consent_at) + '.' : ''}</p>`
+        : `<div class="row">${inp('unsubscribed_at','Unsubscribed on','date')}</div>`}`)
+    + section('Source and attribution', `
+      <div class="row">${profileReady ? sel('original_source','Original source') : ''}${profileReady ? inp('source_detail','Source detail') : ''}${sel('how_heard','How they heard about us')}</div>
+      ${profileReady ? `<div class="row">${inp('utm_source','UTM source')}${inp('utm_medium','UTM medium')}${inp('utm_campaign','UTM campaign')}</div>
         <div class="row">${inp('utm_content','UTM content')}${inp('utm_term','UTM term')}${inp('meta_ad_id','Meta ad id')}${inp('fbclid','fbclid')}${inp('gclid','gclid')}</div>
-        <div class="row">${inp('first_page','First page seen')}${inp('first_referrer','Referrer')}</div>` : ''}
-      <div class="row">${inp('instagram','Instagram')}${profileReady ? inp('facebook','Facebook') : ''}${profileReady ? inp('tiktok','TikTok') : ''}</div>
-      <p class="help">First came from: ${esc(x.first_source || '—')} · most recent: ${esc(x.last_source || '—')}${x.first_conversion_at ? ' · first conversion ' + shortDate(x.first_conversion_at) + (x.first_conversion_event ? ' (' + esc(x.first_conversion_event) + ')' : '') : ''}${x.recent_conversion_at ? ' · latest ' + shortDate(x.recent_conversion_at) + (x.recent_conversion_event ? ' (' + esc(x.recent_conversion_event) + ')' : '') : ''}</p>
-      <div class="row">${inp('rating','How likely to recommend us (0–10)','number','min="0" max="10"')}${chk('google_review','Left a Google review')}${chk('testimonial_ok','Happy to be quoted')}</div>`);
+        <div class="row">${inp('ctwa_clid','Click-to-WhatsApp id')}${inp('first_page','First page seen')}${inp('first_referrer','Referrer')}</div>` : ''}
+      <p class="help">First came from: ${esc(x.first_source || '—')} · most recent: ${esc(x.last_source || '—')}</p>`)
+    + section('Social handles', `<div class="row">${inp('instagram','Instagram')}${profileReady ? inp('facebook','Facebook') : ''}${profileReady ? inp('tiktok','TikTok') : ''}</div>`)
+    + section('Academy credit and referrals', `
+      ${profileReady ? `<div class="row">${sel('academy_status','Academy status')}${inp('credit_balance','Academy credit (RM)','number','min="0"')}${sel('voucher_role','Gift voucher')}</div>` : ''}
+      <div class="row">${inp('referral_code','Their referral code')}${sel('referred_by','Referred by', [['', '—']].concat(people.filter(r => r.id !== x.id).map(r => [r.id, `${r.first_name} ${r.last_name || ''}`.trim()])))}</div>
+      <div class="row">${inp('voucher_code','Voucher code')}${chk('voucher_redeemed','Voucher used')}</div>
+      <div class="row">${inp('rating','How likely to recommend us (0–10)','number','min="0" max="10"')}${chk('google_review','Left a Google review')}${chk('testimonial_ok','Happy to be quoted')}</div>`)
+    + (profileReady ? section('Custom fields', `<div class="f"><label>Custom fields (JSON object)</label><textarea ${fid('custom_fields')} rows="3" placeholder='{"locker":"12"}' ${dis}>${esc(customText)}</textarea><p class="help">For a property we have not named yet. Must be an object, not a list.</p></div>`) : '');
 
   const rows = bk.data || [];
   const formats = (x.formats_attended || []).join(', ');
   html += '<!--COL:RIGHT-->' + section('Bookings', `
       <div class="bk-sum"><span>${bookingN || 0} bookings</span><span>${money(revenue)} revenue</span>${attended ? `<span>${attended} attended</span>` : ''}${lastBooked ? `<span>Last booking ${shortDate(lastBooked)}</span>` : ''}${x.last_workshop_name ? `<span>Last workshop: ${esc(x.last_workshop_name)}</span>` : ''}${formats ? `<span>Formats: ${esc(formats)}</span>` : ''}${x.became_customer_at ? `<span>Customer since payment ${shortDate(x.became_customer_at)}</span>` : ''}</div>
-      ${profileReady ? `<div class="row">${sel('academy_status','Academy status')}${inp('credit_balance','Academy credit (RM)','number','min="0"')}${sel('voucher_role','Gift voucher')}</div>` : ''}
       <div class="row">${inp('enrolled_since','Enrolled since','date')}${inp('monthly_fee','Monthly fee (RM)','number')}</div>
       <div class="row"><div class="f" style="grid-column:1/-1"><label>Enrolled classes (comma-separated)</label><input id="crmProgs" value="${esc((x.enrolled_programmes || []).join(', '))}" ${dis}></div></div>
       <div class="row">${inp('trial_date','Trial date','date')}${sel('trial_outcome','Trial outcome')}</div>
-      <div class="row">${inp('voucher_code','Voucher code')}${chk('voucher_redeemed','Voucher used')}</div>
       <p class="help" style="margin-top:12px"><b>Workshop bookings.</b> The person who pays is the customer. Who attends is listed when we have it. Participants is the head count on the booking.</p>
       ${rows.length ? `<div class="bk-wrap"><table class="bk"><tr><th>Date</th><th>Workshop</th><th>Who attends</th><th>Participants</th><th>Amount</th><th>Status</th></tr>
         ${rows.map(b => `<tr class="${['requested','confirmed','paid','pending'].includes(b.status) ? '' : 'gone'}"><td>${esc(b.session_when)}</td><td>${esc(b.session_name)}</td>
@@ -1728,7 +1883,13 @@ async function crmDetail(id){
     else if (chunk === 'RIGHT') recCol = 'right';
     else recParts[recCol] += chunk;
   });
+  const saveBar = w ? `<div class="form-bar"><button type="button" class="ix-btn" onclick="formCancel()">Cancel</button><button type="button" class="ix-btn primary" onclick="crmSave('${x.id}')">Save</button></div>` : '';
+  recParts.left = `<div class="rec-form" oninput="formTouch()" onchange="formTouch()">${recParts.left}${saveBar}</div>`;
+  crmFormHtml = recParts.left;
+  crmFormFor = x.id;
+  if (crmDetailPanel) { crmDetailPanel = false; return; }
   $('view').innerHTML = window.MaGrowth ? window.MaGrowth.recordFrame(recParts) : html;
+  formSnap();
 }
 
 async function crmSaveFamily(contactId){
@@ -1771,6 +1932,7 @@ window.crmSave = async id => {
   v.email = v.email ? v.email.trim().toLowerCase() : null;
   if (!v.first_name) { toast('Please keep a first name.'); return; }
   if (v.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)) { toast('Please check the email address.'); return; }
+  if (v.phone && window.MaCrm && !window.MaCrm.normaliseMyPhone(v.phone)) { toast('Check the phone number. Use 012… or +60…'); return; }
   if (v.rating !== null && v.rating !== undefined && (v.rating < 0 || v.rating > 10)) { toast('The rating is 0 to 10.'); return; }
   if (v.credit_balance != null && v.credit_balance < 0) { toast('Academy credit cannot be negative.'); return; }
   const before = crmCurrent && crmCurrent.id === id ? crmCurrent : crmRows.find(c => c.id === id);
@@ -1843,6 +2005,7 @@ window.crmSave = async id => {
       : error.message;
     toast('Could not save: ' + msg); return;
   }
+  formDirty = false;
   toast('Saved'); await render();
 };
 
@@ -2277,7 +2440,9 @@ views.inbox = async function(){
     thread = { items: window.MaCrm ? window.MaCrm.rowsToTimeline(rows) : [], family: fam.data || [], bookings: bks.data || [], queue: queue.data || [] };
   }
   if (inboxShowSettings) { $('view').innerHTML = inboxSettingsHtml(); return; }
+  if (open && open.contact_id) await crmDetail(open.contact_id, true);
   $('view').innerHTML = inboxShell(shown, open, thread);
+  formSnap();
   const box = $('inboxBody'); if (box && inboxDraft) box.value = inboxDraft;
 };
 function inboxShell(shown, open, thread){
@@ -2325,27 +2490,10 @@ function inboxThread(open, thread){
         <button class="btn sm" type="button" onclick="inboxSend()">Send</button></p>
     </div>`;
 }
-function inboxPanel(open, thread){
-  const p = open.contacts || {};
-  const w = canWrite('bookings');
-  const dis = w ? '' : 'disabled';
-  const tags = p.tags || [];
-  const kids = (thread.family || []).map(g => {
-    const child = g.participants || {};
-    return `<li>${esc(child.full_name || 'Child')}${child.age_years ? ' (' + esc(child.age_years) + ')' : ''} · ${esc(g.relationship || '')}${g.is_primary ? ' · primary' : ''}</li>`;
-  }).join('');
-  const books = (thread.bookings || []).map(b => `<li>${esc(b.session_when || '')} · ${esc(b.session_name || '')} · ${b.people || 1} attending · ${esc(b.status || '')}</li>`).join('');
-  return `<p class="help" style="margin-top:0">${esc(p.lifecycle_stage || '')} ${p.ctwa_clid ? '· click-to-WhatsApp ad' : ''} ${p.meta_ad_id ? '· ad ' + esc(p.meta_ad_id) : ''}</p>
-    <p><b>${esc(inboxName(open))}</b><br><small>${esc(p.whatsapp_e164 || p.phone || '')}<br>${esc(p.email || '')}</small></p>
-    <p>${(p.whatsapp_consent || p.marketing_consent) ? '<span class="tag">marketing opted-in</span>' : '<span class="tag">no marketing opt-in</span>'}</p>
-    <div class="f"><label>Tags</label><div>${tags.map(t => `<span class="tag">${esc(t)} ${w ? `<button type="button" onclick="inboxDropTag('${esc(t)}')" style="border:0;background:transparent;cursor:pointer">×</button>` : ''}</span>`).join(' ')}</div>
-      <p style="display:flex;gap:6px;margin-top:6px"><input id="inboxTagAdd" placeholder="Add a tag" ${dis}><button class="btn sm" type="button" onclick="inboxAddTag()" ${dis}>Add</button></p>
-      <p class="help">${INBOX_TAGS.map(t => `<button type="button" class="btn sm" onclick="inboxAddTag('${esc(t)}')">${esc(t)}</button>`).join(' ')}</p></div>
-    <div class="f"><label>Notes</label><textarea id="inboxNotes" rows="4" ${dis}>${esc(p.notes || '')}</textarea>
-      ${w ? `<p><button class="btn sm" type="button" onclick="inboxSaveNotes()">Save notes</button></p>` : ''}</div>
-    <p><b>Family</b></p>${kids ? `<ul>${kids}</ul>` : '<p class="help">No children linked.</p>'}
-    <p><b>Bookings</b></p>${books ? `<ul>${books}</ul>` : '<p class="help">No bookings.</p>'}
-    <p><button class="btn sm" type="button" onclick="crmFromBooking('${p.id}')">Open full profile</button></p>`;
+function inboxPanel(open){
+  if (!open.contact_id) return '<p class="help">This conversation has no customer yet.</p>';
+  return `<p><button class="btn sm" type="button" onclick="crmFromBooking('${open.contact_id}')">Open full record</button></p>`
+    + (crmFormFor === open.contact_id ? crmFormHtml : '<p class="help">Loading the customer form…</p>');
 }
 function inboxSettingsHtml(){
   const s = inboxSettings || {};
@@ -2606,9 +2754,10 @@ function paintCustomers(){
     ],
     bulk:[{ id:'owner', label:'Assign owner' }, { id:'tag', label:'Add tag' }, { id:'list', label:'Add to list' }, { id:'stage', label:'Change stage' }, { id:'export', label:'Export CSV' }],
     bulkExtra:`<select id="ixOwner" class="ix-mini"><option value="">Owner…</option>${ownerOpts}</select><select id="ixStage" class="ix-mini"><option value="">Stage…</option>${stageOpts}</select><select id="ixList" class="ix-mini"><option value="">List…</option>${listOpts}</select>`,
-    preview: preview ? { title:[preview.first_name, preview.last_name].filter(Boolean).join(' '), lines:[['Email', preview.email || ''], ['Phone', preview.phone || preview.whatsapp_e164 || ''], ['Lifecycle', preview.lifecycle_stage || preview.stage || ''], ['Lead score', crmScoreMap[preview.id] ? String(crmScoreMap[preview.id].points) : ''], ['Owner', (staffNames && staffNames[preview.owner]) || '']], action:`crmGo('${preview.id}')`, actionLabel:'Open record' } : null,
     empty: crmRows.length ? 'No customers in this view.' : 'No customers yet. They appear after the first booking or trial request.'
   });
+  const panel = crmPreview ? `<aside class="sideform"><p style="display:flex;gap:8px;justify-content:space-between"><button type="button" class="ix-btn" onclick="crmGo('${crmPreview}')">Open full record</button><button type="button" class="ix-btn" onclick="ixPreview('customers','')">Close</button></p>${crmFormFor === crmPreview ? crmFormHtml : '<p class="help">Loading the record…</p>'}</aside>` : '';
+  if (panel) $('view').innerHTML = `<div class="ix-with-form"><div class="ix-main">${$('view').innerHTML}</div>${panel}</div>`;
 }
 function kindLabel(kind){
   return ({ manual:'To do', lead_no_reply:'No reply', booking_unpaid:'Unpaid booking', post_workshop_review:'After workshop', no_rebook:'No rebook' })[kind] || kind || '';
@@ -2652,6 +2801,17 @@ function paintTasks(){
     tools:`<div class="ix-tools"><input id="taskTitle" placeholder="New task" style="height:32px;border:1px solid var(--line);padding:0 8px"><input id="taskDue" type="date" style="height:32px;border:1px solid var(--line);padding:0 8px"><button type="button" class="ix-btn primary" onclick="taskAdd()">Add task</button></div>`,
     empty:'Nothing in this tab.'
   });
+  const task = taskPreview && taskRows.find(t => t.id === taskPreview);
+  if (task) {
+    const owners = Object.entries(staffNames || {}).map(([id, name]) => `<option value="${id}" ${task.assignee===id?'selected':''}>${esc(name)}</option>`).join('');
+    const pri = G.taskPriority(task.due_on || '', today);
+    const form = `<div class="rec-form" oninput="formTouch()" onchange="formTouch()">${G.folds([
+      { title:'Task', open:true, body:`<div class="f"><label>Title</label><input data-f="${task.id}.title" value="${esc(task.title)}"></div><div class="f"><label>Detail</label><textarea data-f="${task.id}.detail">${esc(task.detail || '')}</textarea></div>` },
+      { title:'Status and due date', open:true, body:`<div class="f"><label>Status</label><select data-f="${task.id}.status"><option value="open" ${task.status==='open'?'selected':''}>Open</option><option value="done">Done</option><option value="dismissed">Dismissed</option></select></div><div class="f"><label>Due date</label><input type="date" data-f="${task.id}.due_on" value="${esc((task.due_on || '').slice(0,10))}"></div><p class="help">Priority ${esc(pri.label)} follows the due date. It is not stored separately.</p>` },
+      { title:'Owner and record', body:`<div class="f"><label>Owner</label><select data-f="${task.id}.assignee"><option value="">Unassigned</option>${owners}</select></div><p class="help">${task.contact_id ? `<button type="button" class="ix-link" onclick="crmFromBooking('${task.contact_id}')">${esc(task.contact_name || 'Customer')}</button>` : 'No customer'} ${task.deal_name ? ' · ' + esc(task.deal_name) : ''}</p><p class="help">Type: ${esc(kindLabel(task.kind))}</p>` }
+    ])}<div class="form-bar"><button type="button" class="ix-btn" onclick="ixPreview('tasks','')">Close</button><button type="button" class="ix-btn primary" onclick="taskSave('${task.id}')">Save</button></div></div>`;
+    $('view').innerHTML = `<div class="ix-with-form"><div class="ix-main">${$('view').innerHTML}</div><aside class="sideform"><h2>${esc(task.title)}</h2>${form}</aside></div>`;
+  }
 }
 function paintLists(){
   const G = window.MaGrowth;
@@ -2735,7 +2895,39 @@ function paintDeals(){
     tools:`<div class="ix-tools"><input id="dealTitle" placeholder="New enquiry" style="height:32px;border:1px solid var(--line);padding:0 8px"><select id="dealKind"><option value="team_building">Team-building</option><option value="birthday">Birthday</option><option value="school">School</option><option value="other">Other</option></select><input id="dealValue" type="number" min="0" value="0" style="width:90px;height:32px;border:1px solid var(--line);padding:0 8px" title="RM"><input id="dealHead" type="number" min="1" placeholder="People" style="width:80px;height:32px;border:1px solid var(--line);padding:0 8px"><input id="dealWhen" type="date" style="height:32px;border:1px solid var(--line)"><button type="button" class="ix-btn primary" onclick="dealAdd()">Add</button></div>`,
     empty:'No deals in this view.'
   });
+  const deal = dealPreview && dealRows.find(d => d.id === dealPreview);
+  if (deal && dealMode !== 'board') {
+    const owners = Object.entries(staffNames || {}).map(([id, name]) => `<option value="${id}" ${deal.owner===id?'selected':''}>${esc(name)}</option>`).join('');
+    const stages = G.STAGES.map(s => `<option value="${s}" ${deal.stage===s?'selected':''}>${esc(G.STAGE_LABEL[s])}</option>`).join('');
+    const kinds = ['team_building','birthday','school','other'].map(k => `<option value="${k}" ${deal.kind===k?'selected':''}>${esc(k)}</option>`).join('');
+    const form = `<div class="rec-form" oninput="formTouch()" onchange="formTouch()">${G.folds([
+      { title:'Deal', open:true, body:`<div class="f"><label>Title</label><input data-f="${deal.id}.title" value="${esc(deal.title)}"></div><div class="f"><label>Type</label><select data-f="${deal.id}.kind">${kinds}</select></div><div class="f"><label>Stage</label><select data-f="${deal.id}.stage">${stages}</select></div>` },
+      { title:'Value and date', open:true, body:`<div class="f"><label>Value (RM)</label><input type="number" min="0" data-f="${deal.id}.value_rm" value="${esc(deal.value_rm || 0)}"></div><div class="f"><label>Headcount</label><input type="number" min="1" data-f="${deal.id}.headcount" value="${esc(deal.headcount || '')}"></div><div class="f"><label>Expected</label><input type="date" data-f="${deal.id}.expected_on" value="${esc((deal.expected_on || '').slice(0,10))}"></div>` },
+      { title:'Association', body:`<div class="f"><label>Company</label><input data-f="${deal.id}.company" value="${esc(deal.company || '')}"></div><div class="f"><label>Owner</label><select data-f="${deal.id}.owner"><option value="">Unassigned</option>${owners}</select></div>${deal.contact_id ? `<p><button type="button" class="ix-link" onclick="crmFromBooking('${deal.contact_id}')">Open customer</button></p>` : ''}` },
+      { title:'Notes', body:`<div class="f"><label>Notes</label><textarea data-f="${deal.id}.notes">${esc(deal.notes || '')}</textarea></div><div class="f"><label>Lost reason</label><input data-f="${deal.id}.lost_reason" value="${esc(deal.lost_reason || '')}"></div>` }
+    ])}<div class="form-bar"><button type="button" class="ix-btn" onclick="ixPreview('deals','')">Close</button><button type="button" class="ix-btn primary" onclick="dealSave('${deal.id}')">Save</button></div></div>`;
+    $('view').innerHTML = `<div class="ix-with-form"><div class="ix-main">${$('view').innerHTML}</div><aside class="sideform"><h2>${esc(deal.title)}</h2>${form}</aside></div>`;
+  }
 }
+window.dealSave = async (id) => {
+  const v = collect(id);
+  if (!v.title) { toast('Add a title.'); return; }
+  ['owner','contact_id'].forEach(k => { if (v[k] === '') v[k] = null; });
+  if (v.headcount === '' || v.headcount == null) v.headcount = null;
+  v.updated_at = new Date().toISOString();
+  const { error } = await sb.from('group_deals').update(v).eq('id', id);
+  if (error) { toast(error.message); return; }
+  formDirty = false; toast('Saved'); await render();
+};
+window.taskSave = async (id) => {
+  const v = collect(id);
+  if (!v.title) { toast('Add a title.'); return; }
+  if (v.assignee === '') v.assignee = null;
+  if (v.status === 'done') v.done_at = new Date().toISOString();
+  const { error } = await sb.from('staff_tasks').update(v).eq('id', id);
+  if (error) { toast(error.message); return; }
+  formDirty = false; toast('Saved'); taskPreview = ''; await render();
+};
 function emailNav(){
   const tabs = [['campaigns','Campaigns'],['checklist','Create'],['templates','Templates'],['flows','Automations']];
   const on = id => emailScreen === id || (id === 'checklist' && emailScreen === 'editor') || (id === 'campaigns' && emailScreen === 'report');
@@ -2873,9 +3065,19 @@ window.ixCol = (scope, key, on) => {
   if (!on) crmColKeys = crmColKeys.filter(k => k !== key);
   paintCustomers();
 };
-window.ixPreview = (scope, id) => {
-  if (scope === 'customers') crmPreview = id || '';
-  paintScope(scope);
+window.ixPreview = async (scope, id) => {
+  if (scope === 'customers') {
+    if (formDirty && crmPreview && crmPreview !== id && !confirm('Discard unsaved changes?')) return;
+    formDirty = false;
+    crmPreview = id || '';
+    if (!id) { paintCustomers(); return; }
+    paintCustomers();
+    await crmDetail(id, true);
+    if (crmPreview === id) { paintCustomers(); formSnap(); }
+    return;
+  }
+  if (scope === 'deals') { dealPreview = id || ''; paintDeals(); }
+  if (scope === 'tasks') { taskPreview = id || ''; paintTasks(); }
 };
 window.ixMode = (scope, id) => { if (scope === 'deals') { dealMode = id; paintDeals(); } };
 window.ixBulk = async (scope, action) => {
@@ -3338,6 +3540,62 @@ window.addInvite = async () => {
   busy(false);
   if (error) { toast('Could not add: ' + error.message); return; }
   toast('Invited — they get access automatically when they sign in with that email'); await render();
+};
+
+views.reports = async function(){
+  busy(true,'Loading…');
+  const [people, tasks, deals, camps] = await Promise.all([
+    sb.from('contacts').select('id', { count:'exact', head:true }),
+    sb.from('staff_tasks').select('id', { count:'exact', head:true }).eq('status', 'open'),
+    sb.from('group_deals').select('stage, value_rm'),
+    sb.from('email_campaign_revenue').select('revenue_rm')
+  ]);
+  busy(false);
+  const pipeline = {};
+  (deals.data || []).forEach(d => { pipeline[d.stage] = (pipeline[d.stage] || 0) + Number(d.value_rm || 0); });
+  const revenue = (camps.data || []).reduce((n, r) => n + Number(r.revenue_rm || 0), 0);
+  const stages = Object.keys(pipeline);
+  $('view').innerHTML = `<div class="em-tiles"><div class="em-tile"><span>Customers</span><b>${people.count || 0}</b></div><div class="em-tile"><span>Open tasks</span><b>${tasks.error ? '—' : (tasks.count || 0)}</b></div><div class="em-tile"><span>Email revenue</span><b>RM${revenue}</b></div></div>
+    <h2 style="margin:16px 0 8px">Deal pipeline</h2>
+    <div class="ix-scroll"><table class="ix-table"><thead><tr><th>Stage</th><th>Value</th></tr></thead><tbody>${stages.length ? stages.map(k => `<tr><td>${esc(k)}</td><td>RM${pipeline[k]}</td></tr>`).join('') : '<tr><td colspan="2" class="ix-empty">No deals yet.</td></tr>'}</tbody></table></div>
+    <p class="ix-note">These counts do not include WhatsApp message text.</p>`;
+};
+window.userMenuToggle = () => { const p = $('userPop'); if (p) p.hidden = !p.hidden; };
+let searchTimer = null;
+if ($('globalSearch')) $('globalSearch').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  const q = $('globalSearch').value.trim();
+  searchTimer = setTimeout(() => runSearch(q), 220);
+});
+async function runSearch(q){
+  const box = $('searchHits');
+  if (!box) return;
+  if (q.length < 2) { box.hidden = true; box.innerHTML = ''; return; }
+  const safe = q.replace(/[%_,.()]/g, '').slice(0, 40);
+  const people = await sb.from('contacts').select('id, first_name, last_name, email, phone').or(`first_name.ilike.%${safe}%,last_name.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`).limit(6);
+  let conv = [];
+  if (me && me.role !== 'marketing') {
+    const rows = await sb.from('conversations').select('id, contacts(first_name, last_name)').order('last_message_at', { ascending:false }).limit(40);
+    const needle = safe.toLowerCase();
+    conv = (rows.data || []).filter(r => {
+      const name = r.contacts ? ((r.contacts.first_name || '') + ' ' + (r.contacts.last_name || '')).toLowerCase() : '';
+      return name.includes(needle);
+    }).slice(0, 5);
+  }
+  const bits = (people.data || []).map(p => `<button type="button" onclick="searchOpen('customer','${p.id}')"><b>${esc((p.first_name || '') + ' ' + (p.last_name || ''))}</b><br><small>${esc(p.email || p.phone || 'Customer')}</small></button>`);
+  conv.forEach(r => {
+    const name = r.contacts ? [r.contacts.first_name, r.contacts.last_name].filter(Boolean).join(' ') : 'Conversation';
+    bits.push(`<button type="button" onclick="searchOpen('inbox','${r.id}')"><b>${esc(name)}</b><br><small>Conversation</small></button>`);
+  });
+  box.innerHTML = bits.join('') || '<p class="help" style="padding:8px">No matches.</p>';
+  box.hidden = false;
+}
+window.searchOpen = async (kind, id) => {
+  $('searchHits').hidden = true;
+  $('globalSearch').value = '';
+  if (kind === 'customer') { crmOpen = id; current = 'customers'; crmMode = 'people'; appArea = 'crm'; }
+  else { inboxOpen = id; current = 'inbox'; appArea = 'crm'; }
+  await render();
 };
 
 /* ---------- start ---------- */

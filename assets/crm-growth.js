@@ -364,6 +364,45 @@
       + '</tbody></table></div></div>';
   }
 
+  var ICONS = {
+    inbox: '<path d="M4 6h16v10H4z"/><path d="M4 7l8 6 8-6"/>',
+    customers: '<circle cx="9" cy="8" r="3"/><path d="M3.5 18c.6-2.6 2.8-4 5.5-4s4.9 1.4 5.5 4"/><circle cx="17" cy="9" r="2"/><path d="M16 14.2c1.8.3 3.2 1.4 3.8 3.3"/>',
+    tasks: '<path d="M8 6h11M8 12h11M8 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>',
+    lists: '<path d="M8 6h12M8 12h12M8 18h12"/><path d="M4 6h2v2H4zM4 11h2v2H4zM4 16h2v2H4z"/>',
+    deals: '<path d="M4 19V5M4 19h16"/><path d="M8 15v-3M12 15V8M16 15v-5"/>',
+    email: '<path d="M4 7h16v10H4z"/><path d="M4 8l8 6 8-6"/>',
+    reports: '<path d="M5 19V10M10 19V5M15 19v-6M20 19V8"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/>',
+    website: '<path d="M4 6h16v12H4z"/><path d="M4 10h16"/>'
+  };
+
+  function icon(name) {
+    return '<svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">' + (ICONS[name] || ICONS.lists) + '</svg>';
+  }
+
+  function appNav(groups, active) {
+    return (groups || []).map(function (group) {
+      var items = (group.items || []).map(function (item) {
+        var childOn = (item.children || []).some(function (child) { return child.id === active; });
+        var on = item.id === active || childOn;
+        var badge = item.badge ? '<span class="n">' + esc(item.badge) + '</span>' : '';
+        var row = '<button type="button" class="snav' + (on ? ' on' : '') + '" onclick="' + item.go + '"><span class="nav-ic">' + icon(item.icon) + '</span><span class="nav-lb">' + esc(item.label) + '</span>' + badge + '</button>';
+        var kids = (item.children || []).map(function (child) {
+          return '<button type="button" class="snav sub' + (child.id === active ? ' on' : '') + '" onclick="' + child.go + '"><span class="nav-lb">' + esc(child.label) + '</span></button>';
+        }).join('');
+        return row + kids;
+      }).join('');
+      return '<p class="nav-group">' + esc(group.label) + '</p>' + items;
+    }).join('');
+  }
+
+  function folds(sections) {
+    return (sections || []).map(function (section, i) {
+      var open = section.open || i === 0;
+      return '<details class="fold"' + (open ? ' open' : '') + '><summary>' + esc(section.title) + '</summary><div class="fold-b">' + (section.body || '') + '</div></details>';
+    }).join('');
+  }
+
   function clauseText(definition) {
     var clauses = (definition && definition.clauses) || [];
     if (!clauses.length) return 'No filters';
@@ -392,6 +431,9 @@
     reportHtml: reportHtml,
     rate: rate,
     clauseText: clauseText,
+    appNav: appNav,
+    folds: folds,
+    icon: icon,
     STAGES: STAGES,
     STAGE_LABEL: STAGE_LABEL
   };

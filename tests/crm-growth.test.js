@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { leadScore, emailSendable, segmentMatch, reasonText, indexHtml, recordFrame, taskBucket, taskPriority, checklistState, sortRows, pageWindow } = require('../assets/crm-growth.js');
+const { leadScore, emailSendable, segmentMatch, reasonText, indexHtml, recordFrame, taskBucket, taskPriority, checklistState, sortRows, pageWindow, appNav, folds } = require('../assets/crm-growth.js');
 
 test('lead score is explainable and does not need message text', function () {
   const full = leadScore({ adClick: true, replied: true, askedPrice: true, booked: true, openedLink: true, recencyDays: 3 });
@@ -70,6 +70,18 @@ test('tasks bucket by due date and the record frame has three columns', function
   assert.match(frame, /rec-l/);
   assert.match(frame, /rec-m/);
   assert.match(frame, /rec-r/);
+});
+
+test('the CRM nav and record folds keep labels', function () {
+  const nav = appNav([
+    { label: 'CRM', items: [{ id: 'inbox', label: 'Inbox', icon: 'inbox', badge: '3', go: "goNav('inbox')" }, { id: 'customers', label: 'Customers', icon: 'customers', go: "goNav('customers')" }] }
+  ], 'inbox');
+  assert.match(nav, /Inbox/);
+  assert.match(nav, />3</);
+  assert.match(nav, /class="snav on"/);
+  const form = folds([{ title: 'Contact info', body: '<input>', open: true }, { title: 'Family', body: '' }]);
+  assert.match(form, /Contact info/);
+  assert.match(form, /<details class="fold" open>/);
 });
 
 test('email checklist ticks only the parts that are filled', function () {
