@@ -59,6 +59,7 @@
   .sideform, .inbox.pane-customer .inbox-side {
     position: fixed; inset: 0; z-index: 45; width: auto; max-height: none; border-radius: 0;
     padding: calc(12px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom));
+    background: var(--bg); overflow: auto;
   }
   .form-bar { position: sticky; bottom: 0; padding-bottom: 8px; }
   .ix-btn, .btn.sm, .inbox-row, .snav { min-height: 44px; }

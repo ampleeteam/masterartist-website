@@ -273,6 +273,8 @@ table.bk tr.click:hover td{background:var(--cream)}
 .ch{width:22px;height:22px;border-radius:50%;background:var(--purple);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex:none}
 .unread{min-width:18px;height:18px;border-radius:9px;background:var(--gold);color:var(--purple-deep);font-size:11px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
 .inbox-compose{border-top:1px solid var(--line);padding:10px;position:relative}
+.case-panel{padding:12px;border-bottom:1px solid var(--line)}
+.case-panel .f{margin-bottom:8px}
 .inbox-compose textarea{width:100%;border:1px solid var(--line);padding:8px;min-height:72px}
 .slash-pop{position:absolute;left:10px;right:10px;bottom:calc(100% - 8px);background:var(--surface);border:1px solid var(--line);z-index:5}
 .slash-pop button{display:block;width:100%;text-align:left;background:var(--surface);border:0;border-bottom:1px solid var(--line);padding:8px 10px;cursor:pointer}
@@ -470,11 +472,12 @@ table.bk tr.click:hover td{background:var(--cream)}
     <button type="button" data-tab="inbox" onclick="goNav('inbox')">Inbox</button>
     <button type="button" data-tab="customers" onclick="goNav('customers')">Customers</button>
     <button type="button" data-tab="tasks" onclick="goNav('tasks')">Tasks</button>
-    <button type="button" data-tab="groups" onclick="goNav('groups')">Deals</button>
+    <button type="button" data-tab="sessions" onclick="goNav('sessions')">Events</button>
     <button type="button" data-tab="more" onclick="moreSheet(true)">More</button>
   </nav>
   <div class="more-sheet" id="moreSheet" hidden>
     <div class="ix-sheet-bar"><b>More</b><button type="button" class="ix-btn" onclick="moreSheet(false)">Done</button></div>
+    <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('groups')">Deals</button>
     <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('lists')">Lists</button>
     <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('campaigns')">Email</button>
     <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('reports')">Reports</button>
@@ -489,6 +492,8 @@ table.bk tr.click:hover td{background:var(--cream)}
 <script src="assets/wa-export.js"></script>
 <script src="assets/inbox.js"></script>
 <script src="assets/crm-growth.js"></script>
+<script src="assets/crm-case.js"></script>
+<script src="assets/crm-events.js"></script>
 <script src="assets/crm-shell.js"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
@@ -638,6 +643,7 @@ window.signOut = signOut;
 
 /* ---------- boot: who am I, what may I do ---------- */
 async function boot(){
+  if (new URLSearchParams(location.search).get('preview') || location.hash.indexOf('#preview') === 0) { previewStudio(); return; }
   const { data:{ session } } = await sb.auth.getSession();
   if (!session) return;                       // stay on the sign-in screen
 
@@ -730,6 +736,7 @@ function paintNav(){
     crm.push({ id:'customers', label:'Customers', icon:'customers', go: go('customers') });
     crm.push({ id:'tasks', label:'Tasks', icon:'tasks', badge: navBadges.tasks ? String(navBadges.tasks) : '', go: go('tasks') });
     crm.push({ id:'lists', label:'Lists', icon:'lists', go: go('lists') });
+    crm.push({ id:'sessions', label:'Events', icon:'deals', go: go('sessions') });
     crm.push({ id:'groups', label:'Deals', icon:'deals', go: go('groups') });
   }
   if (me.role === 'admin' || me.role === 'marketing' || canRead('email') || canRead('customers')) {
@@ -752,7 +759,7 @@ function paintNav(){
   else if (site.length) groups.push({ label:'Website', items: site });
   $('nav').innerHTML = G ? G.appNav(groups, navActive()) : '';
   const active = navActive();
-  const moreOn = ['lists','campaigns','flows','templates','reports','settings','people'].includes(active) || appArea === 'website';
+  const moreOn = ['lists','groups','campaigns','flows','templates','reports','settings','people'].includes(active) || appArea === 'website';
   document.querySelectorAll('#tabbar button').forEach(b => {
     b.classList.toggle('on', b.dataset.tab === 'more' ? moreOn : b.dataset.tab === active);
     if (b.dataset.tab === 'inbox') b.hidden = me.role === 'marketing' || !canRead('bookings');
@@ -800,12 +807,13 @@ async function render(){
   $('title').textContent = sec ? sec.label : '';
   const shell = document.querySelector('.bodyw');
   if (shell) {
-    const wide = ['inbox', 'groups', 'customers', 'tasks', 'email', 'reports'].includes(current);
+    const wide = ['inbox', 'groups', 'customers', 'tasks', 'email', 'reports', 'sessions'].includes(current);
     shell.style.maxWidth = wide ? 'none' : '';
     shell.classList.toggle('wide', wide);
   }
 
   if (current === 'reports') { await views.reports(); return; }
+  if (current === 'sessions') { await views.sessions(); return; }
   if (!sec || !sectionAllowed(sec)) {
     $('view').innerHTML = `<div class="locked"><b>You don't have access to this section.</b><br>
       Your role is ${esc(ROLE_LABEL[me.role]||me.role)}. Ask an administrator if you need it.</div>`;
@@ -2369,8 +2377,90 @@ window.delPost = async id => {
   toast('Deleted'); await render();
 };
 
+views.sessions = async function(){
+  busy(true, 'Loading…');
+  const sessions = await sb.from('workshop_sessions').select('id, title, format, starts_at, capacity, price_rm, status').order('starts_at');
+  const finance = me.role === 'admin';
+  let rows = [];
+  if (finance) {
+    const pnl = await sb.from('event_financials').select('*');
+    rows = pnl.error ? [] : (pnl.data || []);
+  }
+  busy(false);
+  const list = sessions.error ? [] : (sessions.data || []);
+  let html = `<div class="hint"><b>Workshops.</b> Profit and loss is for admins. Bookings staff can add a cost and a receipt photo. Nothing here is sent to WhatsApp.</div>`;
+  if (sessions.error) html += `<div class="msg info">Session rows come from <b>supabase/migrations/20261122110000_workshop_sessions_and_enrolments.sql</b>. That file is in the repo and has not been applied from this screen.</div>`;
+  if (finance && window.MaEvents) html += rows.length ? rows.map(r => window.MaEvents.pnlCard(r)).join('') : '<div class="empty">No session figures yet. The finance view fills in after the finance migration is applied and ads or payments are recorded.</div>';
+  if (canWrite('bookings') && window.MaEvents) {
+    html += `<div class="card"><div class="card-h"><span class="grip">Add a cost</span></div><div class="card-b">${window.MaEvents.addCostForm(list)}</div></div>`;
+  }
+  $('view').innerHTML = html;
+};
+window.eventCostSave = async () => {
+  const session = $('costSession') && $('costSession').value;
+  const category = $('costCategory') && $('costCategory').value;
+  const amount = Number($('costAmount') && $('costAmount').value);
+  const description = ($('costNote') && $('costNote').value || '').trim();
+  if (!session || !category || !(amount >= 0)) { toast('Choose a session, a category, and an amount.'); return; }
+  let receipt_path = null;
+  const file = $('costReceipt') && $('costReceipt').files && $('costReceipt').files[0];
+  if (file) {
+    const path = session + '/' + Date.now() + '-' + file.name.replace(/[^\w.\-]+/g, '_');
+    const up = await sb.storage.from('receipts').upload(path, file, { upsert: false });
+    if (up.error) { toast(up.error.message); return; }
+    receipt_path = path;
+  }
+  const { error } = await sb.from('event_costs').insert({ session_id: session, category, amount_rm: amount, description: description || null, receipt_path });
+  if (error) { toast(error.message); return; }
+  toast('Cost added');
+  await render();
+};
+
+function previewStudio(){
+  me = { id: 'preview', full_name: 'Maya Tan', email: 'maya@masterartist.co', role: 'admin', active: true };
+  perms = { bookings: { read: true, write: true }, customers: { read: true, write: true }, email: { read: true, write: true } };
+  navBadges = { inbox: 1, tasks: 2 };
+  $('authScreen').style.display = 'none';
+  $('appScreen').classList.add('on');
+  const which = new URLSearchParams(location.search).get('preview') || (location.hash || '').replace('#preview-', '').replace('#preview', '') || 'inbox';
+  current = which === 'customer' ? 'customers' : which === 'events' || which === 'cost' ? 'sessions' : 'inbox';
+  $('meBox').innerHTML = `<button type="button" class="snav" style="color:var(--ink);width:auto;border:0"><span class="av">${esc(initials(me.full_name))}</span><span class="nm"><b>${esc(me.full_name)}</b><small>Admin</small></span></button>`;
+  paintNav();
+  $('title').textContent = current === 'sessions' ? 'Events' : current === 'customers' ? 'Customers' : 'Inbox';
+  const shell = document.querySelector('.bodyw');
+  if (shell) { shell.style.maxWidth = 'none'; shell.classList.add('wide'); }
+  if (which === 'events' || which === 'cost') {
+    const sample = { session_id: 'children-2027', title: "Children's art, January", ad_spend_rm: 860, cost_per_conversation_rm: 18, cpa_rm: 72, net_revenue_rm: 4200, roas: 4.9, gross_profit_rm: 2510, margin: 0.6, fill_rate: 0.75, cost_materials_rm: 240, cost_instructor_rm: 800, cost_venue_rm: 300, cost_overhead_rm: 120, cost_food_rm: 90, cost_printing_rm: 40, cost_other_rm: 0 };
+    $('view').innerHTML = window.MaEvents.pnlCard(sample) + (which === 'cost' ? `<div class="card"><div class="card-h"><span class="grip">Add a cost</span></div><div class="card-b">${window.MaEvents.addCostForm([{ id: 'children-2027', title: "Children's art, January" }])}</div></div>` : '');
+    return;
+  }
+  if (which === 'customer') {
+    const about = '<h2>Hana Parent</h2><p class="help">From ad: Children\'s Art Class – 10 sessions</p>'
+      + '<div class="card"><div class="card-h"><span class="grip">Contact info</span></div><div class="card-b rec-form">'
+      + '<div class="row"><div class="f"><label>First name</label><input value="Hana"></div><div class="f"><label>Last name</label><input value="Parent"></div></div>'
+      + '<div class="row"><div class="f"><label>Email</label><input value="hana@example.com"></div><div class="f"><label>WhatsApp number</label><input value="+60173334444"></div></div></div></div>'
+      + '<div class="card"><div class="card-h"><span class="grip">Lifecycle and lead status</span></div><div class="card-b">'
+      + '<div class="row"><div class="f"><label>Lifecycle stage</label><input value="enquiry"></div><div class="f"><label>Lead status</label><input value="open"></div></div></div></div>';
+    const mid = '<div class="card"><div class="card-h"><span class="grip">Timeline</span></div><div class="card-b"><p>Today · WhatsApp · Is the Saturday class still open?</p>'
+      + '<div class="tl-compose"><label class="help">Reply on WhatsApp</label><textarea rows="3" placeholder="Write a reply. It is queued."></textarea></div></div></div>';
+    const side = '<div class="card"><div class="card-h"><span class="grip">Family</span></div><div class="card-b"><p>Aina, 8 · painting</p></div></div>';
+    $('view').innerHTML = window.MaGrowth.recordFrame({ top: '', left: about, middle: mid, right: side });
+    return;
+  }
+  inboxRows = [{ id: 'c1', contact_id: 'p1', channel: 'whatsapp', status: 'open', priority: 'high', assigned_to: 'preview', unread_count: 1, last_message_preview: 'Is the Saturday class still open?', last_message_at: new Date().toISOString(), last_inbound_at: new Date().toISOString(), entry_label: "From ad: Children's Art Class – 10 sessions", contacts: { first_name: 'Hana', last_name: 'Parent', tags: ['kids'], ctwa_clid: 'ARtest' } }];
+  inboxOpen = 'c1';
+  inboxStaff = [{ id: 'preview', full_name: 'Maya Tan' }];
+  inboxCase = { status: 'open', priority: 'high', assigned_to: 'preview', tags: ['kids'], staff: inboxStaff, sessionTitle: "Children's art, January", stage: 'enquired', tasks: [{ title: 'Confirm Saturday seats', due_on: '2026-11-23' }] };
+  inboxPane = which === 'case' ? 'customer' : 'thread';
+  crmFormFor = 'p1';
+  crmFormHtml = '<div class="card"><div class="card-h"><span class="grip">Contact info</span></div><div class="card-b rec-form"><div class="f"><label>First name</label><input value="Hana"></div><div class="f"><label>WhatsApp number</label><input value="+60173334444"></div></div></div>';
+  const open = inboxRows[0];
+  const thread = { items: [{ occurredAt: new Date().toISOString(), channel: 'whatsapp', direction: 'in', body: 'Is the Saturday class still open?', senderName: 'Hana Parent', kind: 'message' }], queue: [] };
+  $('view').innerHTML = inboxShell([open], open, thread);
+}
+
 /* ---------- Shared inbox ---------- */
-let inboxFilter = 'all', inboxChannel = '', inboxTag = '', inboxOpen = null, inboxFocusContact = null, inboxShowSettings = false, inboxPane = 'list';
+let inboxFilter = 'all', inboxChannel = '', inboxTag = '', inboxOpen = null, inboxFocusContact = null, inboxShowSettings = false, inboxPane = 'list', inboxCase = null;
 let inboxRows = [], inboxReplies = [], inboxTemplates = [], inboxStaff = [], inboxSettings = null, inboxDraft = '', inboxScores = {}, inboxSort = 'recent';
 const INBOX_FILTERS = [['all','All'],['unassigned','Unassigned'],['mine','Assigned to me'],['needs','Needs reply'],['open','Open'],['closed','Closed']];
 const INBOX_CH = { whatsapp:'W', email:'E', instagram:'I', facebook:'F', website:'S', note:'N' };
@@ -2477,6 +2567,18 @@ views.inbox = async function(){
       occurred_at:e.occurred_at, kind:'booking', channel:'website', direction:'out', sender_type:'system', body:e.detail, booking_event:e.event, source:'live', media:[], buttons:[]
     })));
     thread = { items: window.MaCrm ? window.MaCrm.rowsToTimeline(rows) : [], family: fam.data || [], bookings: bks.data || [], queue: queue.data || [] };
+    const enrol = await sb.from('event_enrolments').select('stage, session_id').eq('conversation_id', open.id).limit(1);
+    const tasks = await sb.from('staff_tasks').select('title, due_on, status').eq('contact_id', open.contact_id).neq('status', 'done').limit(8);
+    inboxCase = {
+      status: open.status || 'open',
+      priority: open.priority || 'normal',
+      assigned_to: open.assigned_to || '',
+      tags: (open.contacts && open.contacts.tags) || [],
+      staff: inboxStaff,
+      sessionTitle: open.entry_label || (enrol.data && enrol.data[0] && enrol.data[0].session_id) || '',
+      stage: enrol.data && enrol.data[0] ? enrol.data[0].stage : '',
+      tasks: tasks.error ? [] : (tasks.data || [])
+    };
   }
   if (inboxShowSettings) { $('view').innerHTML = inboxSettingsHtml(); return; }
   if (open && open.contact_id) await crmDetail(open.contact_id, true);
@@ -2532,9 +2634,31 @@ function inboxThread(open, thread){
 }
 function inboxPanel(open){
   if (!open.contact_id) return '<p class="help">This conversation has no customer yet.</p>';
-  return `<p class="ix-back"><button class="ix-btn" type="button" onclick="inboxPaneGo('thread')">Back to chat</button></p><p><button class="btn sm" type="button" onclick="crmFromBooking('${open.contact_id}')">Open full record</button></p>`
+  const caseHtml = window.MaCase ? window.MaCase.renderCase(inboxCase || { status: open.status, priority: open.priority, assigned_to: open.assigned_to, tags: (open.contacts && open.contacts.tags) || [], staff: inboxStaff, sessionTitle: open.entry_label || '' }) : '';
+  return caseHtml + `<p class="ix-back"><button class="ix-btn" type="button" onclick="inboxPaneGo('thread')">Back to chat</button></p><p><button class="btn sm" type="button" onclick="crmFromBooking('${open.contact_id}')">Open full record</button></p>`
     + (crmFormFor === open.contact_id ? crmFormHtml : '<p class="help">Loading the customer form…</p>');
 }
+window.caseSave = async () => {
+  const row = inboxRows.find(r => r.id === inboxOpen);
+  if (!row) return;
+  const status = $('caseStatus') ? $('caseStatus').value : row.status;
+  const priority = $('casePriority') ? $('casePriority').value : 'normal';
+  const assigned = $('caseAssignee') ? $('caseAssignee').value : '';
+  const tags = ($('caseTags') && $('caseTags').value || '').split(',').map(t => t.trim()).filter(Boolean).slice(0, 20);
+  const stage = $('caseStage') ? $('caseStage').value : '';
+  const note = $('caseNote') ? $('caseNote').value.trim() : '';
+  const task = $('caseTask') ? $('caseTask').value.trim() : '';
+  const { error } = await sb.from('conversations').update({ status, priority, assigned_to: assigned || null }).eq('id', row.id);
+  if (error) { toast(error.message); return; }
+  if (row.contact_id) await sb.from('contacts').update({ tags, updated_at: new Date().toISOString(), updated_by: me.id }).eq('id', row.contact_id);
+  if (stage && inboxCase && inboxCase.sessionTitle) {
+    await sb.from('event_enrolments').update({ stage, updated_at: new Date().toISOString() }).eq('conversation_id', row.id);
+  }
+  if (note) await sb.rpc('send_conversation_message', { p_conversation: row.id, p_body: note, p_template: null, p_as_note: true, p_mentions: [] });
+  if (task && row.contact_id) await sb.from('staff_tasks').insert({ title: task, contact_id: row.contact_id, due_on: new Date().toISOString().slice(0, 10), status: 'open', owner: me.id });
+  toast('Case saved');
+  await render();
+};
 function inboxSettingsHtml(){
   const s = inboxSettings || {};
   const w = canWrite('bookings');
