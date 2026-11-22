@@ -20,8 +20,10 @@ Do these once, in order. Steps 1–3 work without Stripe.
 2. Run `supabase/migrations/20261016115757_trial_leads.sql`, only if the `trial_leads` table doesn't exist yet.
 3. Run `supabase/bookings.sql`.
 4. Run `supabase/crm.sql`. It also creates customers from any bookings and trial requests already saved.
+5. Run `supabase/migrations/20261120143000_crm_timeline_and_profile.sql`. This adds the rest of the customer profile, family links, and the conversation timeline. It does not turn on Stripe and it does not delete existing customers.
+6. Run `supabase/migrations/20261121103000_shared_inbox.sql`. This adds the shared inbox, saved replies, and the message queue. It does not call WhatsApp.
 
-The checks at the end of each file should show that the website (`anon`) can only add rows, and that `admin` has the `bookings` and `customers` permissions. To give another role access, for example `marketing`, add `role_permissions` rows for those sections.
+The checks at the end of each file should show that the website (`anon`) can only add rows, and that `admin` has the `bookings` and `customers` permissions. `anon` must not appear in the checks for `messages` or `participant_health`. To give another role access, for example `marketing`, add `role_permissions` rows for those sections. Marketing can open customers, but child allergies and medical notes stay limited to admin and bookings staff.
 
 ## 2. Email for Sabrina's report (Resend)
 
