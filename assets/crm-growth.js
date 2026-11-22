@@ -1,5 +1,7 @@
-/* CRM growth helpers: score, tasks, lists, deals, email.
-   Loaded only by admin.html. The public site does not use this file. */
+/* CRM list views, record frame, and the marketing-email screens.
+   Loaded only by admin.html. The public site does not use this file.
+   Lead score, send rules, and list matching stay in this file so tests can
+   run them without a browser. */
 (function (root, factory) {
   var api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -20,7 +22,6 @@
     recent: 'Recent'
   };
 
-  /* Mirrors public.contact_lead_scores. Reasons are codes, never message text. */
   function leadScore(input) {
     var reasons = [];
     var points = 0;
@@ -65,6 +66,7 @@
         return c.days_since_last_booking != null && Number(c.days_since_last_booking) >= Number(val);
       }
       if (clause.field === 'lifecycle_stage') return c.lifecycle_stage === val;
+      if (clause.field === 'contact_type') return c.contact_type === val;
       if (clause.field === 'is_organiser') return !!c.is_organiser;
       if (clause.field === 'birthday_enquiry') return !!c.birthday_enquiry;
       if (clause.field === 'asked_price') return !!c.asked_price;
@@ -72,61 +74,300 @@
     });
   }
 
-  function renderTasks(tasks) {
-    var rows = tasks || [];
-    if (!rows.length) return '<div class="empty">No open tasks. Automatic reminders appear when a lead waits 24 hours, a booking stays unpaid, a workshop was yesterday, or 45 days pass with no new booking.</div>';
-    return '<div class="bk-wrap"><table class="bk"><tr><th>Due</th><th>Task</th><th>Customer</th><th>Kind</th><th></th></tr>'
-      + rows.map(function (t) {
-        return '<tr><td>' + esc(t.due_on || '') + '</td><td><b>' + esc(t.title) + '</b><br><small>' + esc(t.detail || '') + '</small></td><td>'
-          + esc(t.contact_name || '') + '</td><td><small>' + esc(t.kind) + '</small></td><td>'
-          + '<button class="btn sm" type="button" onclick="taskDone(\'' + esc(t.id) + '\')">Done</button></td></tr>';
-      }).join('') + '</table></div>';
+  function pill(text, tone) {
+    if (text == null || text === '') return '';
+    return '<span class="ix-pill ' + esc(tone || '') + '">' + esc(text) + '</span>';
   }
 
-  function renderSegments(segments) {
-    var rows = segments || [];
-    if (!rows.length) return '<div class="empty">No saved lists yet.</div>';
-    return rows.map(function (s) {
-      var n = s.count == null ? '' : ' · ' + s.count + ' people';
-      return '<div class="card"><div class="card-h"><span class="grip">' + esc(s.name) + esc(n) + '</span>'
-        + '<button class="btn sm" type="button" onclick="segmentExport(\'' + esc(s.id) + '\')">Download</button>'
-        + '<button class="btn sm" type="button" onclick="segmentQueue(\'' + esc(s.id) + '\')">Queue WhatsApp template</button></div>'
-        + '<div class="card-b"><p class="help">Opt-in only. Queuing does not send. WhatsApp is not connected.</p></div></div>';
+  function sortValue(row, key) {
+    if (row.sort && row.sort[key] != null && row.sort[key] !== '') return row.sort[key];
+    if (row.cells && row.cells[key] != null) return row.cells[key];
+    return '';
+  }
+
+  function sortRows(rows, key, dir) {
+    var m = dir === 'desc' ? -1 : 1;
+    return (rows || []).slice().sort(function (a, b) {
+      var av = sortValue(a, key);
+      var bv = sortValue(b, key);
+      var an = Number(av);
+      var bn = Number(bv);
+      if (av !== '' && bv !== '' && !isNaN(an) && !isNaN(bn) && String(av).match(/^-?\d+(\.\d+)?$/)) {
+        return (an - bn) * m;
+      }
+      return String(av).localeCompare(String(bv), undefined, { numeric: true }) * m;
+    });
+  }
+
+  function pageWindow(total, page, size) {
+    var n = Math.max(0, total || 0);
+    var take = size > 0 ? size : 25;
+    var pages = Math.max(1, Math.ceil(n / take));
+    var p = Math.min(Math.max(0, page || 0), pages - 1);
+    return {
+      page: p,
+      pages: pages,
+      from: n ? p * take + 1 : 0,
+      to: Math.min(n, (p + 1) * take),
+      start: p * take,
+      end: (p + 1) * take
+    };
+  }
+
+  function taskBucket(due, today) {
+    if (!due) return 'upcoming';
+    if (due < today) return 'overdue';
+    if (due === today) return 'today';
+    return 'upcoming';
+  }
+
+  function taskPriority(due, today) {
+    var bucket = taskBucket(due, today);
+    if (bucket === 'overdue') return { label: 'High', tone: 'bad' };
+    if (bucket === 'today') return { label: 'Medium', tone: 'warn' };
+    return { label: 'Low', tone: 'muted' };
+  }
+
+  function cellHtml(row, key) {
+    if (row.html && row.html[key] != null) return row.html[key];
+    var value = row.cells ? row.cells[key] : '';
+    return esc(value == null ? '' : value);
+  }
+
+  function indexHtml(o) {
+    var opt = o || {};
+    var scope = opt.scope || 'list';
+    var columns = opt.columns || [];
+    var sorted = opt.sort && opt.sort.key ? sortRows(opt.rows || [], opt.sort.key, opt.sort.dir) : (opt.rows || []).slice();
+    var win = pageWindow(sorted.length, opt.page, opt.pageSize || 25);
+    var pageRows = sorted.slice(win.start, win.end);
+    var pick = opt.selectable !== false;
+    var selected = opt.selected || {};
+    var selectedCount = pageRows.filter(function (r) { return selected[r.id]; }).length;
+    var allOnPage = pageRows.length > 0 && selectedCount === pageRows.length;
+    var tabs = (opt.tabs || []).map(function (tab) {
+      return '<button type="button" class="ix-tab' + (tab.id === opt.tab ? ' on' : '') + '" onclick="ixTab(\'' + esc(scope) + '\',\'' + esc(tab.id) + '\')">' + esc(tab.label) + '</button>';
     }).join('');
+    var chips = (opt.chips || []).map(function (chip) {
+      return '<button type="button" class="ix-chip" onclick="ixChip(\'' + esc(scope) + '\',\'' + esc(chip.id) + '\')">' + esc(chip.label) + ' <span aria-hidden="true">×</span></button>';
+    }).join('');
+    var filters = (opt.filters || []).map(function (f) {
+      if (f.type === 'check') {
+        return '<label class="ix-check"><input type="checkbox" ' + (f.value ? 'checked' : '') + ' onchange="ixFilter(\'' + esc(scope) + '\',\'' + esc(f.key) + '\',this.checked)"> ' + esc(f.label) + '</label>';
+      }
+      var options = (f.options || []).map(function (item) {
+        var value = typeof item === 'object' ? item.value : item;
+        var label = typeof item === 'object' ? item.label : (item || 'Any');
+        return '<option value="' + esc(value) + '"' + (String(value) === String(f.value || '') ? ' selected' : '') + '>' + esc(label) + '</option>';
+      }).join('');
+      return '<label class="ix-field">' + esc(f.label) + '<select onchange="ixFilter(\'' + esc(scope) + '\',\'' + esc(f.key) + '\',this.value)"><option value="">Any</option>' + options + '</select></label>';
+    }).join('');
+    var chooser = (opt.allColumns || []).map(function (col) {
+      var on = columns.some(function (c) { return c.key === col.key; });
+      return '<label class="ix-check"><input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="ixCol(\'' + esc(scope) + '\',\'' + esc(col.key) + '\',this.checked)"> ' + esc(col.label) + '</label>';
+    }).join('');
+    var head = (pick ? '<th class="ix-checkcol ix-sticky"><input type="checkbox" aria-label="Select rows on this page" ' + (allOnPage ? 'checked' : '') + ' onchange="ixPagePick(\'' + esc(scope) + '\',this.checked)"></th>' : '')
+      + columns.map(function (col, i) {
+        var arrow = opt.sort && opt.sort.key === col.key ? (opt.sort.dir === 'desc' ? ' ↓' : ' ↑') : '';
+        return '<th class="' + (pick && i === 0 ? 'ix-sticky' : '') + '"><button type="button" class="ix-sort" onclick="ixSort(\'' + esc(scope) + '\',\'' + esc(col.key) + '\')">' + esc(col.label) + arrow + '</button></th>';
+      }).join('');
+    var body = pageRows.map(function (row) {
+      var on = selected[row.id] ? ' on' : '';
+      return '<tr class="ix-row' + on + '" onclick="ixPreview(\'' + esc(scope) + '\',\'' + esc(row.id) + '\')">'
+        + (pick ? '<td class="ix-checkcol ix-sticky" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Select row" ' + (selected[row.id] ? 'checked' : '') + ' onchange="ixPick(\'' + esc(scope) + '\',\'' + esc(row.id) + '\',this.checked)"></td>' : '')
+        + columns.map(function (col, i) {
+          return '<td class="' + (pick && i === 0 ? 'ix-sticky' : '') + '">' + cellHtml(row, col.key) + '</td>';
+        }).join('') + '</tr>';
+    }).join('');
+    if (!pageRows.length) {
+      body = '<tr><td class="ix-empty" colspan="' + (columns.length + (pick ? 1 : 0)) + '">' + esc(opt.empty || 'No records in this view.') + '</td></tr>';
+    }
+    var bulkCount = Object.keys(selected).filter(function (id) { return selected[id]; }).length;
+    var bulk = '';
+    if (bulkCount && opt.bulk && opt.bulk.length) {
+      bulk = '<div class="ix-bulk"><b>' + bulkCount + ' selected</b>'
+        + (opt.bulkExtra || '')
+        + opt.bulk.map(function (action) {
+          return '<button type="button" class="ix-btn" onclick="ixBulk(\'' + esc(scope) + '\',\'' + esc(action.id) + '\')">' + esc(action.label) + '</button>';
+        }).join('') + '</div>';
+    }
+    var toggle = '';
+    if (opt.modes && opt.modes.length) {
+      toggle = '<div class="ix-modes">' + opt.modes.map(function (mode) {
+        return '<button type="button" class="ix-btn' + (mode.id === opt.mode ? ' on' : '') + '" onclick="ixMode(\'' + esc(scope) + '\',\'' + esc(mode.id) + '\')">' + esc(mode.label) + '</button>';
+      }).join('') + '</div>';
+    }
+    var table = opt.board
+      ? opt.board
+      : '<div class="ix-scroll"><table class="ix-table"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+    var preview = '';
+    if (opt.preview) {
+      var lines = (opt.preview.lines || []).map(function (line) {
+        return '<div class="ix-pv-row"><span>' + esc(line[0]) + '</span><b>' + esc(line[1] || '—') + '</b></div>';
+      }).join('');
+      preview = '<aside class="ix-preview"><div class="ix-pv-h"><b>' + esc(opt.preview.title || 'Record') + '</b><button type="button" class="ix-btn" onclick="ixPreview(\'' + esc(scope) + '\',\'\')">Close</button></div>'
+        + lines
+        + (opt.preview.action ? '<p><button type="button" class="ix-btn primary" onclick="' + opt.preview.action + '">' + esc(opt.preview.actionLabel || 'Open record') + '</button></p>' : '')
+        + '</aside>';
+    }
+    return '<div class="ix">'
+      + (tabs ? '<div class="ix-tabs" role="tablist">' + tabs + '</div>' : '')
+      + '<div class="ix-tools">'
+      + '<input class="ix-search" type="search" placeholder="' + esc(opt.placeholder || 'Search') + '" value="' + esc(opt.query || '') + '" oninput="ixSearch(\'' + esc(scope) + '\',this.value)">'
+      + toggle
+      + (chooser ? '<details class="ix-cols"><summary>Edit columns</summary>' + chooser + '</details>' : '')
+      + '<span class="ix-count">' + (sorted.length ? (win.from + '–' + win.to + ' of ' + sorted.length) : '0') + '</span>'
+      + '</div>'
+      + (opt.note ? '<p class="ix-note">' + opt.note + '</p>' : '')
+      + (chips ? '<div class="ix-chips">' + chips + '</div>' : '')
+      + (opt.tools || '')
+      + bulk
+      + '<div class="ix-body">'
+      + (filters ? '<aside class="ix-side"><p class="ix-kicker">Filters</p>' + filters + '</aside>' : '')
+      + table
+      + preview
+      + '</div>'
+      + '<div class="ix-pager"><button type="button" class="ix-btn" ' + (win.page <= 0 ? 'disabled' : '') + ' onclick="ixPage(\'' + esc(scope) + '\',' + (win.page - 1) + ')">Previous</button><span>Page ' + (win.page + 1) + ' of ' + win.pages + '</span><button type="button" class="ix-btn" ' + (win.page + 1 >= win.pages ? 'disabled' : '') + ' onclick="ixPage(\'' + esc(scope) + '\',' + (win.page + 1) + ')">Next</button></div>'
+      + '</div>';
+  }
+
+  function recordFrame(parts) {
+    var p = parts || {};
+    return '<div class="rec-page"><div class="rec-top">' + (p.top || '') + '</div><div class="rec">'
+      + '<section class="rec-col rec-l"><p class="rec-kicker">About</p>' + (p.left || '') + '</section>'
+      + '<section class="rec-col rec-m"><p class="rec-kicker">Timeline</p>' + (p.middle || '') + '</section>'
+      + '<section class="rec-col rec-r"><p class="rec-kicker">Associations</p>' + (p.right || '') + '</section>'
+      + '</div></div>';
   }
 
   var STAGES = ['enquiry', 'proposal_sent', 'negotiating', 'won', 'lost'];
   var STAGE_LABEL = { enquiry: 'Enquiry', proposal_sent: 'Proposal sent', negotiating: 'Negotiating', won: 'Won', lost: 'Lost' };
+  var STAGE_TONE = { enquiry: 'muted', proposal_sent: 'warn', negotiating: 'info', won: 'ok', lost: 'bad' };
 
-  function renderDeals(deals) {
+  function stagePill(stage) {
+    return pill(STAGE_LABEL[stage] || stage || '—', STAGE_TONE[stage] || 'muted');
+  }
+
+  function dealBoard(deals) {
     var rows = deals || [];
     return '<div class="kanban">' + STAGES.map(function (stage) {
       var mine = rows.filter(function (d) { return d.stage === stage; });
-      return '<section class="kanban-col"><h3>' + esc(STAGE_LABEL[stage]) + ' <small>' + mine.length + '</small></h3>'
+      var sum = mine.reduce(function (n, d) { return n + Number(d.value_rm || 0); }, 0);
+      return '<section class="kanban-col"><h3>' + esc(STAGE_LABEL[stage]) + ' <small>' + mine.length + ' · RM' + sum + '</small></h3>'
         + (mine.length ? mine.map(function (d) {
           return '<article class="deal"><b>' + esc(d.title) + '</b><p>RM' + esc(d.value_rm || 0) + ' · ' + esc(d.headcount || '—') + ' people</p><p class="help">'
-            + esc(d.kind) + (d.expected_on ? ' · ' + esc(d.expected_on) : '') + '</p>'
+            + esc(d.kind || '') + (d.expected_on ? ' · ' + esc(d.expected_on) : '') + '</p>'
             + '<select onchange="dealStage(\'' + esc(d.id) + '\', this.value)">'
-            + STAGES.map(function (s) { return '<option value="' + s + '"' + (s === d.stage ? ' selected' : '') + '>' + esc(STAGE_LABEL[s]) + '</option>'; }).join('')
+            + STAGES.map(function (s) {
+              return '<option value="' + s + '"' + (s === d.stage ? ' selected' : '') + '>' + esc(STAGE_LABEL[s]) + '</option>';
+            }).join('')
             + '</select></article>';
         }).join('') : '<p class="help">Empty</p>')
         + '</section>';
     }).join('') + '</div>';
   }
 
-  function renderEmail(campaigns, flows) {
-    var list = (campaigns || []).map(function (c) {
-      return '<tr><td>' + esc(c.name) + '</td><td>' + esc(c.status) + '</td><td>' + esc(c.scheduled_at || '') + '</td><td>'
-        + (c.revenue_rm != null ? 'RM' + esc(c.revenue_rm) : '') + '</td></tr>';
+  function checklistState(draft) {
+    var d = draft || {};
+    return {
+      to: !!d.to,
+      from: !!(d.fromName && d.fromEmail && String(d.fromEmail).indexOf('@') !== -1),
+      subject: !!(d.subject && String(d.subject).trim()),
+      send: d.when === 'now' || (d.when === 'later' && !!d.date),
+      content: !!(d.templateId || (d.blocks && d.blocks.length))
+    };
+  }
+
+  function checkRow(key, label, done, open, body) {
+    return '<section class="em-step' + (open ? ' open' : '') + '" data-step="' + key + '"><button type="button" class="em-step-h" onclick="emSection(\'' + key + '\')"><span class="em-tick' + (done ? ' on' : '') + '" aria-hidden="true">' + (done ? '✓' : '') + '</span><span>' + esc(label) + '</span></button>'
+      + (open ? '<div class="em-step-b">' + body + '</div>' : '') + '</section>';
+  }
+
+  function checklistHtml(draft, open, lists) {
+    var d = draft || {};
+    var state = checklistState(d);
+    var listOptions = '<option value="">Choose a list</option>' + (lists || []).map(function (list) {
+      return '<option value="' + esc(list.id) + '"' + (list.id === d.to ? ' selected' : '') + '>' + esc(list.name) + '</option>';
     }).join('');
-    var flowRows = (flows || []).map(function (f) {
-      return '<li>' + esc(f.name) + ' · ' + esc(f.trigger) + (f.active ? '' : ' · paused') + '</li>';
+    return '<div class="em-check"><p class="ix-note">Work through the list in any order. A tick means that part is filled in. Nothing is sent from this page.</p>'
+      + '<label class="ix-field" style="padding:12px 16px 0">Campaign name<input id="emName" value="' + esc(d.name || '') + '" oninput="emRead()"></label>'
+      + checkRow('to', 'To', state.to, open === 'to', '<label class="ix-field">Audience<select id="emTo" onchange="emRead()">' + listOptions + '</select></label>')
+      + checkRow('from', 'From', state.from, open === 'from', '<div class="em-grid"><label class="ix-field">From name<input id="emFromName" value="' + esc(d.fromName || 'Master Artist') + '" oninput="emRead()"></label><label class="ix-field">From email<input id="emFromEmail" value="' + esc(d.fromEmail || 'news@masterartist.co') + '" oninput="emRead()"></label></div><p class="help">Marketing mail uses news@masterartist.co. Booking receipts stay on bookings@masterartist.co.</p>')
+      + checkRow('subject', 'Subject', state.subject, open === 'subject', '<label class="ix-field">Subject<input id="emSubject" value="' + esc(d.subject || '') + '" oninput="emRead()" maxlength="160"></label><label class="ix-field">Preview text<input id="emPreviewText" value="' + esc(d.preview || '') + '" oninput="emRead()" maxlength="140"></label>')
+      + checkRow('send', 'Send time', state.send, open === 'send', '<label class="ix-check"><input type="radio" name="emWhen" value="now" ' + (d.when !== 'later' ? 'checked' : '') + ' onchange="emRead()"> Save as a draft queue for now</label><label class="ix-check"><input type="radio" name="emWhen" value="later" ' + (d.when === 'later' ? 'checked' : '') + ' onchange="emRead()"> Schedule</label><label class="ix-field">Date<input id="emDate" type="date" value="' + esc(d.date || '') + '" oninput="emRead()"></label><p class="help">Scheduling only queues the campaign. Resend is not called.</p>')
+      + checkRow('content', 'Content', state.content, open === 'content', '<p class="help">Pick a template or add blocks in the editor. The live preview is sample copy for Aina.</p><p><button type="button" class="ix-btn primary" onclick="emGo(\'editor\')">Edit content</button> <button type="button" class="ix-btn" onclick="emGo(\'templates\')">Template gallery</button></p>')
+      + '<p class="em-actions"><button type="button" class="ix-btn" onclick="emGo(\'campaigns\')">Back to campaigns</button><button type="button" class="ix-btn primary" onclick="emailSaveDraft()">Save draft</button></p></div>';
+  }
+
+  function blockPreview(block) {
+    if (!block) return '';
+    if (block.type === 'heading') return '<h2>' + esc(block.text || '') + '</h2>';
+    if (block.type === 'button') return '<p><span class="em-cta">' + esc(block.text || 'Book') + '</span></p>';
+    if (block.type === 'image') return '<p class="em-ph">Image · ' + esc(block.text || 'Studio photo') + '</p>';
+    if (block.type === 'divider') return '<hr>';
+    return '<p>' + esc(block.text || '') + '</p>';
+  }
+
+  function editorHtml(draft, device) {
+    var blocks = (draft && draft.blocks) || [];
+    var palette = ['heading', 'text', 'image', 'button', 'divider'].map(function (type) {
+      return '<button type="button" class="ix-btn" onclick="emAdd(\'' + type + '\')">' + esc(type[0].toUpperCase() + type.slice(1)) + '</button>';
     }).join('');
-    return '<div class="card"><div class="card-h"><span class="grip">Campaigns</span></div><div class="card-b">'
-      + (list ? '<div class="bk-wrap"><table class="bk"><tr><th>Name</th><th>Status</th><th>Scheduled</th><th>Attributed revenue</th></tr>' + list + '</table></div>'
-        : '<div class="empty">No campaigns yet. Pick a saved list and a template. Nothing is sent until Resend DNS is in place.</div>')
-      + '</div></div><div class="card"><div class="card-h"><span class="grip">Flows</span></div><div class="card-b"><ul>'
-      + (flowRows || '<li>No flows.</li>') + '</ul><p class="help">Welcome, before and after a workshop, a review request, a 45-day win-back, and a birthday note. They queue only. They do not send.</p></div></div>';
+    var list = blocks.map(function (block, i) {
+      return '<article class="em-block" draggable="true" ondragstart="emDrag(event,' + i + ')" ondragover="emOver(event)" ondrop="emDrop(event,' + i + ')">'
+        + '<header><span class="em-handle" title="Drag to reorder">↕</span><b>' + esc(block.type) + '</b><button type="button" class="ix-btn" onclick="emRemove(' + i + ')">Remove</button></header>'
+        + (block.type === 'divider' ? '' : '<textarea oninput="emBlock(' + i + ',this.value)">' + esc(block.text || '') + '</textarea>')
+        + '</article>';
+    }).join('') || '<p class="help">Add a block. Drag a block onto another to reorder it.</p>';
+    var preview = blocks.map(blockPreview).join('') || '<p>Your sections show up here.</p>';
+    return '<div class="em-editor"><div class="em-pal"><p class="ix-kicker">Blocks</p>' + palette + '<p><button type="button" class="ix-btn" onclick="emGo(\'checklist\')">Back to checklist</button></p></div>'
+      + '<div class="em-canvas">' + list + '</div>'
+      + '<div class="em-stage"><div class="ix-modes"><button type="button" class="ix-btn' + (device !== 'mobile' ? ' on' : '') + '" onclick="emDevice(\'desktop\')">Desktop</button><button type="button" class="ix-btn' + (device === 'mobile' ? ' on' : '') + '" onclick="emDevice(\'mobile\')">Mobile</button></div>'
+      + '<div class="em-preview ' + (device === 'mobile' ? 'mobile' : 'desktop') + '"><p class="em-from">Master Artist</p><div id="emLive">' + preview + '</div><p class="em-foot">Master Artist, 38-2, Jalan 28/70A, Desa Sri Hartamas, 50480 Kuala Lumpur<br>Unsubscribe</p></div>'
+      + '<p class="help">Preview for Aina. No email was sent.</p></div></div>';
+  }
+
+  function galleryHtml(templates) {
+    var cards = (templates || []).map(function (tpl) {
+      return '<article class="em-card"><p class="ix-kicker">Template</p><h3>' + esc(tpl.name) + '</h3><p>' + esc(tpl.subject || '') + '</p><button type="button" class="ix-btn primary" onclick="emUseTemplate(\'' + esc(tpl.id) + '\')">Use this</button></article>';
+    }).join('');
+    return '<div class="em-gallery">' + (cards || '<p class="ix-empty">No templates yet.</p>') + '</div>';
+  }
+
+  function rate(part, whole) {
+    if (!whole) return '—';
+    return Math.round((Number(part) / Number(whole)) * 1000) / 10 + '%';
+  }
+
+  function reportHtml(stats) {
+    var s = stats || {};
+    var recipients = Number(s.recipients || 0);
+    var tiles = [
+      ['Recipients', recipients || '0'],
+      ['Open rate', rate(s.opens, recipients)],
+      ['Click rate', rate(s.clicks, recipients)],
+      ['Unsubscribed', s.unsubscribes || 0],
+      ['Bounced', s.bounces || 0],
+      ['Revenue', 'RM' + Number(s.revenue || 0)]
+    ].map(function (tile) {
+      return '<div class="em-tile"><span>' + esc(tile[0]) + '</span><b>' + esc(tile[1]) + '</b></div>';
+    }).join('');
+    var links = (s.links || []).map(function (link) {
+      return '<tr><td>' + esc(link.url) + '</td><td>' + esc(link.clicks) + '</td></tr>';
+    }).join('');
+    return '<div class="em-report"><p><button type="button" class="ix-btn" onclick="emGo(\'campaigns\')">All campaigns</button></p>'
+      + (s.sample ? '<p class="em-sample">Sample figures for a fake campaign. No email was sent.</p>' : '')
+      + '<h2>' + esc(s.name || 'Campaign') + '</h2><p class="ix-note">' + esc(s.audience || '') + (s.subject ? ' · ' + esc(s.subject) : '') + '</p>'
+      + '<div class="em-tiles">' + tiles + '</div>'
+      + '<h3>Top links</h3><div class="ix-scroll"><table class="ix-table"><thead><tr><th>Link</th><th>Clicks</th></tr></thead><tbody>'
+      + (links || '<tr><td colspan="2" class="ix-empty">No clicks yet.</td></tr>')
+      + '</tbody></table></div></div>';
+  }
+
+  function clauseText(definition) {
+    var clauses = (definition && definition.clauses) || [];
+    if (!clauses.length) return 'No filters';
+    return clauses.map(function (c) { return (c.field || '') + ' ' + (c.op || 'eq') + ' ' + c.value; }).join(' · ');
   }
 
   return {
@@ -135,10 +376,23 @@
     reasonText: reasonText,
     emailSendable: emailSendable,
     segmentMatch: segmentMatch,
-    renderTasks: renderTasks,
-    renderSegments: renderSegments,
-    renderDeals: renderDeals,
-    renderEmail: renderEmail,
-    STAGES: STAGES
+    pill: pill,
+    sortRows: sortRows,
+    pageWindow: pageWindow,
+    taskBucket: taskBucket,
+    taskPriority: taskPriority,
+    indexHtml: indexHtml,
+    recordFrame: recordFrame,
+    stagePill: stagePill,
+    dealBoard: dealBoard,
+    checklistState: checklistState,
+    checklistHtml: checklistHtml,
+    editorHtml: editorHtml,
+    galleryHtml: galleryHtml,
+    reportHtml: reportHtml,
+    rate: rate,
+    clauseText: clauseText,
+    STAGES: STAGES,
+    STAGE_LABEL: STAGE_LABEL
   };
 });

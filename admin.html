@@ -228,8 +228,121 @@ table.bk tr.click:hover td{background:#faf6ee}
 .kanban{display:grid;grid-template-columns:repeat(5,minmax(180px,1fr));gap:10px;overflow:auto}
 .kanban-col{background:#fff;border:1px solid var(--line);padding:8px;min-height:180px}
 .kanban-col h3{font-size:14px;margin:0 0 8px;color:var(--purple)}
-.deal{border:1px solid var(--line);padding:8px;margin:0 0 8px;background:var(--cream)}
+.deal{border:1px solid var(--line);padding:8px;margin:0 0 8px;background:#fff}
 .deal select{width:100%;margin-top:6px}
+
+/* ---------- HubSpot-style index, record, Mailchimp-style email ---------- */
+.bodyw.wide{max-width:none;padding:16px 18px 28px}
+.ix{display:flex;flex-direction:column;gap:8px;min-width:0}
+.ix-tabs{display:flex;gap:0;border-bottom:1px solid var(--line);overflow-x:auto}
+.ix-tab,.em-nav button{background:transparent;border:0;border-bottom:2px solid transparent;padding:8px 14px;cursor:pointer;color:var(--muted);font-size:13px;white-space:nowrap}
+.ix-tab.on,.em-nav button.on{color:var(--purple);border-bottom-color:var(--gold);font-weight:600}
+.ix-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ix-search{flex:1;min-width:180px;height:32px;border:1px solid var(--line);background:#fff;padding:0 10px;border-radius:2px}
+.ix-search:focus{outline:0;border-color:var(--gold)}
+.ix-count{margin-left:auto;font-size:12px;color:var(--muted)}
+.ix-note{font-size:12.5px;color:var(--muted);margin:0}
+.ix-chips{display:flex;gap:6px;flex-wrap:wrap}
+.ix-chip{background:var(--lav-pale);border:1px solid var(--line);border-radius:99px;padding:2px 8px;font-size:12px;cursor:pointer;color:var(--purple)}
+.ix-btn{font-family:Inter,system-ui,sans-serif;font-size:12.5px;font-weight:500;letter-spacing:0;text-transform:none;background:#fff;color:var(--purple);border:1px solid var(--line);padding:5px 10px;border-radius:2px;cursor:pointer;width:auto}
+.ix-btn:hover:not(:disabled){border-color:var(--gold)}
+.ix-btn.primary,.ix-btn.on{background:var(--purple);color:var(--cream);border-color:var(--purple)}
+.ix-btn:disabled{opacity:.45;cursor:not-allowed}
+.ix-modes{display:flex;gap:4px}
+.ix-cols{position:relative}
+.ix-cols summary{list-style:none;cursor:pointer;border:1px solid var(--line);background:#fff;padding:5px 10px;font-size:12.5px}
+.ix-cols summary::-webkit-details-marker{display:none}
+.ix-cols[open] summary{border-color:var(--gold)}
+.ix-cols[open] > .ix-check,.ix-cols[open]{background:#fff}
+.ix-cols .ix-check{display:flex;padding:4px 10px}
+.ix-body{display:flex;gap:10px;align-items:flex-start;min-width:0}
+.ix-side{width:210px;flex:none;background:#fff;border:1px solid var(--line);padding:10px 12px}
+.ix-kicker,.rec-kicker{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);font-weight:600;margin:0 0 8px}
+.ix-field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);margin-bottom:8px}
+.ix-field select,.ix-field input,.ix-mini{border:1px solid var(--line);background:#fff;padding:6px 8px;font-size:13px;color:var(--ink)}
+.ix-check{display:flex;gap:6px;align-items:center;font-size:13px;margin:4px 0}
+.ix-bulk{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--lav-pale);border:1px solid var(--line);padding:6px 8px}
+.ix-scroll{flex:1;min-width:0;max-height:calc(100vh - 250px);overflow:auto;background:#fff;border:1px solid var(--line)}
+.ix-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;min-width:720px}
+.ix-table th{position:sticky;top:0;background:#f7f4ee;z-index:2;text-align:left;font-weight:600;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);padding:0}
+.ix-sort{background:transparent;border:0;padding:8px 10px;cursor:pointer;font-weight:600;color:var(--muted);text-align:left;width:100%}
+.ix-sort:hover{color:var(--purple)}
+.ix-table td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:middle;background:#fff;white-space:nowrap}
+.ix-table tr:hover td{background:#fbf8f2}
+.ix-table tr.on td{background:#f3eef8}
+.ix-checkcol{width:36px;text-align:center}
+.ix-table th.ix-sticky,.ix-table td.ix-sticky{position:sticky;left:0;z-index:1}
+.ix-table th.ix-checkcol.ix-sticky{left:0;z-index:4}
+.ix-table td.ix-checkcol.ix-sticky{left:0;z-index:3}
+.ix-table th.ix-sticky:not(.ix-checkcol),.ix-table td.ix-sticky:not(.ix-checkcol){left:36px;box-shadow:1px 0 0 var(--line)}
+.ix-table td.ix-sticky:not(.ix-checkcol){z-index:3}
+.ix-table th.ix-sticky:not(.ix-checkcol){z-index:5}
+.ix-table th.ix-sticky{z-index:4;background:#f7f4ee}
+.ix-link{background:none;border:0;padding:0;color:var(--purple);font-weight:600;cursor:pointer;text-align:left}
+.ix-link:hover{text-decoration:underline}
+.ix-empty{text-align:center;color:var(--muted);padding:28px 10px !important;white-space:normal}
+.ix-pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.02em;padding:2px 8px;border-radius:99px;background:var(--lav-pale);color:var(--purple);text-transform:none}
+.ix-pill.ok{background:#e7f5ee;color:var(--ok)}
+.ix-pill.warn{background:#fff4df;color:#8a5a10}
+.ix-pill.bad{background:#fdecea;color:#8d341c}
+.ix-pill.muted{background:#f3f0ea;color:var(--muted)}
+.ix-pill.info{background:var(--lav-pale);color:var(--purple)}
+.ix-score{font-variant-numeric:tabular-nums;font-weight:600;color:var(--purple)}
+.ix-pager{display:flex;gap:10px;align-items:center;justify-content:flex-end;font-size:12.5px;color:var(--muted)}
+.ix-preview{width:280px;flex:none;background:#fff;border:1px solid var(--line);padding:12px;position:sticky;top:0}
+.ix-pv-h{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px}
+.ix-pv-row{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--line)}
+.ix-pv-row span{color:var(--muted)}
+.ix-mini{height:30px}
+.rec-page{min-width:0}
+.rec-top{margin-bottom:10px}
+.rec{display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr) minmax(240px,300px);gap:12px;align-items:start}
+.rec-col{background:#fff;border:1px solid var(--line);padding:12px 14px;max-height:calc(100vh - 150px);overflow:auto}
+.rec .card{border:0;border-bottom:1px solid var(--line);background:transparent;margin:0 0 8px}
+.rec .card-h{background:transparent;padding:8px 0;border:0}
+.rec .card-b{padding:0 0 8px}
+.em-nav{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:12px}
+.em-check{max-width:760px;background:#fff;border:1px solid var(--line)}
+.em-step{border-bottom:1px solid var(--line)}
+.em-step-h{width:100%;display:flex;gap:10px;align-items:center;background:#fff;border:0;padding:14px 16px;cursor:pointer;font-size:15px;text-align:left}
+.em-tick{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:13px}
+.em-tick.on{background:var(--ok);border-color:var(--ok)}
+.em-step-b{padding:0 16px 16px 48px}
+.em-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.em-actions{display:flex;gap:8px;padding:12px 16px}
+.em-editor{display:grid;grid-template-columns:180px minmax(0,1fr) 380px;gap:12px;align-items:start}
+.em-pal,.em-canvas,.em-stage{background:#fff;border:1px solid var(--line);padding:12px}
+.em-pal{display:flex;flex-direction:column;gap:6px}
+.em-block{border:1px dashed var(--line);padding:8px;margin-bottom:8px;background:#fff}
+.em-block header{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.em-handle{cursor:grab;color:var(--muted)}
+.em-block textarea{width:100%;min-height:64px;border:1px solid var(--line);padding:8px}
+.em-preview{margin-top:8px;background:var(--cream);border:1px solid var(--line);padding:16px}
+.em-preview.desktop{width:100%}
+.em-preview.mobile{width:280px}
+.em-preview h2{font-size:22px;color:var(--purple);margin:8px 0}
+.em-from{font-size:12px;color:var(--muted)}
+.em-cta{display:inline-block;background:var(--gold);color:var(--purple-deep);padding:8px 12px;font-weight:600}
+.em-ph{background:var(--lav-pale);padding:18px;text-align:center;color:var(--muted)}
+.em-foot{font-size:11px;color:var(--muted);margin-top:16px}
+.em-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.em-card{background:#fff;border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:8px}
+.em-card h3{font-size:18px;color:var(--purple)}
+.em-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.em-tile{background:#fff;border:1px solid var(--line);padding:12px}
+.em-tile span{display:block;font-size:12px;color:var(--muted)}
+.em-tile b{font-size:22px;color:var(--purple);font-family:Fraunces,Georgia,serif;font-weight:500}
+.em-sample{background:#fff8ea;border:1px solid var(--gold);padding:8px 12px}
+.em-report h2{color:var(--purple);margin:8px 0}
+.ix-switch{display:inline-flex;gap:6px;align-items:center}
+@media(max-width:1100px){
+  .rec{grid-template-columns:1fr}
+  .rec-col{max-height:none}
+  .em-editor{grid-template-columns:1fr}
+  .ix-side,.ix-preview{width:100%}
+  .ix-body{flex-direction:column}
+  .em-tiles{grid-template-columns:1fr 1fr}
+}
 </style>
 </head>
 <body>
@@ -526,7 +639,11 @@ async function render(){
   const sec = SECTIONS.find(s => s.id === current);
   $('title').textContent = sec ? sec.label : '';
   const shell = document.querySelector('.bodyw');
-  if (shell) shell.style.maxWidth = (current === 'inbox' || current === 'groups') ? 'none' : (current === 'customers' && crmOpen) ? '1100px' : '';
+  if (shell) {
+    const wide = ['inbox', 'groups', 'customers', 'tasks', 'email'].includes(current);
+    shell.style.maxWidth = wide ? 'none' : '';
+    shell.classList.toggle('wide', wide);
+  }
 
   if (!sec || !sectionAllowed(sec)) {
     $('view').innerHTML = `<div class="locked"><b>You don't have access to this section.</b><br>
@@ -1239,49 +1356,15 @@ views.customers = async function(){
   crmScoreMap = {};
   const scores = await sb.rpc('contact_lead_scores');
   if (!scores.error) (scores.data || []).forEach(s => { crmScoreMap[s.contact_id] = s; });
-  const q = crmQuery.toLowerCase().trim();
-  const shown = crmRows.filter(c => {
-    if (crmFilter === 'news' && !c.marketing_consent) return false;
-    if (crmFilter === 'kids' && !(c.children || []).length) return false;
-    if (crmFilter === 'repeat' && c.bookings_count < 2) return false;
-    if (crmFilter === 'trials' && !c.trials_count) return false;
-    if (crmFilter === 'enrolled' && c.stage !== 'enrolled') return false;
-    if (crmFilter === 'follow' && !(c.follow_up_date && c.follow_up_date <= todayISO())) return false;
-    if ((crmFilter === 'archived') !== !!c.archived) return false;
-    if (!q) return true;
-    return [c.first_name, c.last_name, c.preferred_name, c.email, c.phone, c.phone_e164, c.whatsapp_e164, c.company, c.area,
-      c.lifecycle_stage, c.lead_status, (c.tags || []).join(' '),
-      (c.children || []).map(k => [k.name, k.school].join(' ')).join(' ')]
-      .join(' ').toLowerCase().includes(q);
-  });
-  const paid = crmRows.reduce((n, c) => n + c.total_paid, 0);
-  let queueNote = '';
+  crmQueueNote = '';
   if (!queued.error && queued.count) {
     const phones = [...new Set((queued.data || []).map(r => r.phone_e164 || r.phone_raw).filter(Boolean))];
-    queueNote = `<div class="msg info">${queued.count} WhatsApp message${queued.count===1?'':'s'} had no usable number to match, so they are queued${phones.length ? ' (' + esc(phones.join(', ')) + ')' : ''}. They are not dropped. Open the customer with that number and use <b>File queued messages</b>.</div>`;
+    crmQueueNote = `<div class="msg info">${queued.count} WhatsApp message${queued.count===1?'':'s'} had no usable number to match, so they are queued${phones.length ? ' (' + esc(phones.join(', ')) + ')' : ''}. They are not dropped. Open the customer with that number and use <b>File queued messages</b>.</div>`;
   }
-  let html = crmModes() + `<div class="hint"><b>Everyone who has booked a workshop or asked for a trial.</b> The website adds and updates customers by itself:
-    one record per person (matched by email, then WhatsApp number). Open a customer for their full profile, family, and the conversation timeline
-    (WhatsApp in and out, automated messages, staff notes, and booking events). Only people who ticked <b>Send me news</b> may be sent marketing.</div>
-    ${queueNote}
-    <div class="bk-sum"><span><b>${crmRows.length}</b> customers</span><span>${crmRows.filter(c => c.marketing_consent).length} want news</span>
-      <span>${crmRows.filter(c => c.bookings_count > 1).length} booked more than once</span><span>${money(paid)} paid online and recorded</span></div>
-    <div class="crm-bar"><input type="search" id="crmQ" placeholder="Search name, email, phone, child, school, company, area, tag" value="${esc(crmQuery)}" oninput="crmSearch(this.value)">
-      <button class="btn sm" onclick="crmCsv()">Download (${shown.length})</button></div>
-    <div class="blog-tabs">${Object.entries(CRM_FILTERS).map(([k, v]) => `<button class="${crmFilter===k?'on':''}" onclick="crmTab('${k}')">${v}</button>`).join('')}</div>`;
-  if (!shown.length) html += `<div class="empty">${crmRows.length ? 'No customers match.' : 'No customers yet: they appear here after the first booking or trial request.'}</div>`;
-  else html += `<div class="card"><div class="card-b"><div class="bk-wrap"><table class="bk">
-    <tr><th>Name</th><th>Stage</th><th>Contact</th><th>Children</th><th>Bookings</th><th>Trials</th><th>Paid</th><th>Last seen</th><th>Source</th></tr>
-    ${shown.slice(0, 500).map(c => `<tr class="click" onclick="crmGo('${c.id}')">
-      <td><b>${esc(c.first_name)} ${esc(c.last_name || '')}</b>${crmScoreMap[c.id] ? ` <span class="tag" title="${esc((window.MaGrowth && window.MaGrowth.reasonText(crmScoreMap[c.id].reasons)) || '')}">${crmScoreMap[c.id].points}</span>` : ''}${c.marketing_consent ? ' <span class="tag">news</span>' : ''}${(c.tags || []).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</td>
-      <td><small>${esc(c.lifecycle_stage || c.stage || '')}${c.lifecycle_stage && c.stage ? '<br>' + esc(c.stage) : ''}${c.follow_up_date && c.follow_up_date <= todayISO() ? '<br><b>follow up</b>' : ''}</small></td>
-      <td><small>${esc(c.phone || '')}<br>${esc(c.email || '')}</small></td>
-      <td><small>${(c.children || []).map(k => esc(k.name) + (kidAge(k) ? ' (' + esc(kidAge(k)) + ')' : '') + (k.school ? ', ' + esc(k.school) : '')).join('<br>')}</small></td>
-      <td>${c.bookings_count || ''}</td><td>${c.trials_count || ''}</td><td>${c.total_paid ? money(c.total_paid) : ''}</td>
-      <td><small>${shortDate(c.last_activity)}</small></td><td><small>${esc(c.first_source || c.original_source || '')}</small></td></tr>`).join('')}
-  </table></div></div></div>`;
-  $('view').innerHTML = html;
-  const box = $('crmQ'); if (box && document.activeElement !== box && crmQuery) { box.focus(); box.setSelectionRange(crmQuery.length, crmQuery.length); }
+  await loadStaff();
+  const segs = await sb.from('saved_segments').select('id, name, definition');
+  if (!segs.error) crmSegments = segs.data || [];
+  paintCustomers();
 };
 let crmTimer = null;
 window.crmSearch = v => { crmQuery = v; clearTimeout(crmTimer); crmTimer = setTimeout(async () => { await render(); const b = $('crmQ'); if (b) { b.focus(); b.setSelectionRange(v.length, v.length); } }, 250); };
@@ -1557,9 +1640,9 @@ async function crmDetail(id){
       ${x.last_contacted_at ? `<span>Last contacted ${shortDate(x.last_contacted_at)}</span>` : ''}${x.last_inbound_at ? `<span>Last message in ${shortDate(x.last_inbound_at)}</span>` : ''}
       ${x.credit_balance ? `<span>${money(x.credit_balance)} academy credit</span>` : ''}${x.do_not_contact ? '<span class="full">Do not contact</span>' : ''}</div>`;
 
-  html += timelineCard(timeline.data, timeline.error, !queueQ.error ? (queueQ.count || 0) : 0);
+  html += '<!--COL:MID-->' + timelineCard(timeline.data, timeline.error, !queueQ.error ? (queueQ.count || 0) : 0);
 
-  html += section('Contact', `
+  html += '<!--COL:LEFT-->' + section('Contact', `
       <div class="row">${inp('first_name','First name')}${inp('last_name','Last name')}${inp('preferred_name','Preferred name')}</div>
       <div class="row">${sel('contact_type','Type')}${inp('birthday','Birthday','date')}${sel('language','Preferred language')}${profileReady ? sel('gender','Gender') : ''}</div>
       <div class="row">${inp('email','Email','email')}${inp('phone','Phone')}${inp('phone_2','Secondary phone')}</div>
@@ -1583,7 +1666,7 @@ async function crmDetail(id){
       const bits = [g.relationship, g.is_primary ? 'primary' : '', g.pays ? 'pays' : '', g.receives_messages ? 'gets messages' : ''].filter(Boolean);
       return `<li><a href="#customers" onclick="event.preventDefault();crmGo('${person.id}')">${esc(name)}</a> · ${esc(bits.join(', '))}${phone ? ` · <a href="https://wa.me/${waNum(phone)}" target="_blank" rel="noopener">${esc(phone)}</a>` : ''}</li>`;
     }).join('')}</ul>` : '';
-  html += section('Family', crmFamilyReady ? `${parentHtml}
+  html += '<!--COL:RIGHT-->' + section('Family', crmFamilyReady ? `${parentHtml}
       <p class="help">A child can be a lightweight record, or also their own customer. One child can have more than one parent. Primary is who we call first.</p>
       <div id="crmFamilyBody">${familyCards()}</div>
       ${w ? `<p><button class="btn sm" type="button" onclick="crmFamAdd()">+ Add a child</button></p>` : ''}
@@ -1593,20 +1676,20 @@ async function crmDetail(id){
       ${w ? `<p style="margin-top:10px"><button class="btn sm" type="button" onclick="crmKidAdd()">+ Add a child</button></p>` : ''}
       <p class="help">This is the existing children list. After <b>${CRM_MIGRATION}</b> is run, each child becomes their own record with parents, pickup, and medical notes.</p>`);
 
-  html += section('Preferences', `
+  html += '<!--COL:LEFT-->' + section('Preferences', `
       ${multi('interests','Interests and formats')}
       <div class="row">${sel('skill_level','Overall level')}${sel('how_heard','How they heard about us')}${profileReady ? chk('birthday_enquiry','Birthday party enquiry') : ''}</div>
       <div class="f" style="grid-column:1/-1"><label>Dietary requirements and allergies (baking, Savor)</label><input ${fid('dietary')} value="${esc(x.dietary || '')}" ${dis}></div>
       ${multi('preferred_days','Preferred days')}${multi('preferred_times','Preferred times')}
       ${profileReady ? `<p class="help" style="margin-top:8px">Skill by format</p><div class="row">${CRM_FORMATS.map(f => `<div class="f"><label>${esc(f)}</label><select data-skill="${esc(f)}" ${dis}>${CRM_LEVELS.map(l => `<option value="${esc(l)}" ${ (skill[f]||'')===l ? 'selected' : ''}>${esc(l || '—')}</option>`).join('')}</select></div>`).join('')}</div>` : ''}`);
 
-  html += section('Consent and safety', `
+  html += '<!--COL:LEFT-->' + section('Consent and safety', `
       <div class="row">${sel('photo_consent','Photo consent (this adult)')}${profileReady ? inp('waiver_accepted_at','Waiver and terms accepted','date') : ''}</div>
       <div class="row">${inp('emergency_name','Emergency contact')}${inp('emergency_phone','Emergency phone')}${inp('emergency_relation','Relationship')}</div>
       <div class="row">${chk('do_not_contact','Do not contact at all')}${inp('data_deletion_requested','Asked to delete their data on','date')}</div>
       <p class="help">Child allergies and who may collect a child are on the Family card, not here.</p>`);
 
-  html += section('Marketing', `
+  html += '<!--COL:LEFT-->' + section('Marketing', `
       <div class="row">${chk('marketing_consent','Agreed to news' + (x.consent_at ? ' (' + shortDate(x.consent_at) + ')' : ''))}${chk('email_consent','News by email')}${chk('whatsapp_consent','News by WhatsApp')}</div>
       ${profileReady ? `<div class="row">${inp('email_consent_source','Email opt-in source')}${inp('whatsapp_consent_source','WhatsApp opt-in source')}${chk('unsubscribed','Unsubscribed')}${inp('unsubscribed_at','Unsubscribed on','date')}</div>
         <p class="help">WhatsApp marketing templates need a record of when they opted in and where that came from (website, staff, or WhatsApp). ${x.email_consent_at ? 'Email opt-in ' + shortDate(x.email_consent_at) + '. ' : ''}${x.whatsapp_consent_at ? 'WhatsApp opt-in ' + shortDate(x.whatsapp_consent_at) + '.' : ''}</p>`
@@ -1621,7 +1704,7 @@ async function crmDetail(id){
 
   const rows = bk.data || [];
   const formats = (x.formats_attended || []).join(', ');
-  html += section('Bookings', `
+  html += '<!--COL:RIGHT-->' + section('Bookings', `
       <div class="bk-sum"><span>${bookingN || 0} bookings</span><span>${money(revenue)} revenue</span>${attended ? `<span>${attended} attended</span>` : ''}${lastBooked ? `<span>Last booking ${shortDate(lastBooked)}</span>` : ''}${x.last_workshop_name ? `<span>Last workshop: ${esc(x.last_workshop_name)}</span>` : ''}${formats ? `<span>Formats: ${esc(formats)}</span>` : ''}${x.became_customer_at ? `<span>Customer since payment ${shortDate(x.became_customer_at)}</span>` : ''}</div>
       ${profileReady ? `<div class="row">${sel('academy_status','Academy status')}${inp('credit_balance','Academy credit (RM)','number','min="0"')}${sel('voucher_role','Gift voucher')}</div>` : ''}
       <div class="row">${inp('enrolled_since','Enrolled since','date')}${inp('monthly_fee','Monthly fee (RM)','number')}</div>
@@ -1637,7 +1720,15 @@ async function crmDetail(id){
       ${(tl.data || []).length ? `<div class="bk-wrap"><table class="bk"><tr><th>Received</th><th>Class</th><th>Who it's for</th><th>Status</th></tr>
         ${(tl.data || []).map(r => `<tr><td>${shortDate(r.created_at)}</td><td>${esc(r.programme_slug || '')}</td><td><small>${esc(r.message || '').replace(/\n/g, '<br>')}</small></td><td>${esc(r.status)}</td></tr>`).join('')}
       </table></div>` : '<div class="empty" style="margin:0">No trial requests.</div>'}`);
-  $('view').innerHTML = html;
+  const recParts = { top:'', left:'', middle:'', right:'' };
+  let recCol = 'top';
+  html.split(/<!--COL:(LEFT|MID|RIGHT)-->/).forEach(chunk => {
+    if (chunk === 'LEFT') recCol = 'left';
+    else if (chunk === 'MID') recCol = 'middle';
+    else if (chunk === 'RIGHT') recCol = 'right';
+    else recParts[recCol] += chunk;
+  });
+  $('view').innerHTML = window.MaGrowth ? window.MaGrowth.recordFrame(recParts) : html;
 }
 
 async function crmSaveFamily(contactId){
@@ -1814,11 +1905,8 @@ window.crmLinkParent = async participantId => {
   if (error) { toast(/contact_guardians_pair|duplicate/i.test(error.message) ? 'That parent is already linked.' : error.message); return; }
   toast('Parent linked'); await render();
 };
-window.crmCsv = () => {
-  const q = crmQuery.toLowerCase().trim();
-  const rows = crmRows.filter(c => (crmFilter !== 'news' || c.marketing_consent) && (crmFilter !== 'kids' || (c.children || []).length)
-    && (crmFilter !== 'repeat' || c.bookings_count > 1) && (crmFilter !== 'trials' || c.trials_count)
-    && (!q || [c.first_name, c.last_name, c.email, c.phone, (c.tags || []).join(' ')].join(' ').toLowerCase().includes(q)));
+window.crmCsv = (onlyIds) => {
+  const rows = Array.isArray(onlyIds) ? crmRows.filter(c => onlyIds.includes(c.id)) : visibleContacts();
   const cols = ['first_name', 'last_name', 'preferred_name', 'email', 'phone', 'phone_e164', 'whatsapp_e164', 'lifecycle_stage', 'lead_status', 'stage', 'contact_type', 'marketing_consent', 'email_consent', 'whatsapp_consent',
     'do_not_contact', 'children', 'interests', 'tags', 'area', 'city', 'company', 'birthday', 'enrolled_programmes', 'bookings_count', 'trials_count', 'total_paid',
     'last_booking_date', 'next_booking_date', 'how_heard', 'original_source', 'first_source', 'last_source', 'first_seen', 'last_activity', 'follow_up_date', 'notes'];
@@ -2376,8 +2464,485 @@ window.inboxSendTemplate = async (name) => {
 
 
 /* ---------- tasks, lists, groups, email ---------- */
+let crmQueueNote = '';
+let crmSegments = [];
+let staffNames = null;
+let crmView = 'all';
+let crmColKeys = ['name','email','phone','lifecycle','score','owner','tags','activity'];
+let crmSort = { key:'activity', dir:'desc' };
+let crmPage = 0;
+let crmSelected = {};
+let crmPreview = '';
+let crmSide = { lifecycle:'', status:'', news:false, follow:false, archived:false };
+let listOpen = null;
+let listQuery = '';
+let listSort = { key:'name', dir:'asc' };
+let listPage = 0;
+let listSelected = {};
+let taskRows = [];
+let taskTab = 'today';
+let taskQuery = '';
+let taskSort = { key:'due', dir:'asc' };
+let taskPage = 0;
+let taskSelected = {};
+let dealRows = [];
+let dealTab = 'all';
+let dealMode = 'table';
+let dealQuery = '';
+let dealSort = { key:'value', dir:'desc' };
+let dealPage = 0;
+let dealSelected = {};
+let emailRows = [];
+let emailFlows = [];
+let emailTemplates = [];
+let emailStats = {};
+let emailScreen = 'campaigns';
+let emailQuery = '';
+let emailSort = { key:'name', dir:'asc' };
+let emailPage = 0;
+let emailDraft = null;
+let emailSection = 'to';
+let emailDevice = 'desktop';
+let emailReportId = null;
+let ixPageIds = {};
+let ixTimer = null;
+const CRM_ALL_COLS = [
+  { key:'name', label:'Name' }, { key:'email', label:'Email' }, { key:'phone', label:'Phone' },
+  { key:'lifecycle', label:'Lifecycle' }, { key:'score', label:'Lead score' }, { key:'owner', label:'Owner' },
+  { key:'tags', label:'Tags' }, { key:'activity', label:'Last activity' }, { key:'bookings', label:'Bookings' },
+  { key:'paid', label:'Paid' }, { key:'stage', label:'Studio stage' }, { key:'area', label:'Area' }, { key:'source', label:'Source' }
+];
+const isId = id => /^[0-9a-f-]{36}$/i.test(String(id || ''));
+async function loadStaff(){
+  if (staffNames) return staffNames;
+  const { data } = await sb.from('profiles').select('id, full_name').eq('active', true);
+  staffNames = {};
+  (data || []).forEach(p => { staffNames[p.id] = p.full_name; });
+  return staffNames;
+}
+function freshDraft(){
+  return { name:'', to:'', fromName:'Master Artist', fromEmail:'news@masterartist.co', subject:'', preview:'', when:'now', date:'', templateId:'', blocks:[] };
+}
+function asMatch(c){
+  let days = null;
+  if (c.last_booking_date) days = Math.floor((Date.now() - new Date(c.last_booking_date + 'T00:00:00')) / 86400000);
+  return Object.assign({}, c, { has_child: (c.children || []).length > 0 || c.contact_type === 'parent', days_since_last_booking: days });
+}
+function visibleContacts(){
+  const q = crmQuery.toLowerCase().trim();
+  const today = todayISO();
+  return crmRows.filter(c => {
+    if (crmView === 'mine' && c.owner !== me.id) return false;
+    if (crmView === 'reply') {
+      const needs = (c.tags || []).includes('needs review') || (c.last_inbound_at && (!c.last_contacted_at || c.last_inbound_at > c.last_contacted_at));
+      if (!needs) return false;
+    }
+    if (crmView === 'parents' && c.contact_type !== 'parent' && !(c.children || []).length) return false;
+    if (crmView === 'baking') {
+      const bag = [].concat(c.interests || [], c.formats_attended || []).join(' ').toLowerCase();
+      if (!bag.includes('baking')) return false;
+    }
+    if (crmSide.lifecycle && (c.lifecycle_stage || '') !== crmSide.lifecycle) return false;
+    if (crmSide.status && (c.lead_status || '') !== crmSide.status) return false;
+    if (crmSide.news && !c.marketing_consent) return false;
+    if (crmSide.follow && !(c.follow_up_date && c.follow_up_date <= today)) return false;
+    if (crmSide.archived ? !c.archived : !!c.archived) return false;
+    if (!q) return true;
+    return [c.first_name, c.last_name, c.preferred_name, c.email, c.phone, c.phone_e164, c.whatsapp_e164, c.company, c.area,
+      c.lifecycle_stage, (c.tags || []).join(' '), (c.children || []).map(k => k.name).join(' ')].join(' ').toLowerCase().includes(q);
+  });
+}
+function personRow(c){
+  const G = window.MaGrowth;
+  const name = [c.preferred_name || c.first_name, c.last_name].filter(Boolean).join(' ');
+  const score = crmScoreMap[c.id];
+  return {
+    id: c.id,
+    cells: {
+      name, email: c.email || '', phone: c.phone || c.whatsapp_e164 || '', lifecycle: c.lifecycle_stage || '',
+      score: score ? String(score.points) : '', owner: (staffNames && staffNames[c.owner]) || '', tags: (c.tags || []).join(', '),
+      activity: shortDate(c.last_activity), bookings: String(c.bookings_count || 0), paid: String(c.total_paid || 0),
+      stage: c.stage || '', area: c.area || '', source: c.first_source || c.original_source || ''
+    },
+    sort: { name: name.toLowerCase(), score: score ? score.points : -1, bookings: c.bookings_count || 0, paid: c.total_paid || 0, activity: c.last_activity || '' },
+    html: {
+      name: `<button type="button" class="ix-link" onclick="event.stopPropagation();crmGo('${c.id}')">${esc(name)}</button>`,
+      lifecycle: G.pill(c.lifecycle_stage || c.stage || '—', 'info'),
+      score: score ? `<span class="ix-score" title="${esc(G.reasonText(score.reasons))}">${score.points}</span>` : '',
+      tags: (c.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join(''),
+      paid: c.total_paid ? money(c.total_paid) : ''
+    }
+  };
+}
+function paintCustomers(){
+  const G = window.MaGrowth;
+  const rows = visibleContacts().map(personRow);
+  const win = G.pageWindow(G.sortRows(rows, crmSort.key, crmSort.dir).length, crmPage, 25);
+  crmPage = win.page;
+  ixPageIds.customers = G.sortRows(rows, crmSort.key, crmSort.dir).slice(win.start, win.end).map(r => r.id);
+  const preview = crmPreview && crmRows.find(c => c.id === crmPreview);
+  const chips = [];
+  if (crmSide.lifecycle) chips.push({ id:'lifecycle', label:crmSide.lifecycle });
+  if (crmSide.status) chips.push({ id:'status', label:crmSide.status });
+  if (crmSide.news) chips.push({ id:'news', label:'Want news' });
+  if (crmSide.follow) chips.push({ id:'follow', label:'Follow-up due' });
+  if (crmSide.archived) chips.push({ id:'archived', label:'Archived' });
+  const ownerOpts = Object.entries(staffNames || {}).map(([id, name]) => `<option value="${id}">${esc(name)}</option>`).join('');
+  const stageOpts = CRM_OPT.lifecycle_stage.map(s => `<option>${esc(s)}</option>`).join('');
+  const listOpts = (crmSegments || []).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  $('view').innerHTML = crmModes() + (crmQueueNote || '') + G.indexHtml({
+    scope:'customers',
+    tabs:[{ id:'all', label:'All customers' }, { id:'mine', label:'My customers' }, { id:'reply', label:'Needs reply' }, { id:'parents', label:'Parents' }, { id:'baking', label:'Baking fans' }],
+    tab:crmView, query:crmQuery, placeholder:'Search name, email, phone, company, tag',
+    note:'One row per customer. Click the name for the record. Click the row for a preview.',
+    columns:CRM_ALL_COLS.filter(c => crmColKeys.includes(c.key)),
+    allColumns:CRM_ALL_COLS, rows, sort:crmSort, page:crmPage, selected:crmSelected,
+    chips, filters:[
+      { key:'lifecycle', label:'Lifecycle', type:'select', value:crmSide.lifecycle, options:CRM_OPT.lifecycle_stage.map(s => ({ value:s, label:s })) },
+      { key:'status', label:'Lead status', type:'select', value:crmSide.status, options:CRM_OPT.lead_status.map(s => ({ value:s, label:s })) },
+      { key:'news', label:'Want news', type:'check', value:crmSide.news },
+      { key:'follow', label:'Follow-up due', type:'check', value:crmSide.follow },
+      { key:'archived', label:'Archived only', type:'check', value:crmSide.archived }
+    ],
+    bulk:[{ id:'owner', label:'Assign owner' }, { id:'tag', label:'Add tag' }, { id:'list', label:'Add to list' }, { id:'stage', label:'Change stage' }, { id:'export', label:'Export CSV' }],
+    bulkExtra:`<select id="ixOwner" class="ix-mini"><option value="">Owner…</option>${ownerOpts}</select><select id="ixStage" class="ix-mini"><option value="">Stage…</option>${stageOpts}</select><select id="ixList" class="ix-mini"><option value="">List…</option>${listOpts}</select>`,
+    preview: preview ? { title:[preview.first_name, preview.last_name].filter(Boolean).join(' '), lines:[['Email', preview.email || ''], ['Phone', preview.phone || preview.whatsapp_e164 || ''], ['Lifecycle', preview.lifecycle_stage || preview.stage || ''], ['Lead score', crmScoreMap[preview.id] ? String(crmScoreMap[preview.id].points) : ''], ['Owner', (staffNames && staffNames[preview.owner]) || '']], action:`crmGo('${preview.id}')`, actionLabel:'Open record' } : null,
+    empty: crmRows.length ? 'No customers in this view.' : 'No customers yet. They appear after the first booking or trial request.'
+  });
+}
+function kindLabel(kind){
+  return ({ manual:'To do', lead_no_reply:'No reply', booking_unpaid:'Unpaid booking', post_workshop_review:'After workshop', no_rebook:'No rebook' })[kind] || kind || '';
+}
+function paintTasks(){
+  const G = window.MaGrowth;
+  const today = todayISO();
+  const q = taskQuery.toLowerCase().trim();
+  const rows = taskRows.filter(t => {
+    const bucket = G.taskBucket(t.due_on || '', today);
+    if (taskTab !== 'all' && bucket !== taskTab) return false;
+    if (!q) return true;
+    return [t.title, t.contact_name, t.deal_name, kindLabel(t.kind)].join(' ').toLowerCase().includes(q);
+  }).map(t => {
+    const pri = G.taskPriority(t.due_on || '', today);
+    const who = t.contact_id ? `<button type="button" class="ix-link" onclick="event.stopPropagation();crmFromBooking('${t.contact_id}')">${esc(t.contact_name || 'Customer')}</button>` : esc(t.deal_name || '');
+    return {
+      id:t.id,
+      cells:{ title:t.title, status:'', record:t.contact_name || t.deal_name || '', due:t.due_on || '', owner:(staffNames && staffNames[t.assignee]) || 'Unassigned', type:kindLabel(t.kind), priority:pri.label },
+      sort:{ title:t.title, due:t.due_on || '9999-99-99', owner:(staffNames && staffNames[t.assignee]) || '', type:t.kind, priority: pri.label === 'High' ? 1 : pri.label === 'Medium' ? 2 : 3 },
+      html:{
+        title:`<b>${esc(t.title)}</b>`,
+        status:`<input type="checkbox" aria-label="Mark done" onclick="event.stopPropagation()" onchange="taskDone('${t.id}')">`,
+        record: who + (t.deal_name && t.contact_name ? ' · ' + esc(t.deal_name) : ''),
+        priority: G.pill(pri.label, pri.tone),
+        due: t.due_on && t.due_on < today ? `<span class="ix-pill bad">${esc(t.due_on)}</span>` : esc(t.due_on || '—')
+      }
+    };
+  });
+  const win = G.pageWindow(rows.length, taskPage, 25);
+  taskPage = win.page;
+  ixPageIds.tasks = G.sortRows(rows, taskSort.key, taskSort.dir).slice(win.start, win.end).map(r => r.id);
+  $('view').innerHTML = G.indexHtml({
+    scope:'tasks',
+    tabs:[{ id:'today', label:'Due today' }, { id:'overdue', label:'Overdue' }, { id:'upcoming', label:'Upcoming' }],
+    tab:taskTab, query:taskQuery, placeholder:'Search tasks',
+    note:'Priority follows the due date. A title is the rule, not a WhatsApp message.',
+    columns:[{ key:'status', label:'Status' }, { key:'title', label:'Title' }, { key:'record', label:'Associated record' }, { key:'due', label:'Due date' }, { key:'owner', label:'Owner' }, { key:'type', label:'Type' }, { key:'priority', label:'Priority' }],
+    rows, sort:taskSort, page:taskPage, selected:taskSelected,
+    bulk:[{ id:'done', label:'Mark done' }],
+    tools:`<div class="ix-tools"><input id="taskTitle" placeholder="New task" style="height:32px;border:1px solid var(--line);padding:0 8px"><input id="taskDue" type="date" style="height:32px;border:1px solid var(--line);padding:0 8px"><button type="button" class="ix-btn primary" onclick="taskAdd()">Add task</button></div>`,
+    empty:'Nothing in this tab.'
+  });
+}
+function paintLists(){
+  const G = window.MaGrowth;
+  if (listOpen) {
+    const seg = (crmSegments || []).find(s => s.id === listOpen);
+    const clauses = (seg && seg.definition && seg.definition.clauses) || [];
+    const q = listQuery.toLowerCase().trim();
+    const people = crmRows.filter(c => G.segmentMatch(asMatch(c), clauses)).filter(c => {
+      if (!q) return true;
+      return [c.first_name, c.last_name, c.email, c.phone].join(' ').toLowerCase().includes(q);
+    }).map(personRow);
+    const win = G.pageWindow(people.length, listPage, 25);
+    listPage = win.page;
+    ixPageIds['list-people'] = G.sortRows(people, listSort.key, listSort.dir).slice(win.start, win.end).map(r => r.id);
+    $('view').innerHTML = crmModes() + G.indexHtml({
+      scope:'list-people', query:listQuery, placeholder:'Search this list',
+      note: esc(seg ? seg.name : 'List') + ' · ' + esc(G.clauseText(seg && seg.definition)),
+      columns:CRM_ALL_COLS.filter(c => ['name','email','phone','lifecycle','tags'].includes(c.key)),
+      rows:people, sort:listSort, page:listPage, selected:listSelected,
+      bulk:[{ id:'tag', label:'Add tag' }, { id:'export', label:'Export CSV' }],
+      tools:`<button type="button" class="ix-btn" onclick="listClose()">All lists</button> <button type="button" class="ix-btn" onclick="segmentExport('${listOpen}')">Download</button> <button type="button" class="ix-btn" onclick="segmentQueue('${listOpen}')">Queue WhatsApp template</button>`,
+      empty:'Nobody matches this list.'
+    });
+    return;
+  }
+  const q = listQuery.toLowerCase().trim();
+  const rows = (crmSegments || []).filter(s => !q || s.name.toLowerCase().includes(q)).map(s => {
+    const n = crmRows.filter(c => G.segmentMatch(asMatch(c), (s.definition && s.definition.clauses) || [])).length;
+    return {
+      id:s.id,
+      cells:{ name:s.name, filters:G.clauseText(s.definition), people:String(n) },
+      sort:{ name:s.name.toLowerCase(), people:n },
+      html:{
+        name:`<button type="button" class="ix-link" onclick="event.stopPropagation();listOpenGo('${s.id}')">${esc(s.name)}</button>`,
+        filters:`<span class="ix-note">${esc(G.clauseText(s.definition))}</span>`
+      }
+    };
+  });
+  $('view').innerHTML = crmModes() + G.indexHtml({
+    scope:'lists', query:listQuery, placeholder:'Search lists',
+    note:'A list is a saved filter. WhatsApp queueing stays opted-in only, and it does not send.',
+    columns:[{ key:'name', label:'Name' }, { key:'filters', label:'Filters' }, { key:'people', label:'People' }],
+    rows, sort:listSort, page:listPage, selected:{},
+    tools:`<div class="ix-tools"><input id="segName" placeholder="List name" style="height:32px;border:1px solid var(--line);padding:0 8px"><select id="segField">${['whatsapp_opt_in','email_opt_in','has_child','formats_attended','interests','tags','days_since_last_booking','lifecycle_stage','is_organiser','birthday_enquiry','asked_price'].map(f => `<option>${f}</option>`).join('')}</select><input id="segValue" placeholder="true, baking, or 60" style="height:32px;border:1px solid var(--line);padding:0 8px"><button type="button" class="ix-btn primary" onclick="segmentSave()">Save list</button></div>`,
+    empty:'No saved lists yet.'
+  });
+}
+function paintDeals(){
+  const G = window.MaGrowth;
+  const q = dealQuery.toLowerCase().trim();
+  const shown = dealRows.filter(d => {
+    if (dealTab === 'mine' && d.owner !== me.id) return false;
+    if (dealTab === 'open' && (d.stage === 'won' || d.stage === 'lost')) return false;
+    if (!q) return true;
+    return [d.title, d.kind, d.company, d.stage].join(' ').toLowerCase().includes(q);
+  });
+  const rows = shown.map(d => ({
+    id:d.id,
+    cells:{ name:d.title, stage:G.STAGE_LABEL[d.stage] || d.stage, kind:d.kind, value:String(d.value_rm || 0), close:d.expected_on || '', people:String(d.headcount || ''), owner:(staffNames && staffNames[d.owner]) || '' },
+    sort:{ name:d.title, stage:d.stage, value:d.value_rm || 0, close:d.expected_on || '9999-99-99', people:d.headcount || 0 },
+    html:{
+      name:`<b>${esc(d.title)}</b>`,
+      stage:G.stagePill(d.stage),
+      value: money(d.value_rm || 0)
+    }
+  }));
+  const win = G.pageWindow(rows.length, dealPage, 25);
+  dealPage = win.page;
+  ixPageIds.deals = G.sortRows(rows, dealSort.key, dealSort.dir).slice(win.start, win.end).map(r => r.id);
+  $('view').innerHTML = G.indexHtml({
+    scope:'deals',
+    tabs:[{ id:'all', label:'All deals' }, { id:'mine', label:'My deals' }, { id:'open', label:'Open' }],
+    tab:dealTab, query:dealQuery, placeholder:'Search deals',
+    note:'A won deal is not a workshop booking and does not change a price.',
+    modes:[{ id:'table', label:'Table' }, { id:'board', label:'Board' }], mode:dealMode,
+    columns:[{ key:'name', label:'Deal' }, { key:'stage', label:'Stage' }, { key:'kind', label:'Type' }, { key:'value', label:'Amount' }, { key:'close', label:'Close date' }, { key:'people', label:'Headcount' }, { key:'owner', label:'Owner' }],
+    rows, sort:dealSort, page:dealMode === 'board' ? 0 : dealPage, pageSize: dealMode === 'board' ? 200 : 25, selected:dealSelected,
+    board: dealMode === 'board' ? G.dealBoard(shown) : '',
+    bulk:[{ id:'stage', label:'Change stage' }, { id:'export', label:'Export CSV' }],
+    bulkExtra:`<select id="ixDealStage" class="ix-mini">${G.STAGES.map(s => `<option value="${s}">${esc(G.STAGE_LABEL[s])}</option>`).join('')}</select>`,
+    tools:`<div class="ix-tools"><input id="dealTitle" placeholder="New enquiry" style="height:32px;border:1px solid var(--line);padding:0 8px"><select id="dealKind"><option value="team_building">Team-building</option><option value="birthday">Birthday</option><option value="school">School</option><option value="other">Other</option></select><input id="dealValue" type="number" min="0" value="0" style="width:90px;height:32px;border:1px solid var(--line);padding:0 8px" title="RM"><input id="dealHead" type="number" min="1" placeholder="People" style="width:80px;height:32px;border:1px solid var(--line);padding:0 8px"><input id="dealWhen" type="date" style="height:32px;border:1px solid var(--line)"><button type="button" class="ix-btn primary" onclick="dealAdd()">Add</button></div>`,
+    empty:'No deals in this view.'
+  });
+}
+function emailNav(){
+  const tabs = [['campaigns','Campaigns'],['checklist','Create'],['templates','Templates'],['flows','Automations']];
+  const on = id => emailScreen === id || (id === 'checklist' && emailScreen === 'editor') || (id === 'campaigns' && emailScreen === 'report');
+  return `<div class="em-nav">${tabs.map(([id, label]) => `<button type="button" class="${on(id)?'on':''}" onclick="emGo('${id}')">${label}</button>`).join('')}</div>`;
+}
+function paintEmail(){
+  const G = window.MaGrowth;
+  if (!emailDraft) emailDraft = freshDraft();
+  let body = '';
+  if (emailScreen === 'checklist') body = G.checklistHtml(emailDraft, emailSection, crmSegments);
+  else if (emailScreen === 'editor') body = G.editorHtml(emailDraft, emailDevice);
+  else if (emailScreen === 'templates') body = G.galleryHtml(emailTemplates);
+  else if (emailScreen === 'flows') {
+    const rows = emailFlows.map(f => ({
+      id:f.id, cells:{ name:f.name, trigger:f.trigger, status:f.active ? 'On' : 'Off' },
+      html:{ status:`<label class="ix-switch" onclick="event.stopPropagation()"><input type="checkbox" ${f.active?'checked':''} onchange="emFlow('${f.id}', this.checked)"> ${f.active?'On':'Off'}</label>` }
+    }));
+    body = G.indexHtml({ scope:'flows', selectable:false, columns:[{ key:'name', label:'Automation' }, { key:'trigger', label:'Starts when' }, { key:'status', label:'On' }], rows, selected:{}, note:'These queue only. They do not send.', empty:'No automations.' });
+  } else if (emailScreen === 'report' && emailReportId) {
+    const camp = emailRows.find(c => c.id === emailReportId) || {};
+    const stat = emailStats[emailReportId] || { recipients:0, opens:new Set(), clicks:new Set(), unsubs:new Set(), bounces:new Set(), links:{}, revenue:0 };
+    const links = Object.keys(stat.links || {}).map(url => ({ url, clicks:stat.links[url] })).sort((a, b) => b.clicks - a.clicks).slice(0, 8);
+    const audience = (crmSegments.find(s => s.id === camp.segment_id) || {}).name || '';
+    body = G.reportHtml({ name:camp.name, audience, subject:camp.subject || '', recipients:stat.recipients, opens:stat.opens.size, clicks:stat.clicks.size, unsubscribes:stat.unsubs.size, bounces:stat.bounces.size, revenue:stat.revenue, links });
+  } else {
+    const q = emailQuery.toLowerCase().trim();
+    const rows = emailRows.filter(c => !q || c.name.toLowerCase().includes(q)).map(c => {
+      const stat = emailStats[c.id] || { recipients:0, opens:new Set(), clicks:new Set(), revenue:0 };
+      const tone = { draft:'muted', scheduled:'warn', sending:'info', sent:'ok', cancelled:'bad' }[c.status] || 'muted';
+      const audience = (crmSegments.find(s => s.id === c.segment_id) || {}).name || '—';
+      return {
+        id:c.id,
+        cells:{ name:c.name, status:c.status, audience, sent:(c.sent_at || c.scheduled_at || '').slice(0, 10), recipients:String(stat.recipients), open:G.rate(stat.opens.size, stat.recipients), click:G.rate(stat.clicks.size, stat.recipients), revenue:String(stat.revenue || 0) },
+        sort:{ name:c.name, recipients:stat.recipients, revenue:stat.revenue || 0 },
+        html:{
+          name:`<button type="button" class="ix-link" onclick="event.stopPropagation();emReport('${c.id}')">${esc(c.name)}</button>`,
+          status:G.pill(c.status, tone),
+          revenue:'RM' + Number(stat.revenue || 0)
+        }
+      };
+    });
+    body = G.indexHtml({
+      scope:'email', selectable:false, query:emailQuery, placeholder:'Search campaigns',
+      note:'Opens and clicks come from Resend events. Nothing is delivered until the sender is switched on.',
+      columns:[{ key:'name', label:'Name' }, { key:'status', label:'Status' }, { key:'audience', label:'Audience' }, { key:'sent', label:'Sent' }, { key:'recipients', label:'Recipients' }, { key:'open', label:'Open rate' }, { key:'click', label:'Click rate' }, { key:'revenue', label:'RM revenue' }],
+      rows, sort:emailSort, page:emailPage, selected:{},
+      empty:'No campaigns yet. Create one when you are ready. Nothing is sent.'
+    });
+  }
+  $('view').innerHTML = emailNav() + body;
+}
+function rememberPage(scope, rows, sort, page){
+  const G = window.MaGrowth;
+  const win = G.pageWindow(rows.length, page, 25);
+  ixPageIds[scope] = G.sortRows(rows, sort.key, sort.dir).slice(win.start, win.end).map(r => r.id);
+  return win.page;
+}
+function paintScope(scope){
+  if (scope === 'customers') paintCustomers();
+  else if (scope === 'tasks') paintTasks();
+  else if (scope === 'lists' || scope === 'list-people') paintLists();
+  else if (scope === 'deals') paintDeals();
+  else if (scope === 'email' || scope === 'flows') paintEmail();
+}
+function sortOf(scope){
+  return { customers:crmSort, tasks:taskSort, lists:listSort, 'list-people':listSort, deals:dealSort, email:emailSort }[scope];
+}
+window.ixTab = (scope, id) => {
+  if (scope === 'customers') { crmView = id; crmPage = 0; crmSelected = {}; crmPreview = ''; }
+  if (scope === 'tasks') { taskTab = id; taskPage = 0; taskSelected = {}; }
+  if (scope === 'deals') { dealTab = id; dealPage = 0; dealSelected = {}; }
+  paintScope(scope);
+};
+window.ixSearch = (scope, value) => {
+  if (scope === 'customers') crmQuery = value;
+  if (scope === 'tasks') taskQuery = value;
+  if (scope === 'lists' || scope === 'list-people') listQuery = value;
+  if (scope === 'deals') dealQuery = value;
+  if (scope === 'email') emailQuery = value;
+  clearTimeout(ixTimer);
+  ixTimer = setTimeout(() => {
+    if (scope === 'customers') crmPage = 0;
+    if (scope === 'tasks') taskPage = 0;
+    if (scope === 'deals') dealPage = 0;
+    if (scope === 'email') emailPage = 0;
+    if (scope === 'lists' || scope === 'list-people') listPage = 0;
+    paintScope(scope);
+    const box = document.querySelector('#view .ix-search');
+    if (box) { box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
+  }, 160);
+};
+window.ixSort = (scope, key) => {
+  const sort = sortOf(scope);
+  if (!sort) return;
+  if (sort.key === key) sort.dir = sort.dir === 'asc' ? 'desc' : 'asc';
+  else { sort.key = key; sort.dir = key === 'activity' || key === 'value' ? 'desc' : 'asc'; }
+  paintScope(scope);
+};
+window.ixPage = (scope, page) => {
+  if (scope === 'customers') crmPage = page;
+  if (scope === 'tasks') taskPage = page;
+  if (scope === 'lists' || scope === 'list-people') listPage = page;
+  if (scope === 'deals') dealPage = page;
+  if (scope === 'email') emailPage = page;
+  paintScope(scope);
+};
+window.ixPick = (scope, id, on) => {
+  const bag = { customers:crmSelected, tasks:taskSelected, 'list-people':listSelected, deals:dealSelected }[scope];
+  if (!bag) return;
+  bag[id] = !!on;
+  paintScope(scope);
+};
+window.ixPagePick = (scope, on) => {
+  const bag = { customers:crmSelected, tasks:taskSelected, 'list-people':listSelected, deals:dealSelected }[scope];
+  if (!bag) return;
+  (ixPageIds[scope] || []).forEach(id => { bag[id] = !!on; });
+  paintScope(scope);
+};
+window.ixFilter = (scope, key, value) => {
+  if (scope !== 'customers') return;
+  if (key === 'news' || key === 'follow' || key === 'archived') crmSide[key] = value === true || value === 'true';
+  else crmSide[key] = value;
+  crmPage = 0;
+  paintCustomers();
+};
+window.ixChip = (scope, id) => {
+  if (scope !== 'customers') return;
+  if (id === 'news' || id === 'follow' || id === 'archived') crmSide[id] = false;
+  else crmSide[id] = '';
+  paintCustomers();
+};
+window.ixCol = (scope, key, on) => {
+  if (scope !== 'customers' || key === 'name') return;
+  if (on && !crmColKeys.includes(key)) crmColKeys.push(key);
+  if (!on) crmColKeys = crmColKeys.filter(k => k !== key);
+  paintCustomers();
+};
+window.ixPreview = (scope, id) => {
+  if (scope === 'customers') crmPreview = id || '';
+  paintScope(scope);
+};
+window.ixMode = (scope, id) => { if (scope === 'deals') { dealMode = id; paintDeals(); } };
+window.ixBulk = async (scope, action) => {
+  const bag = { customers:crmSelected, tasks:taskSelected, 'list-people':listSelected, deals:dealSelected }[scope] || {};
+  const ids = Object.keys(bag).filter(id => bag[id] && isId(id));
+  if (!ids.length) { toast('Select at least one row.'); return; }
+  if (scope === 'customers' || scope === 'list-people') {
+    if (action === 'export') { crmCsv(ids); return; }
+    if (action === 'tag' || action === 'list') {
+      let tag = '';
+      if (action === 'list') {
+        const seg = crmSegments.find(s => s.id === ($('ixList') && $('ixList').value));
+        const clause = seg && ((seg.definition && seg.definition.clauses) || []).find(c => c.field === 'tags' && c.value);
+        if (!clause) { toast('That list is a saved filter. People show up when they match it. Add a tag instead.'); return; }
+        tag = String(clause.value);
+      } else tag = (window.prompt('Tag to add', '') || '').trim();
+      if (!tag) return;
+      for (const id of ids) {
+        const row = crmRows.find(c => c.id === id);
+        const tags = [...new Set([...(row && row.tags || []), tag])].slice(0, 20);
+        const { error } = await sb.from('contacts').update({ tags, updated_at:new Date().toISOString() }).eq('id', id);
+        if (error) { toast(error.message); return; }
+      }
+      toast('Tag added'); crmSelected = {}; listSelected = {}; await render(); return;
+    }
+    if (action === 'owner') {
+      const owner = $('ixOwner') && $('ixOwner').value;
+      if (!isId(owner)) { toast('Choose an owner.'); return; }
+      const { error } = await sb.from('contacts').update({ owner }).in('id', ids);
+      if (error) { toast(error.message); return; }
+      toast('Owner updated'); crmSelected = {}; await render(); return;
+    }
+    if (action === 'stage') {
+      const stage = $('ixStage') && $('ixStage').value;
+      if (!stage) { toast('Choose a stage.'); return; }
+      const { error } = await sb.from('contacts').update({ lifecycle_stage:stage }).in('id', ids);
+      if (error) { toast(error.message); return; }
+      toast('Stage updated'); crmSelected = {}; await render(); return;
+    }
+  }
+  if (scope === 'tasks' && action === 'done') {
+    const { error } = await sb.from('staff_tasks').update({ status:'done', done_at:new Date().toISOString() }).in('id', ids);
+    if (error) { toast(error.message); return; }
+    toast('Marked done'); taskSelected = {}; await render(); return;
+  }
+  if (scope === 'deals' && action === 'stage') {
+    const stage = $('ixDealStage') && $('ixDealStage').value;
+    const { error } = await sb.from('group_deals').update({ stage, updated_at:new Date().toISOString() }).in('id', ids);
+    if (error) { toast(error.message); return; }
+    toast('Stage updated'); dealSelected = {}; await render(); return;
+  }
+  if (scope === 'deals' && action === 'export') {
+    const lines = ['title,stage,kind,value_rm,expected_on,headcount'];
+    dealRows.filter(d => ids.includes(d.id)).forEach(d => lines.push([d.title, d.stage, d.kind, d.value_rm, d.expected_on || '', d.headcount || ''].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type:'text/csv' }));
+    a.download = 'group-deals.csv'; a.click();
+  }
+};
+window.listOpenGo = id => { listOpen = id; listPage = 0; listQuery = ''; listSelected = {}; paintLists(); };
+window.listClose = () => { listOpen = null; paintLists(); };
 async function crmLists(){
   busy(true,'Loading…');
+  if (!crmRows.length) {
+    const people = await sb.from('contacts').select('*').order('last_activity', { ascending:false }).limit(2000);
+    if (!people.error) crmRows = people.data || [];
+  }
   const { data, error } = await sb.from('saved_segments').select('*').order('name');
   busy(false);
   if (error) {
@@ -2386,23 +2951,16 @@ async function crmLists(){
       : `<div class="msg err">${esc(error.message)}</div>`);
     return;
   }
-  const fields = ['whatsapp_opt_in','email_opt_in','has_child','formats_attended','interests','tags','days_since_last_booking','lifecycle_stage','is_organiser','birthday_enquiry','asked_price'];
-  $('view').innerHTML = crmModes()
-    + `<div class="hint"><b>Saved lists.</b> Filters use contact fields, bookings and interests. WhatsApp queueing is opted-in people only, and it does not send.</div>`
-    + (window.MaGrowth ? window.MaGrowth.renderSegments(data || []) : '')
-    + `<div class="card"><div class="card-h"><span class="grip">New list</span></div><div class="card-b">
-        <div class="row"><div class="f"><label>Name</label><input id="segName" placeholder="Parents in Bangsar"></div>
-        <div class="f"><label>Field</label><select id="segField">${fields.map(f => `<option>${f}</option>`).join('')}</select></div>
-        <div class="f"><label>Value</label><input id="segValue" placeholder="true, baking, or 60"></div></div>
-        <button class="btn sm" type="button" onclick="segmentSave()">Save list</button></div></div>`;
+  crmSegments = data || [];
+  await loadStaff();
+  paintLists();
 }
 window.segmentSave = async () => {
   const name = ($('segName').value || '').trim();
   const field = $('segField').value;
   const raw = ($('segValue').value || '').trim();
   if (!name || !raw) { toast('Add a name and a value.'); return; }
-  const op = (field === 'formats_attended' || field === 'interests' || field === 'tags') ? 'contains'
-    : field === 'days_since_last_booking' ? 'gte' : 'eq';
+  const op = (field === 'formats_attended' || field === 'interests' || field === 'tags') ? 'contains' : field === 'days_since_last_booking' ? 'gte' : 'eq';
   const value = raw === 'true' ? true : raw === 'false' ? false : (/^[0-9]+$/.test(raw) ? Number(raw) : raw);
   const { error } = await sb.from('saved_segments').insert({ name, definition: { clauses: [{ field, op, value }] }, owner: me.id });
   if (error) { toast(error.message); return; }
@@ -2434,26 +2992,22 @@ window.segmentQueue = async (id) => {
 views.tasks = async function(){
   busy(true,'Loading…');
   await sb.rpc('refresh_auto_tasks');
-  const [{ data, error }, notes] = await Promise.all([
-    sb.from('staff_tasks').select('id, title, detail, kind, due_on, status, assignee, contact_id, contacts(first_name, last_name)').eq('status', 'open').order('due_on'),
-    sb.from('staff_notifications').select('id, title, read_at').is('read_at', null).eq('staff_id', me.id).limit(20)
-  ]);
+  let q = await sb.from('staff_tasks').select('id, title, detail, kind, due_on, status, assignee, contact_id, deal_id, contacts(first_name, last_name), group_deals(title)').eq('status', 'open').order('due_on');
+  if (q.error) q = await sb.from('staff_tasks').select('id, title, detail, kind, due_on, status, assignee, contact_id, contacts(first_name, last_name)').eq('status', 'open').order('due_on');
   busy(false);
-  if (error) {
-    $('view').innerHTML = schemaMissing(error)
+  if (q.error) {
+    $('view').innerHTML = schemaMissing(q.error)
       ? `<div class="msg info">Tasks are added by <b>supabase/migrations/20261122020000_staff_tasks.sql</b>.</div>`
-      : `<div class="msg err">${esc(error.message)}</div>`;
+      : `<div class="msg err">${esc(q.error.message)}</div>`;
     return;
   }
-  const tasks = (data || []).map(t => ({ ...t, contact_name: t.contacts ? [t.contacts.first_name, t.contacts.last_name].filter(Boolean).join(' ') : '' }));
-  const mine = tasks.filter(t => !t.assignee || t.assignee === me.id);
-  $('view').innerHTML = `<div class="hint"><b>My tasks.</b> Yours are listed first. A task title is the rule, not a copy of a WhatsApp message. Notices stay in the admin.</div>`
-    + ((notes.data || []).length ? `<p>${(notes.data || []).map(n => `<span class="tag">${esc(n.title)}</span>`).join(' ')}</p>` : '')
-    + (window.MaGrowth ? window.MaGrowth.renderTasks(mine.length ? mine : tasks) : '')
-    + `<div class="card"><div class="card-h"><span class="grip">Add a task</span></div><div class="card-b">
-        <div class="row"><div class="f"><label>Title</label><input id="taskTitle" placeholder="Call about Sunday"></div>
-        <div class="f"><label>Due</label><input id="taskDue" type="date"></div></div>
-        <button class="btn sm" type="button" onclick="taskAdd()">Add</button></div></div>`;
+  await loadStaff();
+  taskRows = (q.data || []).map(t => ({
+    ...t,
+    contact_name: t.contacts ? [t.contacts.first_name, t.contacts.last_name].filter(Boolean).join(' ') : '',
+    deal_name: Array.isArray(t.group_deals) ? ((t.group_deals[0] && t.group_deals[0].title) || '') : (t.group_deals && t.group_deals.title) || ''
+  }));
+  paintTasks();
 };
 window.taskDone = async (id) => {
   const { error } = await sb.from('staff_tasks').update({ status: 'done', done_at: new Date().toISOString() }).eq('id', id);
@@ -2469,7 +3023,7 @@ window.taskAdd = async () => {
 };
 views.groups = async function(){
   busy(true,'Loading…');
-  const { data, error } = await sb.from('group_deals').select('*').order('created_at', { ascending: false });
+  const { data, error } = await sb.from('group_deals').select('*').order('expected_on');
   busy(false);
   if (error) {
     $('view').innerHTML = schemaMissing(error)
@@ -2477,15 +3031,9 @@ views.groups = async function(){
       : `<div class="msg err">${esc(error.message)}</div>`;
     return;
   }
-  $('view').innerHTML = `<div class="hint"><b>Groups and companies.</b> Team-building, birthday parties and school groups. A won card is not a workshop booking and does not change a price.</div>`
-    + `<div class="card"><div class="card-b"><div class="row">
-        <div class="f"><label>Title</label><input id="dealTitle" placeholder="Hartamas school, 20 children"></div>
-        <div class="f"><label>Kind</label><select id="dealKind"><option value="team_building">Team-building</option><option value="birthday">Birthday</option><option value="school">School</option><option value="other">Other</option></select></div>
-        <div class="f"><label>Value (RM)</label><input id="dealValue" type="number" min="0" value="0"></div>
-        <div class="f"><label>Headcount</label><input id="dealHead" type="number" min="1"></div>
-        <div class="f"><label>Expected</label><input id="dealWhen" type="date"></div>
-      </div><button class="btn sm" type="button" onclick="dealAdd()">Add enquiry</button></div></div>`
-    + (window.MaGrowth ? window.MaGrowth.renderDeals(data || []) : '');
+  await loadStaff();
+  dealRows = data || [];
+  paintDeals();
 };
 window.dealAdd = async () => {
   const title = ($('dealTitle').value || '').trim();
@@ -2505,51 +3053,145 @@ window.dealStage = async (id, stage) => {
 };
 views.email = async function(){
   busy(true,'Loading…');
-  const [camps, flows, templates, segments, revenue] = await Promise.all([
+  const [camps, flows, templates, segments, revenue, queue, events] = await Promise.all([
     sb.from('email_campaigns').select('*').order('created_at', { ascending: false }),
-    sb.from('email_flows').select('name, trigger, active').order('name'),
-    sb.from('email_templates').select('id, name, subject').order('name'),
-    sb.from('saved_segments').select('id, name').order('name'),
-    sb.from('email_campaign_revenue').select('*')
+    sb.from('email_flows').select('id, name, trigger, active').order('name'),
+    sb.from('email_templates').select('id, name, subject, preheader').order('name'),
+    sb.from('saved_segments').select('id, name, definition').order('name'),
+    sb.from('email_campaign_revenue').select('*'),
+    sb.from('email_queue').select('campaign_id, status'),
+    sb.from('email_events').select('campaign_id, contact_id, kind, url')
   ]);
   busy(false);
   const missing = [camps, flows, templates].find(r => r.error && schemaMissing(r.error));
   if (missing) {
-    $('view').innerHTML = `<div class="msg info">Email marketing is added by <b>supabase/migrations/20261122050000_email_marketing.sql</b>. No customer mail is sent. Resend DNS and the API key are not set.</div>`;
+    $('view').innerHTML = `<div class="msg info">Email marketing is added by <b>supabase/migrations/20261122050000_email_marketing.sql</b>. No customer mail is sent.</div>`;
     return;
   }
   if (camps.error) { $('view').innerHTML = `<div class="msg err">${esc(camps.error.message)}</div>`; return; }
-  const moneyById = {};
-  (revenue.data || []).forEach(r => { moneyById[r.campaign_id] = r.revenue_rm; });
-  const rows = (camps.data || []).map(c => ({ ...c, revenue_rm: moneyById[c.id] || 0 }));
-  $('view').innerHTML = `<div class="hint"><b>Marketing email.</b> Campaigns and flows queue messages for people who opted in. Nothing is delivered: RESEND_API_KEY and the domain DNS are not set, and the sender stays off until EMAIL_SEND_ENABLED is true.</div>`
-    + `<div class="card"><div class="card-h"><span class="grip">New campaign</span></div><div class="card-b"><div class="row">
-        <div class="f"><label>Name</label><input id="emName" placeholder="Sunday baking, November"></div>
-        <div class="f"><label>List</label><select id="emSegment">${(segments.data || []).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div>
-        <div class="f"><label>Template</label><select id="emTemplate">${(templates.data || []).map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div>
-      </div><p class="help">Preview uses the first name "Aina" and does not email anyone. A test send is not available until Resend is switched on.</p>
-      <p><button class="btn sm" type="button" onclick="emailPreview()">Preview</button>
-         <button class="btn sm" type="button" onclick="emailSchedule()">Schedule queue</button></p>
-      <div id="emPreview"></div></div></div>`
-    + (window.MaGrowth ? window.MaGrowth.renderEmail(rows, flows.data || []) : '');
+  emailRows = camps.data || [];
+  emailFlows = flows.data || [];
+  emailTemplates = (templates.data || []).map(t => ({ ...t, id:t.id, name:t.name }));
+  if (!segments.error) crmSegments = segments.data || [];
+  emailStats = {};
+  emailRows.forEach(c => { emailStats[c.id] = { recipients:0, opens:new Set(), clicks:new Set(), unsubs:new Set(), bounces:new Set(), links:{}, revenue:0 }; });
+  (queue.data || []).forEach(row => {
+    const bag = emailStats[row.campaign_id];
+    if (bag && (row.status === 'queued' || row.status === 'sent')) bag.recipients += 1;
+  });
+  (events.data || []).forEach(ev => {
+    const bag = emailStats[ev.campaign_id];
+    if (!bag) return;
+    if (ev.kind === 'opened' && ev.contact_id) bag.opens.add(ev.contact_id);
+    if (ev.kind === 'clicked' && ev.contact_id) { bag.clicks.add(ev.contact_id); if (ev.url) bag.links[ev.url] = (bag.links[ev.url] || 0) + 1; }
+    if (ev.kind === 'unsubscribed' && ev.contact_id) bag.unsubs.add(ev.contact_id);
+    if (ev.kind === 'bounced' && ev.contact_id) bag.bounces.add(ev.contact_id);
+  });
+  (revenue.data || []).forEach(r => { if (emailStats[r.campaign_id]) emailStats[r.campaign_id].revenue = r.revenue_rm || 0; });
+  paintEmail();
 };
-window.emailPreview = () => {
-  const name = $('emTemplate').selectedOptions[0] ? $('emTemplate').selectedOptions[0].textContent : '';
-  $('emPreview').innerHTML = `<div class="card"><div class="card-b"><p><b>${esc(name)}</b></p><p>Hello Aina,</p><p>This is a preview with sample data. No email was sent.</p><p class="help">Master Artist, 38-2, Jalan 28/70A, Desa Sri Hartamas, 50480 Kuala Lumpur<br>Unsubscribe link is added on every message.</p></div></div>`;
+window.emGo = screen => { emRead(); emailScreen = screen; if ((screen === 'checklist' || screen === 'editor') && !emailDraft) emailDraft = freshDraft(); paintEmail(); };
+window.emRead = () => {
+  const d = emailDraft || (emailDraft = freshDraft());
+  if ($('emName')) d.name = $('emName').value;
+  if ($('emTo')) d.to = $('emTo').value;
+  if ($('emFromName')) d.fromName = $('emFromName').value;
+  if ($('emFromEmail')) d.fromEmail = $('emFromEmail').value;
+  if ($('emSubject')) d.subject = $('emSubject').value;
+  if ($('emPreviewText')) d.preview = $('emPreviewText').value;
+  const when = document.querySelector('input[name=emWhen]:checked');
+  if (when) d.when = when.value;
+  if ($('emDate')) d.date = $('emDate').value;
+  const state = window.MaGrowth.checklistState(d);
+  Object.keys(state).forEach(key => {
+    const tick = document.querySelector('.em-step[data-step="' + key + '"] .em-tick');
+    if (!tick) return;
+    tick.classList.toggle('on', !!state[key]);
+    tick.textContent = state[key] ? '✓' : '';
+  });
 };
-window.emailSchedule = async () => {
-  const name = ($('emName').value || '').trim();
-  const segment = $('emSegment').value;
-  const template = $('emTemplate').value;
-  if (!name || !segment || !template) { toast('Choose a name, a list and a template.'); return; }
+window.emSection = key => { emRead(); emailSection = emailSection === key ? '' : key; paintEmail(); };
+window.emAdd = type => {
+  if (!emailDraft) emailDraft = freshDraft();
+  const text = type === 'heading' ? 'This Sunday at the studio' : type === 'button' ? 'See the workshops' : type === 'image' ? 'Studio table' : '';
+  emailDraft.blocks.push({ type, text });
+  paintEmail();
+};
+window.emRemove = i => { if (emailDraft) emailDraft.blocks.splice(i, 1); paintEmail(); };
+window.emDevice = device => { emailDevice = device; paintEmail(); };
+let emDragFrom = 0;
+window.emDrag = (ev, i) => { emDragFrom = i; ev.dataTransfer.setData('text/plain', String(i)); };
+window.emOver = ev => ev.preventDefault();
+window.emDrop = (ev, i) => {
+  ev.preventDefault();
+  if (!emailDraft) return;
+  const [item] = emailDraft.blocks.splice(emDragFrom, 1);
+  emailDraft.blocks.splice(i, 0, item);
+  paintEmail();
+};
+window.emBlock = (i, value) => {
+  if (!emailDraft || !emailDraft.blocks[i]) return;
+  emailDraft.blocks[i].text = value;
+  const live = $('emLive');
+  if (!live) return;
+  live.innerHTML = emailDraft.blocks.map(b => {
+    if (b.type === 'heading') return '<h2>' + esc(b.text || '') + '</h2>';
+    if (b.type === 'button') return '<p><span class="em-cta">' + esc(b.text || '') + '</span></p>';
+    if (b.type === 'image') return '<p class="em-ph">Image · ' + esc(b.text || 'Studio photo') + '</p>';
+    if (b.type === 'divider') return '<hr>';
+    return '<p>' + esc(b.text || '') + '</p>';
+  }).join('');
+};
+window.emUseTemplate = id => {
+  const tpl = emailTemplates.find(t => t.id === id);
+  if (!emailDraft) emailDraft = freshDraft();
+  emailDraft.templateId = id;
+  if (tpl) {
+    if (!emailDraft.subject) emailDraft.subject = tpl.subject || '';
+    if (!emailDraft.name) emailDraft.name = tpl.name;
+    emailDraft.blocks = [
+      { type:'heading', text: tpl.subject || tpl.name },
+      { type:'text', text:'Hello {first_name},' },
+      { type:'text', text: tpl.preheader || 'A note from the studio.' },
+      { type:'button', text:'See the workshops' }
+    ];
+  }
+  emailScreen = 'editor';
+  paintEmail();
+};
+window.emFlow = async (id, active) => {
+  const { error } = await sb.from('email_flows').update({ active: !!active }).eq('id', id);
+  if (error) { toast(error.message); await render(); return; }
+  const row = emailFlows.find(f => f.id === id);
+  if (row) row.active = !!active;
+  toast(active ? 'Automation on' : 'Automation off');
+  paintEmail();
+};
+window.emReport = id => { emailReportId = id; emailScreen = 'report'; paintEmail(); };
+window.emailSaveDraft = async () => {
+  emRead();
+  const d = emailDraft || freshDraft();
+  const name = (d.name || d.subject || '').trim();
+  if (!name) { toast('Add a campaign name.'); return; }
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'campaign';
-  const ins = await sb.from('email_campaigns').insert({ name, slug, segment_id: segment, template_id: template, status: 'draft', created_by: me.id }).select('id').single();
+  const ready = Object.values(window.MaGrowth.checklistState(d)).every(Boolean);
+  const ins = await sb.from('email_campaigns').insert({
+    name, slug, segment_id: d.to || null, template_id: d.templateId || null,
+    status: ready && d.when === 'later' ? 'scheduled' : 'draft',
+    scheduled_at: d.when === 'later' && d.date ? new Date(d.date + 'T09:00:00+08:00').toISOString() : null,
+    created_by: me.id
+  }).select('id').single();
   if (ins.error) { toast(ins.error.message); return; }
-  const queued = await sb.rpc('enqueue_email_campaign', { p_campaign: ins.data.id });
-  if (queued.error) { toast(queued.error.message); return; }
-  toast('Queued ' + (queued.data || 0) + ' emails. None were sent.');
+  if (ready && d.to) {
+    const queued = await sb.rpc('enqueue_email_campaign', { p_campaign: ins.data.id });
+    if (queued.error) { toast('Draft saved. ' + queued.error.message); }
+    else toast('Queued ' + (queued.data || 0) + '. None were sent.');
+  } else toast('Draft saved. None were sent.');
+  emailDraft = freshDraft();
+  emailScreen = 'campaigns';
   await render();
 };
+
 
 /* ---------- studio details ---------- */
 /* ---------- studio details ---------- */
