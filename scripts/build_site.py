@@ -50,7 +50,6 @@ PHOTOS = {
     'kids-art-studio': ('art-photo-2.jpg', 'Children painting in the studio'),
     'parent-child-studio': ('painting-4.jpg', 'A teacher helping children paint'),
     'adult-art-class': ('painting-3.jpg', 'A painting in progress'),
-    'sing-your-song': ('vocal-teaching-2.jpg', 'A group singing session in the studio'),
     'kids-art-younger': ('art-photo-2.jpg', 'Younger children painting'),
     'kids-art-older': ('art-photo-3.jpg', 'Older students working on a painting together'),
     'adult-art': ('painting-2.jpg', 'An adult art session'),
@@ -1079,7 +1078,21 @@ def build_workshops():
     for slots in days.values():
         build_session_day(sorted(slots, key=lambda s: s['time']))
     build_this_sunday()
+    build_sing_your_song_note()
     return len(days)
+
+
+def build_sing_your_song_note():
+    """The workshop is discontinued. Keep /workshops/sing-your-song/ from 404ing, and out of the sitemap."""
+    body = hero_band('Master Artist Studio Sessions', 'Coming soon: <em>kids voice lessons</em>',
+                     'Sing Your Song is no longer on the schedule. Kids voice lessons are coming soon. Weekly voice lessons are open now.',
+                     '<a class="btn" href="/classes/voice/">Voice lessons</a><a class="btn ghost" href="/workshops/">Workshops</a>',
+                     crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (None, 'Sing Your Song')))
+    page('/workshops/sing-your-song/', 'Coming soon: kids voice lessons · Master Artist',
+         'Sing Your Song has ended. Kids voice lessons are coming soon. Weekly voice lessons are open now.',
+         body, voice='studio', active='/workshops/', noindex=True,
+         data_attrs=' data-page="sing-your-song"',
+         wa={'msg': "Hi, I'd like to ask about kids voice lessons. Source: {source}.", 'fmt': 'sing-your-song'})
 
 
 # --- Classes ----------------------------------------------------------------

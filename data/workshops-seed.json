@@ -68,21 +68,6 @@
       "cap_specialty": 20
     },
     {
-      "id": "sing-your-song",
-      "name": "Sing Your Song",
-      "discipline": "voice",
-      "duration_min": 120,
-      "price": 75,
-      "cap": 12,
-      "room": "L2 recording studio",
-      "audience": "adults",
-      "summary": "A recorded group performance of one song plus a short solo technique round; the recording is sent to you.",
-      "upsell": "voice",
-      "dine_addon": true,
-      "live_from": "2026-11-08",
-      "status": "paused"
-    },
-    {
       "id": "reels-for-your-business",
       "name": "Reels for Your Business",
       "discipline": "videography",
@@ -348,7 +333,7 @@
       "id": "l2-studio",
       "name": "L2 recording studio",
       "floor": "L2",
-      "use": "music lessons, Sing Your Song, photo and video",
+      "use": "music lessons, photo and video",
       "cap": 12
     },
     {
