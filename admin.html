@@ -1568,7 +1568,7 @@ async function crmDetail(id){
     : `${parentHtml}<div class="bk-wrap"><table class="bk"><tr>${KID_FIELDS.map(([, l]) => `<th>${l}</th>`).join('')}${w ? '<th></th>' : ''}</tr>
       <tbody id="crmKidBody">${kidRows(w)}</tbody></table></div>
       ${w ? `<p style="margin-top:10px"><button class="btn sm" type="button" onclick="crmKidAdd()">+ Add a child</button></p>` : ''}
-      <p class="help">This is the existing children list. After <b>${CRM_MIGRATION}</b> is run, each child becomes their own record with parents, pickup, and medical notes.</p>`});
+      <p class="help">This is the existing children list. After <b>${CRM_MIGRATION}</b> is run, each child becomes their own record with parents, pickup, and medical notes.</p>`);
 
   html += section('Preferences', `
       ${multi('interests','Interests and formats')}
