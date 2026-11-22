@@ -2,12 +2,14 @@
 // Account act_1612497836946260. Set META_ADS_TOKEN before this is switched on.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { requireCaller } from "../_shared/edge-guard.mjs";
 
 const ACCOUNT = "act_1612497836946260";
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  if (!(await requireCaller(req))) return json({ ok: false, upserted: 0, reason: "Sign in is required." }, 401);
   const token = Deno.env.get("META_ADS_TOKEN") || "";
   if (!token) return json({ ok: false, upserted: 0, reason: "META_ADS_TOKEN is not set" });
   const since = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);

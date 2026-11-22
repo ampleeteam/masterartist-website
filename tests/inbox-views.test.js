@@ -84,6 +84,15 @@ test('pipeline columns follow the enrolment stages', function () {
   assert.equal(arranged.columns[3].rows.length, 1);
 });
 
+test('kids go to Alysha and everyone else is round-robin among people on duty', function () {
+  const { pickAssignee } = require('../assets/crm-inbox-views.js');
+  const rules = [{ kind: 'category', match: 'kids', staff_id: 'alysha' }, { kind: 'category', match: 'corporate', staff_id: 'sabrina' }];
+  const duty = [{ staff_id: 'alysha', on_duty: true }, { staff_id: 'sabrina', on_duty: true }, { staff_id: 'maya', on_duty: false }];
+  assert.equal(pickAssignee(rules, duty, null, { category: 'kids' }), 'alysha');
+  assert.equal(pickAssignee(rules, duty, null, { category: 'corporate' }), 'sabrina');
+  assert.equal(pickAssignee(rules, duty, 'alysha', { category: 'painting', source: 'ad' }), 'sabrina');
+});
+
 test('mine keeps only the signed-in assignee', function () {
   const arranged = arrange([
     row({ id: 'mine', assigned_to: 'maya' }),

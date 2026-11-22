@@ -2,11 +2,13 @@
 // Uses the Atrium prompt shape and rejects a draft that uses a banned phrase.
 
 import { draftSystemPrompt, reviewDraft } from "../_shared/atrium-port.mjs";
+import { requireCaller } from "../_shared/edge-guard.mjs";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
 Deno.serve(async (req) => {
+  if (!(await requireCaller(req))) return json({ ok: false, sent: false, reason: "Sign in is required." }, 401);
   const body = await req.json().catch(() => ({}));
   const note = String(body.note || body.context || "").slice(0, 1000);
   const messages = Array.isArray(body.messages) ? body.messages : [{ direction: "inbound", body: note || "Hello" }];

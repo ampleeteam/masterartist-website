@@ -248,16 +248,33 @@ table.bk tr.click:hover td{background:var(--cream)}
 .crm-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .crm-bar input[type=search]{flex:1;min-width:220px;padding:8px 10px;border:1px solid var(--line)}
 .tag{margin:1px 2px 1px 0}
-.tl{display:flex;flex-direction:column;gap:10px}
-.tl-item{border:1px solid var(--line);padding:10px 12px;background:var(--surface);max-width:680px}
-.tl-item.in{border-left:3px solid var(--purple)}
-.tl-item.out{margin-left:auto;background:var(--lav-pale);border-left:3px solid var(--gold)}
+.tl{display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--cream)}
+.tl-day{position:sticky;top:0;z-index:1;text-align:center;margin:6px 0}
+.tl-day span{background:var(--lavender-pale);color:var(--purple);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600}
+.tl-switch{text-align:center;color:var(--muted);font-size:12px;margin:4px 0}
+.tl-item{border:0;border-radius:16px;padding:8px 10px 4px;background:var(--surface);max-width:min(82%,420px);box-shadow:var(--shadow)}
+.tl-item.in{align-self:flex-start;border-radius:4px 16px 16px 16px}
+.tl-item.out{align-self:flex-end;margin-left:auto;background:var(--gold-pale);border-radius:16px 4px 16px 16px}
 .tl-item.bot{background:var(--gold-pale)}
-.tl-item.note{background:var(--cream-deep);border-left:3px solid var(--muted)}
-.tl-item.event{max-width:none;background:var(--cream-deep);border-left:3px solid var(--gold-deep)}
-.tl-meta{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
-.tl-who{font-weight:600;color:var(--purple);font-size:13px}
-.tl-body{margin-top:4px}
+.tl-item.note{background:var(--surface);border:1.5px dashed var(--muted);align-self:center;max-width:min(90%,420px)}
+.tl-note{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.tl-who{font-weight:600;color:var(--purple);font-size:12px}
+.tl-body{margin-top:2px}
+.tl-foot{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-top:4px}
+.tl-time{font-size:11px;color:var(--muted)}
+.ticks{font-size:12px;color:var(--muted)}
+.ticks.read{color:var(--purple)}
+.ticks.fail{color:var(--warn)}
+.ch-badge{display:inline-flex;align-items:center;gap:3px;border-radius:999px;padding:0 6px;font-size:11px;font-weight:700;line-height:1.6}
+.ch-wa{background:#E5F6EC;color:#1B7A45}
+.ch-ig{background:linear-gradient(90deg,#FDE1F0,#F8D7C4);color:#9D174D}
+.ch-ms{background:#E7F0FF;color:#1D4ED8}
+.ch-em{background:var(--lavender-pale);color:var(--purple)}
+.ch-sms{background:var(--cream-deep);color:var(--ink)}
+.ch-call{background:var(--gold-pale);color:var(--gold-text)}
+.ch-web{background:var(--cream-deep);color:var(--purple)}
+.ch-note{background:var(--cream-deep);color:var(--muted)}
+.chat-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
 .tl-media{margin-top:4px;font-size:12px;color:var(--muted)}
 .tl-compose,.tl-import{display:flex;flex-direction:column;gap:8px;margin-top:14px}
 .tl-compose textarea,.tl-import input[type=text]{width:100%;border:1px solid var(--line);background:var(--surface);padding:8px 10px}
@@ -674,7 +691,9 @@ window.signOut = signOut;
 
 /* ---------- boot: who am I, what may I do ---------- */
 async function boot(){
-  if (new URLSearchParams(location.search).get('preview') || location.hash.indexOf('#preview') === 0) { previewStudio(); return; }
+  const wantPreview = new URLSearchParams(location.search).get('preview') || (location.hash.indexOf('#preview') === 0 ? '1' : '');
+  const localPreview = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if (wantPreview && localPreview) { previewStudio(); return; }
   const { data:{ session } } = await sb.auth.getSession();
   if (!session) return;                       // stay on the sign-in screen
 
@@ -697,6 +716,7 @@ async function boot(){
     .select('section, can_read, can_write').eq('role', profile.role);
   perms = {};
   (rows||[]).forEach(r => perms[r.section] = { read:r.can_read, write:r.can_write });
+  if (wantPreview) { previewStudio(); return; }
 
   const first = SECTIONS.find(s => s.ready && canRead(s.key)) || SECTIONS.find(s => canRead(s.key));
   current = first ? first.id : 'banner';
@@ -1771,6 +1791,10 @@ async function crmDetail(id, panel){
     $('view').innerHTML = msg; return;
   }
   const x = c.data;
+  const lifeQ = await sb.from('customer_lifetime_stats').select('*').eq('contact_id', id).maybeSingle();
+  const histQ = await sb.from('customer_workshop_history').select('*').eq('contact_id', id).order('session_at', { ascending: false });
+  crmLife = lifeQ.error ? null : lifeQ.data;
+  crmHistory = histQ.error ? [] : (histQ.data || []).map(r => ({ title: r.title, when_label: [r.session_date, r.session_when].filter(Boolean).join(' · '), attendees: r.attendees, status_chip: r.status_chip, amount_paid_rm: r.amount_paid_rm }));
   const profileReady = Object.prototype.hasOwnProperty.call(x, 'lifecycle_stage');
   crmCurrent = x;
   crmHealthVisible = me.role === 'admin' || (me.role !== 'marketing' && canRead('bookings'));
@@ -1848,6 +1872,7 @@ async function crmDetail(id, panel){
 
   let html = `<p style="margin-bottom:14px"><button class="btn sm" type="button" onclick="crmBack()">← ${crmMode==='workshops' ? 'All workshops' : 'All customers'}</button></p>
     <h2 style="margin:0 0 6px">${esc(x.preferred_name || x.first_name)} ${esc(x.last_name || '')}</h2>
+    ${window.MaEvents ? window.MaEvents.historyStrip(crmLife || {}, me.role !== 'marketing') + '<h3>Workshops</h3>' + window.MaEvents.historyList(crmHistory || [], me.role !== 'marketing') : ''}
     ${crmScoreMap[x.id] ? `<p class="help">Lead score ${crmScoreMap[x.id].points}${window.MaGrowth ? ' · ' + esc(window.MaGrowth.reasonText(crmScoreMap[x.id].reasons)) : ''}</p>` : ''}
     ${profileReady ? '' : `<div class="msg info">The rest of the profile (lifecycle, WhatsApp in international form, family records, and the timeline) is in <b>${CRM_MIGRATION}</b>. Saving the fields already here still works before that file is run.</div>`}
     <div class="bk-sum"><span>${esc(x.lifecycle_stage || x.stage || '')}</span>${x.lead_status ? `<span>${esc(x.lead_status)}</span>` : ''}<span>${bookingN || 0} booking${bookingN===1?'':'s'}</span>
@@ -2422,6 +2447,17 @@ views.sessions = async function(){
   let html = `<div class="hint"><b>Workshops.</b> Profit and loss is for admins. Bookings staff can add a cost and a receipt photo. Nothing here is sent to WhatsApp.</div>`;
   if (sessions.error) html += `<div class="msg info">Session rows come from <b>supabase/migrations/20261122110000_workshop_sessions_and_enrolments.sql</b>. That file is in the repo and has not been applied from this screen.</div>`;
   if (finance && window.MaEvents) html += rows.length ? rows.map(r => window.MaEvents.pnlCard(r)).join('') : '<div class="empty">No session figures yet. The finance view fills in after the finance migration is applied and ads or payments are recorded.</div>';
+  if (window.MaEvents && list[0]) {
+    const roster = await sb.from('session_roster').select('*').eq('session_id', list[0].id);
+    const mapped = (roster.error ? [] : roster.data || []).map(r => ({
+      name: r.participant_name, age_at_session: r.age_at_session, booker_name: r.booker_name, booker_phone: r.booker_phone,
+      child: r.age_at_session != null && Number(r.age_at_session) < 18, status: r.status, amount_paid_rm: r.amount_paid_rm,
+      split_note: r.family_amount_rm ? 'of RM' + r.family_amount_rm + ' family booking' : '', health_flag: r.health_flag,
+      booking_id: r.booking_id, participant_id: r.participant_id, amount_due_rm: r.status === 'paid' || r.status === 'attended' ? 0 : r.amount_paid_rm
+    }));
+    rosterState = { rows: mapped, capacity: list[0].capacity, filter: rosterState.filter || 'All', sort: rosterState.sort || 'name', showMoney: me.role !== 'marketing', showHealth: me.role !== 'marketing' && (me.role === 'admin' || canRead('bookings')), canMark: me.role !== 'marketing' && canWrite('bookings') };
+    html += window.MaEvents.rosterHtml(rosterState);
+  }
   if (canWrite('bookings') && window.MaEvents) {
     html += `<div class="card"><div class="card-h"><span class="grip">Add a cost</span></div><div class="card-b">${window.MaEvents.addCostForm(list)}</div></div>`;
   }
@@ -2448,7 +2484,7 @@ window.eventCostSave = async () => {
 };
 
 function previewStudio(){
-  me = { id: 'preview', full_name: 'Maya Tan', email: 'maya@masterartist.co', role: 'admin', active: true };
+  if (!me || me.id === 'preview') me = { id: 'preview', full_name: 'Maya Tan', email: 'maya@masterartist.co', role: 'admin', active: true };
   perms = { bookings: { read: true, write: true }, customers: { read: true, write: true }, email: { read: true, write: true } };
   navBadges = { inbox: 1, tasks: 2 };
   $('authScreen').style.display = 'none';
@@ -2465,8 +2501,28 @@ function previewStudio(){
     $('view').innerHTML = window.MaEvents.pnlCard(sample) + (which === 'cost' ? `<div class="card"><div class="card-h"><span class="grip">Add a cost</span></div><div class="card-b">${window.MaEvents.addCostForm([{ id: 'children-2027', title: "Children's art, January" }])}</div></div>` : '');
     return;
   }
+  if (which === 'roster') {
+    const sample = { session_id: 'children-2027', title: "Children's art, January", ad_spend_rm: 860, cost_per_conversation_rm: 18, cpa_rm: 72, net_revenue_rm: 4200, roas: 4.9, gross_profit_rm: 2510, margin: 0.6, fill_rate: 0.75, cost_materials_rm: 240, cost_instructor_rm: 800, cost_venue_rm: 300, cost_overhead_rm: 120, cost_food_rm: 90, cost_printing_rm: 40, cost_other_rm: 0 };
+    rosterState = { capacity: 12, filter: 'All', sort: 'name', showMoney: true, showHealth: true, canMark: true, rows: [
+      { name: 'Aina Rahman', age_at_session: 8, child: true, booker_name: 'Hana Parent', booker_phone: '+60173334444', status: 'paid', amount_paid_rm: 150, split_note: 'of RM300 family booking', health_flag: true, booking_id: 'b1', participant_id: 'p1' },
+      { name: 'Adam Rahman', age_at_session: 6, child: true, booker_name: 'Hana Parent', booker_phone: '+60173334444', status: 'paid', amount_paid_rm: 150, split_note: 'of RM300 family booking', health_flag: false, booking_id: 'b1', participant_id: 'p2' },
+      { name: 'Mei Tan', age_at_session: 34, child: false, booker_name: '', status: 'waitlist', amount_paid_rm: 0, booking_id: 'b2', participant_id: 'p3' }
+    ]};
+    $('view').innerHTML = window.MaEvents.pnlCard(sample) + window.MaEvents.rosterHtml(rosterState);
+    return;
+  }
+  if (which === 'assign') {
+    inboxStaff = [{ id: 'alysha', full_name: 'Alysha' }, { id: 'sabrina', full_name: 'Sabrina' }, { id: 'maya', full_name: 'Maya Tan' }];
+    inboxDuty = { alysha: true, sabrina: true, maya: true };
+    inboxRules = [{ kind: 'category', match: 'kids', staff_name: 'Alysha' }, { kind: 'category', match: 'corporate', staff_name: 'Sabrina' }];
+    $('view').innerHTML = '<p><button class="btn sm" type="button" onclick="inboxSettingsGo(false)">← Inbox</button></p>' + assignmentCard(inboxStaff);
+    return;
+  }
   if (which === 'customer') {
-    const about = '<h2>Hana Parent</h2><p class="help">From ad: Children\'s Art Class – 10 sessions</p>'
+    const stat = { lifetime_spend_rm: 860, attended_count: 4, upcoming_count: 1, last_attended_at: '2026-11-01', first_booking_at: '2026-01-18', avg_spend: 215 };
+    const hist = [{ title: "Children's art", when_label: '2026-11-29 · 10:00', attendees: 'Aina, Adam', status_chip: 'upcoming', amount_paid_rm: 300 }, { title: 'Sourdough', when_label: '2026-11-01 · 15:00', attendees: 'Hana', status_chip: 'attended', amount_paid_rm: 180 }];
+    const about = '<h2>Hana Parent</h2><p class="help">From ad: Children\'s Art Class – 10 sessions. Spend includes the children she books for.</p>'
+      + window.MaEvents.historyStrip(stat, true) + '<h3>Workshops</h3>' + window.MaEvents.historyList(hist, true)
       + '<div class="card"><div class="card-h"><span class="grip">Contact info</span></div><div class="card-b rec-form">'
       + '<div class="row"><div class="f"><label>First name</label><input value="Hana"></div><div class="f"><label>Last name</label><input value="Parent"></div></div>'
       + '<div class="row"><div class="f"><label>Email</label><input value="hana@example.com"></div><div class="f"><label>WhatsApp number</label><input value="+60173334444"></div></div></div></div>'
@@ -2499,11 +2555,17 @@ function previewStudio(){
   inboxSheet = which === 'filters';
   inboxOpen = 'c1';
   inboxCase = { status: 'open', priority: 'high', assigned_to: 'preview', tags: ['kids'], staff: inboxStaff, sessionTitle: "Children's art", stage: 'enquired', tasks: [{ title: 'Confirm Saturday seats', due_on: '2026-11-23' }] };
-  inboxPane = (which === 'case') ? 'customer' : (which === 'event' || which === 'needs' || which === 'filters' || which === 'pipeline' ? 'list' : 'thread');
+  inboxPane = (which === 'case') ? 'customer' : (which === 'list' || which === 'event' || which === 'needs' || which === 'filters' || which === 'pipeline' ? 'list' : 'thread');
   crmFormFor = 'p1';
   crmFormHtml = '<div class="card"><div class="card-h"><span class="grip">Contact info</span></div><div class="card-b rec-form"><div class="f"><label>First name</label><input value="Hana"></div><div class="f"><label>WhatsApp number</label><input value="+60173334444"></div></div></div>';
-  const open = which === 'event' || which === 'needs' || which === 'filters' || which === 'pipeline' ? null : inboxRows[0];
-  const thread = { items: [{ occurredAt: new Date().toISOString(), channel: 'whatsapp', direction: 'in', body: 'Is the Saturday class still open?', senderName: 'Hana Parent', kind: 'message' }], queue: [] };
+  const open = which === 'list' || which === 'event' || which === 'needs' || which === 'filters' || which === 'pipeline' ? null : inboxRows[0];
+  const thread = { items: [
+    { occurredAt: '2026-11-18T02:15:00Z', channel: 'whatsapp', direction: 'in', body: 'Is the Saturday class still open?', senderName: 'Hana Parent', kind: 'message', status: '' },
+    { occurredAt: '2026-11-18T02:20:00Z', channel: 'whatsapp', direction: 'out', senderType: 'staff', senderName: 'Maya Tan', body: 'Yes, two seats are free.', kind: 'message', status: 'read' },
+    { occurredAt: '2026-11-20T03:05:00Z', channel: 'instagram', direction: 'in', body: 'Can I send the payment here instead?', senderName: 'Hana Parent', kind: 'message' },
+    { occurredAt: '2026-11-20T03:10:00Z', channel: 'note', direction: 'out', senderType: 'staff', senderName: 'Maya Tan', body: 'Asked for a bank transfer.', kind: 'message' },
+    { occurredAt: new Date().toISOString(), channel: 'whatsapp', direction: 'in', body: 'I have transferred it.', senderName: 'Hana Parent', kind: 'message' }
+  ], queue: [] };
   const arranged = window.MaInboxViews.arrange(inboxDecorated(), Object.assign({ meId: 'preview' }, inboxViewState), inboxSessions, new Date());
   $('view').innerHTML = inboxShell(arranged, open, thread);
 }
@@ -2511,6 +2573,8 @@ function previewStudio(){
 /* ---------- Shared inbox ---------- */
 let inboxFilter = 'all', inboxChannel = '', inboxTag = '', inboxOpen = null, inboxFocusContact = null, inboxShowSettings = false, inboxPane = 'list', inboxCase = null;
 let inboxViewState = null, inboxSheet = false, inboxSessions = [], inboxSaved = [], inboxEnrol = {}, inboxStats = {};
+let rosterState = { rows: [], filter: 'All', sort: 'name' };
+let inboxDuty = {}, inboxRules = [];
 let inboxRows = [], inboxReplies = [], inboxTemplates = [], inboxStaff = [], inboxSettings = null, inboxDraft = '', inboxScores = {}, inboxSort = 'recent';
 const INBOX_FILTERS = [['all','All'],['unassigned','Unassigned'],['mine','Assigned to me'],['needs','Needs reply'],['open','Open'],['closed','Closed']];
 const INBOX_CH = { whatsapp:'W', email:'E', instagram:'I', facebook:'F', website:'S', note:'N' };
@@ -2683,10 +2747,12 @@ function inboxRowButton(r){
       ? `<span class="iv-warn">${Math.max(1, Math.ceil(win.msLeft / 3600000))}h left</span>`
       : `<span class="iv-wait">${esc(V.waitingLabel(r.last_inbound_at, new Date()))}</span>`)
     : '';
+  const badge = window.MaCrm && window.MaCrm.channelBadge ? window.MaCrm.channelBadge(r.channel) : `<span class="ch">${INBOX_CH[r.channel] || '?'}</span>`;
+  const when = window.MaCrm && window.MaCrm.listStamp ? window.MaCrm.listStamp(r.last_message_at, new Date()) : inboxWhen(r.last_message_at);
   return `<button type="button" class="inbox-row${r.id===inboxOpen?' on':''}" onclick="inboxOpenConv('${r.id}')">
-      <span class="ch" title="${esc(r.channel)}">${INBOX_CH[r.channel] || '?'}</span>
+      ${badge}
       <span style="flex:1;min-width:0"><b>${esc(inboxName(r))}</b><small>${r.last_direction==='out' ? '✓ ' : ''}${esc(r.last_message_preview || 'No message yet')}</small></span>
-      <span style="text-align:right">${wait}${r.unread_count ? `<span class="unread">${r.unread_count}</span>` : ''}<br><small>${esc(inboxWhen(r.last_message_at))}</small></span>
+      <span style="text-align:right">${wait}${r.unread_count ? `<span class="unread">${r.unread_count}</span>` : ''}<br><small>${esc(when)}</small></span>
     </button>`;
 }
 function inboxListHtml(arranged){
@@ -2846,7 +2912,12 @@ function inboxThread(open, thread){
   const closed = open.channel === 'whatsapp' && !win.open;
   const paused = open.automation_paused_until && new Date(open.automation_paused_until) > new Date();
   const staffOpts = [['', 'Unassigned']].concat(inboxStaff.map(s => [s.id, s.full_name]));
-  return `<div class="inbox-h"><button type="button" class="ix-btn ix-back" onclick="inboxPaneGo('list')">Back</button> <b>${esc(inboxName(open))}</b> · ${esc(open.channel)} · ${esc(open.status)}
+  const used = [...new Set([open.channel].concat((thread.items || []).map(i => i.channel).filter(c => c && c !== 'note')))];
+  const badges = window.MaCrm && window.MaCrm.channelBadge ? used.map(c => window.MaCrm.channelBadge(c)).join('') : esc(open.channel);
+  const winLine = open.channel === 'whatsapp' || used.includes('whatsapp')
+    ? `<span class="${win.open ? 'iv-wait' : 'iv-warn'}">${esc(win.open ? win.label : 'Window closed · templates only')}</span>` : '';
+  return `<div class="inbox-h"><button type="button" class="ix-btn ix-back" onclick="inboxPaneGo('list')">Back</button> <b>${esc(inboxName(open))}</b>
+      <div class="chat-badges">${badges} ${winLine}</div>
       ${paused ? `<span class="pill">Automation paused until ${esc(inboxWhen(open.automation_paused_until))}</span>` : ''}
       <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
         <select onchange="inboxAssign(this.value)">${staffOpts.map(([id, name]) => `<option value="${id}" ${open.assigned_to===id?'selected':''}>${esc(name)}</option>`).join('')}</select>
@@ -2916,8 +2987,65 @@ function inboxSettingsHtml(){
       ${w ? `<div class="row"><div class="f"><label>Title</label><input id="ibReplyTitle"></div><div class="f"><label>Shortcut</label><input id="ibReplyCut" placeholder="/hold"></div></div>
         <div class="f"><label>Body. You can use {first_name}, {workshop} and {date}.</label><textarea id="ibReplyBody" rows="3"></textarea></div>
         <p><button class="btn sm" type="button" onclick="inboxAddReply()">Save reply</button></p>` : ''}
-    </div></div>`;
+    </div></div>
+    ${assignmentCard(inboxStaff)}`;
 }
+function assignmentCard(staff){
+  const people = staff || [];
+  const rules = inboxRules || [];
+  return `<div class="card" id="assignCard"><div class="card-h"><span class="grip">Who gets a new chat</span></div><div class="card-b">
+    <p class="help">Round-robin uses people who are on duty. A workshop or source rule wins when it matches, for example kids to Alysha and corporate to Sabrina. The assignee gets an in-app notice, and a phone notification when this browser is allowed to show them.</p>
+    ${people.map(s => `<label class="help" style="display:flex;gap:8px;min-height:44px;align-items:center"><input type="checkbox" data-duty="${esc(s.id)}" ${(inboxDuty[s.id] !== false) ? 'checked' : ''}> ${esc(s.full_name)} on duty</label>`).join('') || '<p class="help">No staff loaded yet.</p>'}
+    <div class="row"><div class="f"><label>Kind</label><select id="ruleKind"><option value="category">Workshop</option><option value="source">Source</option></select></div>
+      <div class="f"><label>Match</label><input id="ruleMatch" placeholder="kids or ad"></div>
+      <div class="f"><label>Person</label><select id="ruleStaff">${people.map(s => `<option value="${esc(s.id)}">${esc(s.full_name)}</option>`).join('')}</select></div></div>
+    <ul>${rules.map(r => `<li>${esc(r.kind)} “${esc(r.match)}” → ${esc(r.staff_name || r.staff_id)}</li>`).join('') || '<li class="help">No special rules yet. New chats go round-robin.</li>'}
+    <p><button type="button" class="ix-btn primary" onclick="assignmentSave()">Save assignment</button> <button type="button" class="ix-btn" onclick="enablePush()">Allow phone notifications</button></p>
+  </div></div>`;
+}
+window.assignmentSave = async () => {
+  const duty = {};
+  document.querySelectorAll('[data-duty]').forEach(el => { duty[el.dataset.duty] = el.checked; });
+  inboxDuty = duty;
+  const match = ($('ruleMatch') && $('ruleMatch').value || '').trim().toLowerCase();
+  const kind = ($('ruleKind') && $('ruleKind').value) || 'category';
+  const staffId = $('ruleStaff') && $('ruleStaff').value;
+  if (match && staffId) {
+    const person = (inboxStaff || []).find(s => s.id === staffId);
+    inboxRules.push({ kind, match, staff_id: staffId, staff_name: person && person.full_name });
+    await sb.from('assignment_rules').insert({ kind, match, staff_id: staffId });
+  }
+  await Promise.all(Object.keys(duty).map(id => sb.from('staff_duty').upsert({ staff_id: id, on_duty: !!duty[id] })));
+  const sample = window.MaInboxViews ? window.MaInboxViews.pickAssignee(inboxRules, Object.keys(duty).map(id => ({ staff_id: id, on_duty: duty[id] })), null, { category: 'kids', source: '' }) : null;
+  if (sample) await sb.rpc('notify_staff', { p_staff: sample, p_title: 'New chat assigned to you' });
+  toast('Assignment saved. The person on duty is notified in the app.');
+  if (inboxShowSettings) render();
+};
+window.enablePush = async () => {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) { toast('This browser cannot show phone notifications. The in-app notice still works.'); return; }
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { toast('Phone notifications are off. The in-app notice still works.'); return; }
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true }).catch(() => null);
+  if (sub) await sb.from('staff_push_subscriptions').insert({ staff_id: me.id, endpoint: sub.endpoint, p256dh: '', auth: '' });
+  toast('Phone notifications are on for this browser.');
+};
+window.rosterFilter = name => { rosterState.filter = name; if (current === 'sessions') render(); };
+window.rosterSort = () => { rosterState.sort = rosterState.sort === 'status' ? 'name' : 'status'; if (current === 'sessions') render(); };
+window.rosterCsv = () => {
+  if (!window.MaEvents) return;
+  const csv = window.MaEvents.rosterCsv(rosterState.rows, rosterState.showMoney);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'roster.csv';
+  a.click();
+};
+window.rosterMark = async (bookingId, participantId, status) => {
+  const { error } = await sb.from('booking_participants').update({ attendance: status }).eq('booking_id', bookingId).eq('participant_id', participantId);
+  if (error) { toast(error.message); return; }
+  toast(status === 'attended' ? 'Marked attended' : 'Marked no-show');
+  await render();
+};
 window.inboxNoteToggle = (el) => { const box = $('inboxBody'); if (box && box.dataset.closed === '1') box.disabled = !el.checked; };
 window.inboxAssign = async (staffId) => {
   const { error } = await sb.from('conversations').update({ assigned_to: staffId || null }).eq('id', inboxOpen);
@@ -3013,12 +3141,13 @@ let crmQueueNote = '';
 let crmSegments = [];
 let staffNames = null;
 let crmView = 'all';
-let crmColKeys = ['name','email','phone','lifecycle','score','owner','tags','activity'];
+let crmColKeys = ['name','email','phone','lifecycle','score','spend','attended','owner','tags','activity'];
 let crmSort = { key:'activity', dir:'desc' };
 let crmPage = 0;
 let crmSelected = {};
 let crmPreview = '';
-let crmSide = { lifecycle:'', status:'', news:false, follow:false, archived:false };
+let crmSide = { lifecycle:'', status:'', news:false, follow:false, archived:false, spend:'', attended:'' };
+let crmLife = null, crmHistory = [];
 let listOpen = null;
 let listQuery = '';
 let listSort = { key:'name', dir:'asc' };
@@ -3055,7 +3184,8 @@ const CRM_ALL_COLS = [
   { key:'name', label:'Name' }, { key:'email', label:'Email' }, { key:'phone', label:'Phone' },
   { key:'lifecycle', label:'Lifecycle' }, { key:'score', label:'Lead score' }, { key:'owner', label:'Owner' },
   { key:'tags', label:'Tags' }, { key:'activity', label:'Last activity' }, { key:'bookings', label:'Bookings' },
-  { key:'paid', label:'Paid' }, { key:'stage', label:'Studio stage' }, { key:'area', label:'Area' }, { key:'source', label:'Source' }
+  { key:'paid', label:'Paid' }, { key:'spend', label:'Lifetime spend' }, { key:'attended', label:'Workshops attended' },
+  { key:'stage', label:'Studio stage' }, { key:'area', label:'Area' }, { key:'source', label:'Source' }
 ];
 const isId = id => /^[0-9a-f-]{36}$/i.test(String(id || ''));
 async function loadStaff(){
@@ -3092,6 +3222,9 @@ function visibleContacts(){
     if (crmSide.news && !c.marketing_consent) return false;
     if (crmSide.follow && !(c.follow_up_date && c.follow_up_date <= today)) return false;
     if (crmSide.archived ? !c.archived : !!c.archived) return false;
+    if (crmSide.spend === 'over500' && !(Number(c.lifetime_spend_rm) >= 500)) return false;
+    if (crmSide.spend === 'under500' && !(Number(c.lifetime_spend_rm) > 0 && Number(c.lifetime_spend_rm) < 500)) return false;
+    if (crmSide.attended === '3' && !(Number(c.attended_count || c.workshops_attended) >= 3)) return false;
     if (!q) return true;
     return [c.first_name, c.last_name, c.preferred_name, c.email, c.phone, c.phone_e164, c.whatsapp_e164, c.company, c.area,
       c.lifecycle_stage, (c.tags || []).join(' '), (c.children || []).map(k => k.name).join(' ')].join(' ').toLowerCase().includes(q);
@@ -3107,15 +3240,18 @@ function personRow(c){
       name, email: c.email || '', phone: c.phone || c.whatsapp_e164 || '', lifecycle: c.lifecycle_stage || '',
       score: score ? String(score.points) : '', owner: (staffNames && staffNames[c.owner]) || '', tags: (c.tags || []).join(', '),
       activity: shortDate(c.last_activity), bookings: String(c.bookings_count || 0), paid: String(c.total_paid || 0),
+      spend: c.lifetime_spend_rm == null ? '' : String(c.lifetime_spend_rm), attended: String(c.attended_count || c.workshops_attended || 0),
       stage: c.stage || '', area: c.area || '', source: c.first_source || c.original_source || ''
     },
-    sort: { name: name.toLowerCase(), score: score ? score.points : -1, bookings: c.bookings_count || 0, paid: c.total_paid || 0, activity: c.last_activity || '' },
+    sort: { name: name.toLowerCase(), score: score ? score.points : -1, bookings: c.bookings_count || 0, paid: c.total_paid || 0, activity: c.last_activity || '', spend: Number(c.lifetime_spend_rm || 0), attended: Number(c.attended_count || c.workshops_attended || 0) },
     html: {
       name: `<button type="button" class="ix-link" onclick="event.stopPropagation();crmGo('${c.id}')">${esc(name)}</button>`,
       lifecycle: G.pill(c.lifecycle_stage || c.stage || '—', 'info'),
       score: score ? `<span class="ix-score" title="${esc(G.reasonText(score.reasons))}">${score.points}</span>` : '',
       tags: (c.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join(''),
-      paid: c.total_paid ? money(c.total_paid) : ''
+      paid: c.total_paid ? money(c.total_paid) : '',
+      spend: c.lifetime_spend_rm == null ? '' : money(c.lifetime_spend_rm),
+      attended: String(c.attended_count || c.workshops_attended || 0)
     }
   };
 }
@@ -3132,6 +3268,8 @@ function paintCustomers(){
   if (crmSide.news) chips.push({ id:'news', label:'Want news' });
   if (crmSide.follow) chips.push({ id:'follow', label:'Follow-up due' });
   if (crmSide.archived) chips.push({ id:'archived', label:'Archived' });
+  if (crmSide.spend) chips.push({ id:'spend', label: crmSide.spend === 'over500' ? 'Spend RM500+' : 'Spend under RM500' });
+  if (crmSide.attended) chips.push({ id:'attended', label:'Attended 3+' });
   const ownerOpts = Object.entries(staffNames || {}).map(([id, name]) => `<option value="${id}">${esc(name)}</option>`).join('');
   const stageOpts = CRM_OPT.lifecycle_stage.map(s => `<option>${esc(s)}</option>`).join('');
   const listOpts = (crmSegments || []).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
@@ -3147,7 +3285,9 @@ function paintCustomers(){
       { key:'status', label:'Lead status', type:'select', value:crmSide.status, options:CRM_OPT.lead_status.map(s => ({ value:s, label:s })) },
       { key:'news', label:'Want news', type:'check', value:crmSide.news },
       { key:'follow', label:'Follow-up due', type:'check', value:crmSide.follow },
-      { key:'archived', label:'Archived only', type:'check', value:crmSide.archived }
+      { key:'archived', label:'Archived only', type:'check', value:crmSide.archived },
+      { key:'spend', label:'Lifetime spend', type:'select', value:crmSide.spend, options:[{ value:'over500', label:'RM500 or more' }, { value:'under500', label:'Under RM500' }] },
+      { key:'attended', label:'Workshops attended', type:'select', value:crmSide.attended, options:[{ value:'3', label:'3 or more' }] }
     ],
     bulk:[{ id:'owner', label:'Assign owner' }, { id:'tag', label:'Add tag' }, { id:'list', label:'Add to list' }, { id:'stage', label:'Change stage' }, { id:'export', label:'Export CSV' }],
     bulkExtra:`<select id="ixOwner" class="ix-mini"><option value="">Owner…</option>${ownerOpts}</select><select id="ixStage" class="ix-mini"><option value="">Stage…</option>${stageOpts}</select><select id="ixList" class="ix-mini"><option value="">List…</option>${listOpts}</select>`,

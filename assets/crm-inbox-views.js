@@ -426,6 +426,25 @@
 
   function locationPath() { return ''; }
 
+  function pickAssignee(rules, duty, lastId, input) {
+    var on = {};
+    (duty || []).forEach(function (row) { if (row.on_duty !== false && row.onDuty !== false) on[row.staff_id || row.staffId] = true; });
+    var category = (input && input.category || '').toLowerCase();
+    var source = (input && input.source || '').toLowerCase();
+    var match = (rules || []).filter(function (rule) {
+      var id = rule.staff_id || rule.staffId;
+      if (!on[id]) return false;
+      if (rule.kind === 'category' && String(rule.match || '').toLowerCase() === category) return true;
+      if (rule.kind === 'source' && String(rule.match || '').toLowerCase() === source) return true;
+      return false;
+    })[0];
+    if (match) return match.staff_id || match.staffId;
+    var pool = Object.keys(on).sort();
+    if (!pool.length) return null;
+    var index = pool.indexOf(lastId);
+    return pool[(index + 1) % pool.length];
+  }
+
   return {
     VIEWS: VIEWS,
     STAGES: STAGES,
@@ -447,6 +466,7 @@
     eventTitle: eventTitle,
     readState: readState,
     writeState: writeState,
-    klDate: klDate
+    klDate: klDate,
+    pickAssignee: pickAssignee
   };
 });

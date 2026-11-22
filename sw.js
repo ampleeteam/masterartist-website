@@ -23,6 +23,15 @@ self.addEventListener('activate', function (event) {
   event.waitUntil(self.clients.claim());
 });
 
+self.addEventListener('push', function (event) {
+  var payload = {};
+  try { payload = event.data ? event.data.json() : {}; } catch (e) { payload = { title: event.data ? event.data.text() : 'New chat' }; }
+  event.waitUntil(self.registration.showNotification(payload.title || 'New chat assigned', {
+    body: payload.body || 'Open the inbox to reply.',
+    icon: '/logo.svg'
+  }));
+});
+
 self.addEventListener('fetch', function (event) {
   var url = new URL(event.request.url);
   if (event.request.method !== 'GET') return;

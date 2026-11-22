@@ -3,11 +3,13 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { textPayload } from "../_shared/atrium-port.mjs";
+import { requireCaller } from "../_shared/edge-guard.mjs";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  if (!(await requireCaller(req))) return json({ ok: false, sent: 0, reason: "Sign in is required." }, 401);
   const key = Deno.env.get("D360_API_KEY") || "";
   if (!key || Deno.env.get("D360_SEND_ENABLED") !== "true") {
     return json({ ok: false, sent: 0, reason: "360dialog sending is off" });

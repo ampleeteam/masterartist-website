@@ -210,36 +210,147 @@
     return item.senderName || 'Customer';
   }
 
-  function timelineHtml(items) {
+  var CHANNELS = {
+    whatsapp: { label: 'WhatsApp', cls: 'ch-wa' },
+    instagram: { label: 'Instagram', cls: 'ch-ig' },
+    facebook: { label: 'Messenger', cls: 'ch-ms' },
+    messenger: { label: 'Messenger', cls: 'ch-ms' },
+    email: { label: 'Email', cls: 'ch-em' },
+    sms: { label: 'SMS', cls: 'ch-sms' },
+    call: { label: 'Call', cls: 'ch-call' },
+    website: { label: 'Website form', cls: 'ch-web' },
+    note: { label: 'Note', cls: 'ch-note' }
+  };
+
+  function channelInfo(channel) {
+    return CHANNELS[channel] || { label: channel || 'Message', cls: 'ch-other' };
+  }
+
+  function channelBadge(channel) {
+    var info = channelInfo(channel);
+    return '<span class="ch-badge ' + info.cls + '"><span class="ch-ico" aria-hidden="true">●</span><span class="ch-lab">' + esc(info.label) + '</span></span>';
+  }
+
+  function klParts(value) {
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return null;
+    var parts = {};
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kuala_Lumpur',
+      year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long',
+      hour: 'numeric', minute: '2-digit', hourCycle: 'h12'
+    }).formatToParts(d).forEach(function (p) { parts[p.type] = p.value; });
+    return parts;
+  }
+
+  function klKey(value) {
+    var p = klParts(value);
+    return p ? p.year + '-' + p.month + '-' + p.day : '';
+  }
+
+  function shiftKey(ymd, days) {
+    var bits = ymd.split('-').map(Number);
+    var dt = new Date(Date.UTC(bits[0], bits[1] - 1, bits[2]));
+    dt.setUTCDate(dt.getUTCDate() + days);
+    return dt.toISOString().slice(0, 10);
+  }
+
+  function daySpan(fromKey, toKey) {
+    var a = fromKey.split('-').map(Number);
+    var b = toKey.split('-').map(Number);
+    return Math.round((Date.UTC(b[0], b[1] - 1, b[2]) - Date.UTC(a[0], a[1] - 1, a[2])) / 86400000);
+  }
+
+  function dayHeading(iso, now) {
+    var key = klKey(iso);
+    var today = klKey(now || new Date());
+    if (!key || !today) return '';
+    if (key === today) return 'Today';
+    if (key === shiftKey(today, -1)) return 'Yesterday';
+    var diff = daySpan(key, today);
+    var parts = klParts(iso);
+    if (diff > 1 && diff < 7) return parts.weekday;
+    return Number(parts.day) + ' ' + new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kuala_Lumpur', month: 'short', year: 'numeric' }).format(new Date(iso));
+  }
+
+  function klClock(iso) {
+    var p = klParts(iso);
+    if (!p) return '';
+    var hour = String(Number(p.hour));
+    var ap = (p.dayPeriod || '').toLowerCase();
+    return hour + ':' + p.minute + (ap ? ' ' + ap : '');
+  }
+
+  function listStamp(iso, now) {
+    var heading = dayHeading(iso, now || new Date());
+    if (heading === 'Today') return klClock(iso);
+    if (heading === 'Yesterday') return 'Yesterday';
+    var key = klKey(iso);
+    var today = klKey(now || new Date());
+    var diff = key && today ? daySpan(key, today) : 99;
+    if (heading && diff > 1 && diff < 7) return heading;
+    var p = klParts(iso);
+    if (!p) return '';
+    return p.day + '/' + p.month + '/' + String(p.year).slice(2);
+  }
+
+  function ticks(status) {
+    var s = String(status || '').toLowerCase();
+    if (s === 'read') return '<span class="ticks read" title="Read">✓✓</span>';
+    if (s === 'delivered') return '<span class="ticks" title="Delivered">✓✓</span>';
+    if (s === 'sent' || s === 'queued') return '<span class="ticks" title="Sent">✓</span>';
+    if (s === 'failed') return '<span class="ticks fail" title="Failed">!</span>';
+    return '';
+  }
+
+  function timelineHtml(items, now) {
+    now = now || new Date();
     if (!items || !items.length) {
       return '<div class="empty" style="margin:0">Nothing here yet. Notes, WhatsApp messages, and booking events show on this timeline in time order.</div>';
     }
-    return '<div class="tl">' + items.map(function (item) {
-      var cls = item.kind === 'booking' ? 'event' : (item.direction === 'out' ? 'out' : 'in');
-      if (item.senderType === 'bot') cls += ' bot';
-      if (item.channel === 'note') cls += ' note';
-      var meta = [whenLabel(item.occurredAt)];
-      if (item.kind === 'booking') meta.push('booking');
-      else meta.push(item.channel || 'message');
-      if (item.direction && item.kind !== 'booking') meta.push(item.direction === 'in' ? 'in' : 'out');
-      if (item.status) meta.push(item.status);
-      else if (item.senderType === 'bot' && item.source === 'live') meta.push('queued');
-      if (SOURCE_LABEL[item.source]) meta.push(SOURCE_LABEL[item.source]);
-      var who = whoLabel(item);
+    var names = {};
+    items.forEach(function (item) {
+      if (item.direction !== 'out' && item.senderName) names[item.senderName] = true;
+    });
+    var multi = Object.keys(names).length > 1;
+    var html = '<div class="tl">';
+    var lastDay = '';
+    var lastChannel = '';
+    items.forEach(function (item) {
+      var day = dayHeading(item.occurredAt, now);
+      if (day && day !== lastDay) {
+        html += '<div class="tl-day"><span>' + esc(day) + '</span></div>';
+        lastDay = day;
+      }
+      var channel = item.channel || '';
+      if (item.kind !== 'booking' && channel && channel !== 'note' && lastChannel && channel !== lastChannel) {
+        html += '<p class="tl-switch">Continued on ' + esc(channelInfo(channel).label) + '</p>';
+      }
+      if (item.kind !== 'booking' && channel && channel !== 'note') lastChannel = channel;
       var body = item.body || '';
       if (item.kind === 'booking') {
         var label = BOOKING_LABEL[item.bookingEvent] || 'Booking update';
         body = body ? label + ' — ' + body : label;
+        html += '<p class="tl-switch">' + esc(body) + '</p>';
+        return;
       }
+      var cls = item.direction === 'out' ? 'out' : 'in';
+      if (item.senderType === 'bot') cls += ' bot';
+      if (item.channel === 'note') cls += ' note';
+      var who = '';
+      if (item.senderType === 'bot') who = whoLabel(item);
+      else if (item.direction === 'out' && item.senderType === 'staff') who = item.senderName || 'Staff';
+      else if (item.direction !== 'out' && multi && item.senderName) who = item.senderName;
       var media = mediaLabel(item.media);
-      return '<article class="tl-item ' + cls + '">'
-        + '<div class="tl-meta">' + esc(meta.filter(Boolean).join(' · ')) + '</div>'
+      html += '<article class="tl-item ' + cls + '">'
+        + (item.channel === 'note' ? '<div class="tl-note">Note</div>' : '')
         + (who ? '<div class="tl-who">' + esc(who) + '</div>' : '')
         + (body ? '<div class="tl-body">' + esc(body).replace(/\n/g, '<br>') + '</div>' : '')
         + (media ? '<div class="tl-media">' + esc(media) + '</div>' : '')
-        + (item.buttons && item.buttons.length ? '<div class="tl-media">' + item.buttons.map(function (b) { return esc(typeof b === 'string' ? b : (b.title || b.text || '')); }).filter(Boolean).join(' · ') + '</div>' : '')
+        + '<div class="tl-foot">' + channelBadge(item.channel) + (item.direction === 'out' ? ticks(item.status) : '') + '<time class="tl-time">' + esc(klClock(item.occurredAt)) + '</time></div>'
         + '</article>';
-    }).join('') + '</div>';
+    });
+    return html + '</div>';
   }
 
   return {
@@ -248,6 +359,11 @@
     parseWhatsAppExport: parseWhatsAppExport,
     rowsToTimeline: rowsToTimeline,
     filterTimeline: filterTimeline,
-    timelineHtml: timelineHtml
+    timelineHtml: timelineHtml,
+    channelBadge: channelBadge,
+    dayHeading: dayHeading,
+    klClock: klClock,
+    listStamp: listStamp,
+    ticks: ticks
   };
 });
