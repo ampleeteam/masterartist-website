@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <link rel="icon" type="image/svg+xml" href="logo.svg">
   <link rel="icon" href="logo.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3B1C5A">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="robots" content="noindex, nofollow">
 <title>Master Artist — Content Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -385,6 +387,7 @@ table.bk tr.click:hover td{background:var(--cream)}
   .em-tiles{grid-template-columns:1fr 1fr}
 }
 </style>
+<link rel="stylesheet" href="assets/crm-app.css">
 </head>
 <body>
 
@@ -463,6 +466,21 @@ table.bk tr.click:hover td{background:var(--cream)}
     </div>
     <div class="bodyw" id="view"></div>
   </div>
+  <nav class="tabbar" id="tabbar" aria-label="CRM">
+    <button type="button" data-tab="inbox" onclick="goNav('inbox')">Inbox</button>
+    <button type="button" data-tab="customers" onclick="goNav('customers')">Customers</button>
+    <button type="button" data-tab="tasks" onclick="goNav('tasks')">Tasks</button>
+    <button type="button" data-tab="groups" onclick="goNav('groups')">Deals</button>
+    <button type="button" data-tab="more" onclick="moreSheet(true)">More</button>
+  </nav>
+  <div class="more-sheet" id="moreSheet" hidden>
+    <div class="ix-sheet-bar"><b>More</b><button type="button" class="ix-btn" onclick="moreSheet(false)">Done</button></div>
+    <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('lists')">Lists</button>
+    <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('campaigns')">Email</button>
+    <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('reports')">Reports</button>
+    <button type="button" class="ix-btn" onclick="moreSheet(false);goNav('settings')">Settings</button>
+    <button type="button" class="ix-btn" onclick="moreSheet(false);switchApp('website')">Website</button>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -471,6 +489,7 @@ table.bk tr.click:hover td{background:var(--cream)}
 <script src="assets/wa-export.js"></script>
 <script src="assets/inbox.js"></script>
 <script src="assets/crm-growth.js"></script>
+<script src="assets/crm-shell.js"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 
@@ -732,6 +751,12 @@ function paintNav(){
   else if (crm.length) groups.push({ label:'CRM', items: crm });
   else if (site.length) groups.push({ label:'Website', items: site });
   $('nav').innerHTML = G ? G.appNav(groups, navActive()) : '';
+  const active = navActive();
+  const moreOn = ['lists','campaigns','flows','templates','reports','settings','people'].includes(active) || appArea === 'website';
+  document.querySelectorAll('#tabbar button').forEach(b => {
+    b.classList.toggle('on', b.dataset.tab === 'more' ? moreOn : b.dataset.tab === active);
+    if (b.dataset.tab === 'inbox') b.hidden = me.role === 'marketing' || !canRead('bookings');
+  });
   $('brandName').textContent = appArea === 'website' ? 'Website' : 'CRM';
   const hidden = SECTIONS.filter(s => !sectionAllowed(s)).length;
   $('sideFoot').innerHTML = `<button type="button" class="snav" onclick="switchApp('${appArea === 'crm' ? 'website' : 'crm'}')"><span class="nav-lb">${appArea === 'crm' ? 'Website admin' : 'Back to CRM'}</span></button>`
@@ -2345,7 +2370,7 @@ window.delPost = async id => {
 };
 
 /* ---------- Shared inbox ---------- */
-let inboxFilter = 'all', inboxChannel = '', inboxTag = '', inboxOpen = null, inboxFocusContact = null, inboxShowSettings = false;
+let inboxFilter = 'all', inboxChannel = '', inboxTag = '', inboxOpen = null, inboxFocusContact = null, inboxShowSettings = false, inboxPane = 'list';
 let inboxRows = [], inboxReplies = [], inboxTemplates = [], inboxStaff = [], inboxSettings = null, inboxDraft = '', inboxScores = {}, inboxSort = 'recent';
 const INBOX_FILTERS = [['all','All'],['unassigned','Unassigned'],['mine','Assigned to me'],['needs','Needs reply'],['open','Open'],['closed','Closed']];
 const INBOX_CH = { whatsapp:'W', email:'E', instagram:'I', facebook:'F', website:'S', note:'N' };
@@ -2375,7 +2400,8 @@ window.inboxFilterGo = async (key) => { inboxFilter = key; await render(); };
 window.inboxSortScore = async () => { inboxSort = inboxSort === 'score' ? 'recent' : 'score'; await render(); };
 window.inboxChannelGo = async (v) => { inboxChannel = v; await render(); };
 window.inboxTagGo = async (v) => { inboxTag = v; await render(); };
-window.inboxOpenConv = async (id) => { inboxOpen = id; inboxDraft = ''; await render(); };
+window.inboxOpenConv = async (id) => { inboxOpen = id; inboxDraft = ''; inboxPane = 'thread'; await render(); };
+window.inboxPaneGo = (pane) => { inboxPane = pane; const box = document.querySelector('.inbox'); if (box) box.className = 'inbox pane-' + pane; };
 window.inboxSettingsGo = async (on) => { inboxShowSettings = on; await render(); };
 window.inboxComposeInput = (el) => {
   inboxDraft = el.value;
@@ -2472,10 +2498,10 @@ function inboxShell(shown, open, thread){
       <button class="btn sm" type="button" onclick="inboxSortScore()">Sort by lead score</button>
       <button class="btn sm" type="button" onclick="inboxSettingsGo(true)">Inbox settings</button>
     </div>
-    <div class="inbox">
-      <section class="inbox-col"><div class="inbox-h"><b>${shown.length}</b> conversation${shown.length===1?'':'s'}</div><div class="inbox-list">${list}</div></section>
-      <section class="inbox-col">${open ? inboxThread(open, thread) : '<div class="empty">Choose a conversation.</div>'}</section>
-      <section class="inbox-col"><div class="inbox-side">${open ? inboxPanel(open, thread) : ''}</div></section>
+    <div class="inbox pane-${inboxPane}">
+      <section class="inbox-col inbox-list-col"><div class="inbox-h"><b>${shown.length}</b> conversation${shown.length===1?'':'s'}</div><div class="inbox-list">${list}</div></section>
+      <section class="inbox-col inbox-thread-col">${open ? inboxThread(open, thread) : '<div class="empty">Choose a conversation.</div>'}</section>
+      <section class="inbox-col inbox-form-col"><div class="inbox-side">${open ? inboxPanel(open, thread) : ''}</div></section>
     </div>`;
 }
 function inboxThread(open, thread){
@@ -2485,10 +2511,11 @@ function inboxThread(open, thread){
   const closed = open.channel === 'whatsapp' && !win.open;
   const paused = open.automation_paused_until && new Date(open.automation_paused_until) > new Date();
   const staffOpts = [['', 'Unassigned']].concat(inboxStaff.map(s => [s.id, s.full_name]));
-  return `<div class="inbox-h"><b>${esc(inboxName(open))}</b> · ${esc(open.channel)} · ${esc(open.status)}
+  return `<div class="inbox-h"><button type="button" class="ix-btn ix-back" onclick="inboxPaneGo('list')">Back</button> <b>${esc(inboxName(open))}</b> · ${esc(open.channel)} · ${esc(open.status)}
       ${paused ? `<span class="pill">Automation paused until ${esc(inboxWhen(open.automation_paused_until))}</span>` : ''}
       <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
         <select onchange="inboxAssign(this.value)">${staffOpts.map(([id, name]) => `<option value="${id}" ${open.assigned_to===id?'selected':''}>${esc(name)}</option>`).join('')}</select>
+        <button class="btn sm ix-back" type="button" onclick="inboxPaneGo('customer')">Customer</button>
         <button class="btn sm" type="button" onclick="inboxToggle()">${open.status==='open'?'Close':'Reopen'}</button>
       </span></div>
     <div class="inbox-thread">${window.MaCrm ? window.MaCrm.timelineHtml(thread.items) : ''}</div>
@@ -2505,7 +2532,7 @@ function inboxThread(open, thread){
 }
 function inboxPanel(open){
   if (!open.contact_id) return '<p class="help">This conversation has no customer yet.</p>';
-  return `<p><button class="btn sm" type="button" onclick="crmFromBooking('${open.contact_id}')">Open full record</button></p>`
+  return `<p class="ix-back"><button class="ix-btn" type="button" onclick="inboxPaneGo('thread')">Back to chat</button></p><p><button class="btn sm" type="button" onclick="crmFromBooking('${open.contact_id}')">Open full record</button></p>`
     + (crmFormFor === open.contact_id ? crmFormHtml : '<p class="help">Loading the customer form…</p>');
 }
 function inboxSettingsHtml(){

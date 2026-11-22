@@ -197,9 +197,31 @@
         return '<button type="button" class="ix-btn' + (mode.id === opt.mode ? ' on' : '') + '" onclick="ixMode(\'' + esc(scope) + '\',\'' + esc(mode.id) + '\')">' + esc(mode.label) + '</button>';
       }).join('') + '</div>';
     }
+    var mobile = '<div class="ix-mlist">' + (pageRows.length ? pageRows.map(function (row) {
+      var nameKey = (columns[0] && columns[0].key) || '';
+      var name = esc(row.cells && row.cells[nameKey] != null ? row.cells[nameKey] : '');
+      var pill = row.mobilePill || '';
+      if (!pill && row.html) {
+        ['lifecycle', 'stage', 'status', 'priority'].some(function (key) {
+          if (row.html[key]) { pill = row.html[key]; return true; }
+          return false;
+        });
+      }
+      var sub = row.mobileSub != null ? esc(row.mobileSub) : '';
+      if (!sub) {
+        var subKey = columns.slice(1).map(function (col) { return col.key; }).filter(function (key) {
+          return ['lifecycle', 'stage', 'status', 'priority'].indexOf(key) === -1;
+        })[0];
+        sub = subKey ? cellHtml(row, subKey) : '';
+      }
+      return '<button type="button" class="ix-mrow' + (selected[row.id] ? ' on' : '') + '" onclick="ixPreview(\'' + esc(scope) + '\',\'' + esc(row.id) + '\')"><span class="ix-mname">' + name + '</span>' + (pill ? '<span class="ix-mpill">' + pill + '</span>' : '') + (sub ? '<small class="ix-msub">' + sub + '</small>' : '') + '</button>';
+    }).join('') : '<p class="ix-empty">' + esc(opt.empty || 'No records in this view.') + '</p>') + '</div>';
+    var sorts = '<div class="ix-sorts"><p class="ix-kicker">Sort</p>' + columns.map(function (col) {
+      return '<button type="button" class="ix-btn" onclick="ixSort(\'' + esc(scope) + '\',\'' + esc(col.key) + '\')">' + esc(col.label) + '</button>';
+    }).join('') + '</div>';
     var table = opt.board
       ? opt.board
-      : '<div class="ix-scroll"><table class="ix-table"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+      : '<div class="ix-scroll"><table class="ix-table"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>' + mobile;
     var preview = '';
     if (opt.preview) {
       var lines = (opt.preview.lines || []).map(function (line) {
@@ -215,6 +237,7 @@
       + '<div class="ix-tools">'
       + '<input class="ix-search" type="search" placeholder="' + esc(opt.placeholder || 'Search') + '" value="' + esc(opt.query || '') + '" oninput="ixSearch(\'' + esc(scope) + '\',this.value)">'
       + toggle
+      + '<button type="button" class="ix-btn ix-filter-btn" onclick="ixSheet(true)">Sort and filter</button>'
       + (chooser ? '<details class="ix-cols"><summary>Edit columns</summary>' + chooser + '</details>' : '')
       + '<span class="ix-count">' + (sorted.length ? (win.from + '–' + win.to + ' of ' + sorted.length) : '0') + '</span>'
       + '</div>'
@@ -222,6 +245,7 @@
       + (chips ? '<div class="ix-chips">' + chips + '</div>' : '')
       + (opt.tools || '')
       + bulk
+      + '<div class="ix-sheet" hidden><div class="ix-sheet-card"><div class="ix-sheet-bar"><b>Sort and filter</b><button type="button" class="ix-btn" onclick="ixSheet(false)">Done</button></div>' + sorts + (filters ? '<div class="ix-sheet-filters"><p class="ix-kicker">Filters</p>' + filters + '</div>' : '') + '</div></div>'
       + '<div class="ix-body">'
       + (filters ? '<aside class="ix-side"><p class="ix-kicker">Filters</p>' + filters + '</aside>' : '')
       + table

@@ -51,6 +51,8 @@ test('index table is dense, sortable, and paged', function () {
     rows, sort: { key: 'name', dir: 'asc' }, page: 0, pageSize: 1, selected: {}
   });
   assert.match(html, /ix-table/);
+  assert.match(html, /ix-mlist/);
+  assert.match(html, /Sort and filter/);
   assert.match(html, /ix-sticky/);
   assert.match(html, /Edit columns/);
   assert.match(html, /All customers/);
