@@ -24,7 +24,8 @@
     {
       "days": "Sunday",
       "open": "10:00",
-      "close": "18:00"
+      "close": "18:00",
+      "note": "no workshops before 12:00"
     },
     {
       "days": "Monday – Thursday",

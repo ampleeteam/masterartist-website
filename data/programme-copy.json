@@ -68,11 +68,11 @@
   },
   "baking-course": {
     "ages": "Adults and teens 13+",
-    "headline": "A six-week plant-based baking course, from foundations to a bake of your own.",
+    "headline": "A six-week baking course, from foundations to a bake of your own.",
     "intro": "Six weekly sessions in the L1 kitchen, up to {cap} bakers. Each week builds on the last, and the final week is a showcase bake you choose yourself.",
     "levels": [
-      {"name": "Weeks 1–2 · Foundations", "text": "Doughs, proving and shaping; the basics every plant-based bake depends on."},
-      {"name": "Weeks 3–4 · Technique", "text": "Enriched doughs, laminating and plant-based swaps for eggs and butter."},
+      {"name": "Weeks 1–2 · Foundations", "text": "Doughs, proving and shaping; the basics every bake depends on."},
+      {"name": "Weeks 3–4 · Technique", "text": "Enriched doughs, laminating, and swaps for eggs and butter."},
       {"name": "Weeks 5–6 · Showcase", "text": "Plan and bake a showcase piece of your own choice."}
     ],
     "bring": "An apron if you have one; everything else is provided."

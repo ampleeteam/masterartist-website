@@ -20,7 +20,7 @@ orchestra are paused: don't write about them.
 5. **Watercolour for beginners: why a guided evening class works** — "watercolour class KL beginners" — /workshops/watercolour-botanicals/
 6. **Christmas gifts you make yourself: candles, cookies and canvases** — "christmas workshop KL" — /gift-vouchers/
 7. **Date night ideas in KL that aren't just dinner** — "date night ideas KL" — /workshops/textured-canvas/
-8. **Plant-based gingerbread cookies: a Christmas bake for the family** — "gingerbread cookie workshop KL" — /workshops/bake-lab/
+8. **Gingerbread cookies: a Christmas bake for the family** — "gingerbread cookie workshop KL" — /workshops/bake-lab/
 
 ## Priority 2 — parents deciding (Academy; high intent)
 9. **How to choose an art class for your child in Mont Kiara & Hartamas** — "art classes for kids Mont Kiara" — /classes/kids-art-younger/

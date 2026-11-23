@@ -50,7 +50,6 @@ PHOTOS = {
     'kids-art-studio': ('art-photo-2.jpg', 'Children painting in the studio'),
     'parent-child-studio': ('painting-4.jpg', 'A teacher helping children paint'),
     'adult-art-class': ('painting-3.jpg', 'A painting in progress'),
-    'sing-your-song': ('vocal-teaching-2.jpg', 'A group singing session in the studio'),
     'kids-art-younger': ('art-photo-2.jpg', 'Younger children painting'),
     'kids-art-older': ('art-photo-3.jpg', 'Older students working on a painting together'),
     'adult-art': ('painting-2.jpg', 'An adult art session'),
@@ -475,11 +474,11 @@ def ReviewList(voice, reviews=None):
 def HoursBlock():
     rows = ''.join(f'<tr><td>{e(h["days"])}</td><td>{"Closed" if h.get("closed") else fmt_time(h["open"]) + "–" + fmt_time(h["close"])}</td></tr>' for h in SITE['hours'])
     notes = ' '.join(SITE['hours_notes'])
-    return f'<div class="hours"><table>{rows}</table><p class="notes">{e(notes)} Fridays: no workshops after 12:30pm.</p></div>'
+    return f'<div class="hours"><table>{rows}</table><p class="notes">{e(notes)} Fridays: no workshops after 12:30pm. Sundays: no workshops before 12pm.</p></div>'
 
 
 # ------------------------------------------------------------------ shell
-NAV = [('/workshops/', 'Workshops'), ('/classes/', 'Classes'), ('/groups/', 'Groups'), ('/prices/', 'Prices'), ('/blog.html', 'Blog'), ('/about/', 'About')]
+NAV = [('/workshops/', 'Workshops'), ('/classes/', 'Classes'), ('/groups/', 'Groups'), ('/prices/', 'Prices'), ('/blog/', 'Blog'), ('/about/', 'About')]
 
 
 def head(title, desc, canonical, extra=''):
@@ -548,7 +547,7 @@ def footer(voice, wa=None):
   <div class="cols">
     <div><h2 class="foot-h">Visit</h2><p>{e(a['street'])}, {e(a['postcode'])} {e(a['city'])}<br>{e(a['note'].capitalize())}</p></div>
     <div><h2 class="foot-h">Hours</h2>{HoursBlock()}</div>
-    <div><h2 class="foot-h">Explore</h2><ul><li><a href="/workshops/">Workshops</a></li><li><a href="/classes/">Classes</a></li><li><a href="/birthdays/">Birthday parties</a></li><li><a href="/groups/">Team days</a></li><li><a href="/gift-vouchers/">Gift vouchers</a></li><li><a href="/teachers/">Teachers</a></li><li><a href="/reviews/">Reviews</a></li><li><a href="/showcase/">Showcase</a></li><li><a href="/blog.html">Blog</a></li></ul></div>
+    <div><h2 class="foot-h">Explore</h2><ul><li><a href="/workshops/">Workshops</a></li><li><a href="/classes/">Classes</a></li><li><a href="/birthdays/">Birthday parties</a></li><li><a href="/groups/">Team days</a></li><li><a href="/gift-vouchers/">Gift vouchers</a></li><li><a href="/teachers/">Teachers</a></li><li><a href="/reviews/">Reviews</a></li><li><a href="/showcase/">Showcase</a></li><li><a href="/blog/">Blog</a></li></ul></div>
     <div><h2 class="foot-h">Contact</h2><ul><li>{wa_attrs(wa, voice, SITE['phone'], cls='')}</li><li><a href="{SITE['instagram']}">Instagram</a></li><li><a href="mailto:{SITE['email']}">{SITE['email']}</a></li></ul></div>
   </div>
   <div class="legal"><span>© {dt.date.today().year} Master Artist</span><a href="/privacy/">PDPA notice</a><a href="/terms/">Booking terms</a></div>
@@ -1079,7 +1078,21 @@ def build_workshops():
     for slots in days.values():
         build_session_day(sorted(slots, key=lambda s: s['time']))
     build_this_sunday()
+    build_sing_your_song_note()
     return len(days)
+
+
+def build_sing_your_song_note():
+    """The workshop is discontinued. Keep /workshops/sing-your-song/ from 404ing, and out of the sitemap."""
+    body = hero_band('Master Artist Studio Sessions', 'Coming soon: <em>kids voice lessons</em>',
+                     'Sing Your Song is no longer on the schedule. Kids voice lessons are coming soon. Weekly voice lessons are open now.',
+                     '<a class="btn" href="/classes/voice/">Voice lessons</a><a class="btn ghost" href="/workshops/">Workshops</a>',
+                     crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (None, 'Sing Your Song')))
+    page('/workshops/sing-your-song/', 'Coming soon: kids voice lessons · Master Artist',
+         'Sing Your Song has ended. Kids voice lessons are coming soon. Weekly voice lessons are open now.',
+         body, voice='studio', active='/workshops/', noindex=True,
+         data_attrs=' data-page="sing-your-song"',
+         wa={'msg': "Hi, I'd like to ask about kids voice lessons. Source: {source}.", 'fmt': 'sing-your-song'})
 
 
 # --- Classes ----------------------------------------------------------------
@@ -1485,7 +1498,7 @@ def build_birthdays():
     <h2>Good to <em>know</em></h2>{Accordion([
         ('Can we bring a cake?', 'Yes. The last 30 minutes are yours in the room for cake and candles.'),
         ('Do parents stay?', 'Parents are welcome to stay and watch.'),
-        ('Allergies', 'Tell us about allergies when you book. Bake parties are plant-based, made in a shared kitchen where gluten and nuts may be present.'),
+        ('Allergies', 'Tell us about allergies when you book. Bake parties are made in a shared kitchen where gluten and nuts may be present.'),
         ('Saturdays', 'We are closed on Saturdays, so parties run on Sundays and weekdays.'),
     ])}</div>
 </div></section>'''
@@ -1670,18 +1683,22 @@ def build_static():
 
 
 # --- Blog ------------------------------------------------------------------------------
-# tools/build_blog.py (hourly in CI) writes blog/<slug>.html from post.html and fills blog.html's
-# <!--posts--> block. These two shells give them the site's design; the ids, meta tags and the
-# pretty-printed BreadcrumbList below are the hooks build_blog.py replaces, so keep them as they are.
+# tools/build_blog.py (hourly in CI) writes blog/<slug>/index.html from post.html and fills
+# blog/index.html's <!--posts--> block. These two shells give them the site's design; the ids,
+# meta tags and the pretty-printed BreadcrumbList below are the hooks build_blog.py replaces,
+# so keep them as they are.
 BLOG_API = 'https://fudaosneozobacdalncv.supabase.co/rest/v1/blog_public'
 # Public, read-only key (the same one tools/build_blog.py and the trial form use)
 BLOG_ANON = re.search(r"ANON = '([^']+)'", (ROOT / 'tools' / 'build_blog.py').read_text()).group(1)
 
 
 def blog_cards_from_pages():
-    """Cards for blog.html read off the built posts, newest first (build_blog.py writes the same markup)."""
+    """Cards for /blog/ read off the built posts, newest first (build_blog.py writes the same markup)."""
+    files = list((ROOT / 'blog').glob('*/index.html'))
+    if not files:
+        files = [f for f in (ROOT / 'blog').glob('*.html') if 'http-equiv="refresh"' not in f.read_text()[:800]]
     cards = []
-    for f in (ROOT / 'blog').glob('*.html'):
+    for f in files:
         doc = f.read_text()
         title = re.search(r'<h1>(.*?)</h1>', doc, re.S)
         if not title:
@@ -1694,8 +1711,9 @@ def blog_cards_from_pages():
         has_cover = '<img loading="lazy" class="cover"' in doc
         cover = (f'<img class="cover" src="{img.group(1)}" alt="{alt.group(1) if alt else ""}" loading="lazy">'
                  if has_cover and img else '<div class="cover ph"><img src="/logo.svg" alt=""></div>')
+        slug = f.parent.name if f.name == 'index.html' else f.stem
         cards.append((date.group(1) if date else '',
-                      f'<a class="post-card" href="/blog/{f.name}">{cover}<div class="meta">{meta.group(1) if meta else ""}</div>'
+                      f'<a class="post-card" href="/blog/{slug}/">{cover}<div class="meta">{meta.group(1) if meta else ""}</div>'
                       f'<h3>{title.group(1)}</h3><p>{desc.group(1) if desc else ""}</p><span class="more">Read article</span></a>'))
     return ''.join(c for _, c in sorted(cards, reverse=True))
 
@@ -1729,17 +1747,44 @@ def blog_og(title, desc, url):
 
 POST_LOADER = '''<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" crossorigin="anonymous"></script>
 <script>(function () {
+  function scrub(s) {
+    return String(s || '')
+      .replace(/Plant-based Baking Course/g, 'Baking Course')
+      .replace(/Plant-based Bake Lab/g, 'Bake Lab')
+      .replace(/Plant-based mini pizzas/g, 'Mini pizzas')
+      .replace(/Plant-based cooking class/g, 'Baking class')
+      .replace(/Plant-based gingerbread/g, 'Gingerbread')
+      .replace(/plant-based restaurants/gi, 'restaurants')
+      .replace(/plant-based restaurant/gi, 'restaurant')
+      .replace(/plant-based expertise/gi, 'experience')
+      .replace(/it is plant-based without any substitutions at all/gi, 'it needs no substitutions at all')
+      .replace(/plant-based cooking class/gi, 'baking class')
+      .replace(/plant-based baking course/gi, 'baking course')
+      .replace(/plant-based bake lab/gi, 'bake lab')
+      .replace(/plant-based mini pizzas/gi, 'mini pizzas')
+      .replace(/plant-based gingerbread/gi, 'gingerbread')
+      .replace(/plant-based swaps/gi, 'swaps')
+      .replace(/are plant-based,/gi, 'are')
+      .replace(/plant-based bake/gi, 'bake')
+      .replace(/\\bplant[-\\s]based\\b/gi, '')
+      .replace(/ {2,}/g, ' ')
+      .replace(/ +([,.;:])/g, '$1')
+      .replace(/\\( +/g, '(');
+  }
   var slug = new URLSearchParams(location.search).get('slug'), art = document.getElementById('post');
   if (!art || !slug || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return;
   var key = '__ANON__';
   fetch('__API__?slug=eq.' + slug + '&select=*', {headers: {apikey: key, Authorization: 'Bearer ' + key}})
     .then(function (r) { return r.json(); }).then(function (rows) {
       var p = rows && rows[0]; if (!p) return;
-      document.title = p.title + ' \\u2014 Master Artist';
-      document.getElementById('postTitle').textContent = p.title;
-      document.getElementById('postCrumb').textContent = p.title;
+      var title = scrub(p.title), body = scrub(p.body_html || '');
+      document.title = title + ' \\u2014 Master Artist';
+      var desc = document.querySelector('meta[name="description"]');
+      if (desc) desc.setAttribute('content', scrub(p.seo_description || p.excerpt || desc.getAttribute('content') || ''));
+      document.getElementById('postTitle').textContent = title;
+      document.getElementById('postCrumb').textContent = title;
       document.getElementById('postMeta').innerHTML = '<span>' + new Date(p.published_at).toLocaleDateString('en-GB', {day: 'numeric', month: 'long', year: 'numeric'}) + '</span>';
-      art.innerHTML = '<div class="prose">' + (window.DOMPurify ? DOMPurify.sanitize(p.body_html || '') : '') + '</div>';
+      art.innerHTML = '<div class="prose">' + (window.DOMPurify ? DOMPurify.sanitize(body) : '') + '</div>';
     });
 })();</script>'''
 
@@ -1748,11 +1793,11 @@ def build_blog_shells():
     desc = 'Ideas, how-tos and news from Master Artist in Desa Sri Hartamas, KL: workshops, kids’ art, voice and baking.'
     breadcrumb = json.dumps({'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': [
         {'@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': SITE['url'] + '/'},
-        {'@type': 'ListItem', 'position': 2, 'name': 'Blog', 'item': SITE['url'] + '/blog.html'}]}, indent=2)
+        {'@type': 'ListItem', 'position': 2, 'name': 'Blog', 'item': SITE['url'] + '/blog/'}]}, indent=2)
     # post.html: the template. Opened directly with ?slug= (404.html sends a post newer than the last
     # hourly build here) it loads the post live; built pages lose the ids, so the loader does nothing there.
     body = f'''<section class="page-hero on-dark"><div class="wrap">
-  <div class="crumbs"><a href="/">Home</a> / <a href="/blog.html">Blog</a> / <span id="postCrumb">Article</span></div>
+  <div class="crumbs"><a href="/">Home</a> / <a href="/blog/">Blog</a> / <span id="postCrumb">Article</span></div>
   <span class="eyebrow">Blog</span>
     <h1 id="postTitle">Loading…</h1>
     <div class="post-meta" id="postMeta"></div>
@@ -1766,28 +1811,54 @@ def build_blog_shells():
 </div></section>
 {blog_cta()}
 {POST_LOADER.replace('__ANON__', BLOG_ANON).replace('__API__', BLOG_API)}'''
-    page('/post.html', 'Blog — Master Artist', desc, body, voice='both', active='/blog.html',
+    page('/post.html', 'Blog — Master Artist', desc, body, voice='both', active='/blog/',
          extra_head=blog_og('Blog — Master Artist', desc, SITE['url'] + '/post.html')
          + f'\n<script type="application/ld+json">\n{breadcrumb}\n</script>', noindex='noindex, follow')
-    # blog.html: the index. Keep the cards build_blog.py last wrote; else read them off the built posts.
-    path = ROOT / 'blog.html'
+    # /blog/ index. Keep the cards build_blog.py last wrote; else read them off the built posts.
+    path = ROOT / 'blog' / 'index.html'
     old = path.read_text() if path.exists() else ''
+    if '<!--posts-->' not in old and (ROOT / 'blog.html').exists():
+        old = (ROOT / 'blog.html').read_text()
     m = re.search(r'<!--posts-->(.*?)<!--/posts-->', old, re.S)
-    cards = m.group(1) if m else blog_cards_from_pages()
+    cards = m.group(1) if m and 'post-card' in m.group(1) else blog_cards_from_pages()
     body = hero_band('Blog', 'Ideas from <em>the studio</em>', e(desc), '', crumbs(('/', 'Home'), (None, 'Blog')), img=('painting-1.jpg', 'Watercolour work on the studio table'))
     body += f'''<section class="sec"><div class="wrap">
   <div class="blog-grid" id="blogGrid"><!--posts-->{cards}<!--/posts--></div>
 </div></section>
 {blog_cta()}'''
-    page('/blog.html', 'Blog · Master Artist, Sri Hartamas KL', desc, body, voice='both', active='/blog.html',
-         extra_head=blog_og('Blog · Master Artist', desc, SITE['url'] + '/blog.html'))
-    GENERATED[:] = [g for g in GENERATED if g[0] != '/blog.html']   # build_sitemap keeps the blog URLs already listed
+    page('/blog/', 'Blog · Master Artist, Sri Hartamas KL', desc, body, voice='both', active='/blog/',
+         extra_head=blog_og('Blog · Master Artist', desc, SITE['url'] + '/blog/'))
+    GENERATED[:] = [g for g in GENERATED if g[0] != '/blog/']   # build_sitemap keeps the blog URLs already listed
+
+
+def build_404():
+    """Missing URLs use the current site shell and point at what the studio offers now."""
+    desc = 'This page is not on the Master Artist site. Browse workshops, classes, the blog, or contact the studio in Desa Sri Hartamas.'
+    fallback = '''<script>
+(function () {
+  var m = location.pathname.match(/^\\/blog\\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\\/|\\.html)?$/);
+  if (m) location.replace('/post.html?slug=' + m[1]);
+})();
+</script>'''
+    doors = '''<section class="sec"><div class="wrap"><div class="doors">
+<a class="door" href="/workshops/"><img src="/painting-1.jpg" alt="A painting workshop on the studio table"><span class="label">Studio Sessions</span><h3>Workshops</h3><p>Painting, baking, candles and crochet, on a weeknight or a Sunday.</p><span class="more">See workshops</span></a>
+<a class="door" href="/classes/"><img src="/art-photo-1.jpg" alt="Students with finished artwork"><span class="label">Academy</span><h3>Classes</h3><p>Weekly art, voice, photo and baking classes. A RM50 trial is credited to the first month.</p><span class="more">See classes</span></a>
+<a class="door" href="/blog/"><img src="/baking-2.jpg" alt="A loaf from a baking workshop"><span class="label">From the studio</span><h3>Blog</h3><p>Notes on workshops, classes and baking in Desa Sri Hartamas.</p><span class="more">Read the blog</span></a>
+<a class="door" href="/about/#visit"><img src="/hero-1.jpg" alt="The Master Artist studio"><span class="label">Desa Sri Hartamas</span><h3>Contact</h3><p>Visit the studio above Savor, or WhatsApp +60 10-277 9426.</p><span class="more">Contact the studio</span></a>
+</div></div></section>'''
+    body = hero_band('Page not found', 'This page isn’t <em>here</em>',
+                     'The link may be old. Workshops, classes, the blog and contact are the pages to use.',
+                     '', crumbs(('/', 'Home'), (None, 'Page not found')))
+    body += doors
+    page('/404.html', 'Page not found — Master Artist', desc, body, voice='both', noindex=True,
+         extra_head=fallback + '\n' + blog_og('Page not found — Master Artist', desc, SITE['url'] + '/404.html'))
 
 # --- Redirects and sitemap ------------------------------------------------------------
 REDIRECTS = {
     'about.html': '/about/', 'art.html': '/classes/', 'gallery.html': '/showcase/', 'media.html': '/classes/teen-photo-video/',
     'music.html': '/classes/voice/', 'orchestra.html': '/classes/voice/', 'pricing.html': '/prices/', 'privacy.html': '/privacy/',
     'terms.html': '/terms/', 'visit.html': '/about/#visit', 'workshops.html': '/workshops/',
+    'blog.html': '/blog/',
 }
 
 
@@ -1831,6 +1902,7 @@ if __name__ == '__main__':
     build_static()
     build_redirects()
     build_blog_shells()
+    build_404()
     urls, posts = build_sitemap()
     print(f'sitemap: {urls} pages + {posts} blog posts; {len(REDIRECTS)} redirects')
     print(f'built /, /styleguide/, /workshops/ ({len(WORKSHOP_FORMATS)} formats, {n} dated pages), /this-sunday/, /classes/ ({len(PROGS)} programmes), /trial/, /holiday-camps/, /groups/, /prices/, /gift-vouchers/, /birthdays/, /about/, /teachers/, /reviews/, /showcase/, /terms/, /privacy/')

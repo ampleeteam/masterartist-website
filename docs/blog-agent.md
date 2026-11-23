@@ -15,9 +15,9 @@ Key facts (check the files — they win if these ever differ):
   A short drive from Mont Kiara.
 - Hours: Sun–Thu 10:30am–9pm, Fri 10:30am–5:30pm, closed Saturdays (Sabbath).
 - Timetable: children's art Mon–Fri 3–5pm; adult art weekday mornings from 10:30am
-  and Mon–Thu 7–9pm; art for all ages Sun 10:30am–12:30pm; photography Sun
-  10:30am–12:30pm and Thu 7–9pm; videography Tue 7–9pm; workshops every Sunday
-  3–5pm. Music lessons are arranged one-to-one or in groups with teachers.
+  and Mon–Thu 7–9pm; photography Thu 7–9pm; videography Tue 7–9pm; workshops on
+  Sunday afternoons from 3pm and on weeknights. No Sunday class or workshop
+  starts before 12pm. Music lessons are arranged one-to-one or in groups with teachers.
 - Trial: any class RM50, credited in full to the first month.
 - Founder Sabrina Hew teaches voice; Cheong Chui Yen teaches art; Alden teaches
   photography; Zimin teaches videography & film.

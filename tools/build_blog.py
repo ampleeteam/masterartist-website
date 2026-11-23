@@ -2,8 +2,8 @@
 """Builds a static HTML page for every published blog post.
 
 Reads published posts from the Supabase view `blog_public`, writes
-blog/<slug>.html using post.html as the page template (so posts get the
-site's header, footer and trial form), and adds the posts to sitemap.xml.
+blog/<slug>/index.html (so the URL is /blog/<slug>/) using post.html as the
+page template, writes the index at blog/index.html, and adds both to sitemap.xml.
 Search engines and AI crawlers can then read each post without running
 JavaScript. Run from the repository root:  python3 tools/build_blog.py
 """
@@ -24,6 +24,59 @@ ALLOWED_TAGS = ['p', 'br', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'strong', 'b', 'e
                 'img', 'figure', 'figcaption', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'code', 'pre']
 ALLOWED_ATTRS = {'a': ['href', 'title', 'rel', 'target'], 'img': ['src', 'alt', 'width', 'height', 'loading'],
                  'th': ['scope'], 'td': ['colspan', 'rowspan']}
+
+# Stored posts sometimes call the baking "plant-based". The database is left as it is;
+# this only changes the HTML we write. Longer phrases first, so a leftover adjective
+# does not turn "plant-based restaurant" into "baking restaurant".
+SCRUB_RULES = [
+    (re.compile(r'plant-based%20', re.I), ''),
+    (re.compile(r'Plant-based Baking Course'), 'Baking Course'),
+    (re.compile(r'Plant-based Bake Lab'), 'Bake Lab'),
+    (re.compile(r'Plant-based mini pizzas'), 'Mini pizzas'),
+    (re.compile(r'Plant-based cooking class'), 'Baking class'),
+    (re.compile(r'Plant-based gingerbread'), 'Gingerbread'),
+    (re.compile(r'plant-based restaurants', re.I), 'restaurants'),
+    (re.compile(r'plant-based restaurant', re.I), 'restaurant'),
+    (re.compile(r'plant-based expertise', re.I), 'experience'),
+    (re.compile(r'it is plant-based without any substitutions at all', re.I), 'it needs no substitutions at all'),
+    (re.compile(r'plant-based cooking class', re.I), 'baking class'),
+    (re.compile(r'plant-based baking course', re.I), 'baking course'),
+    (re.compile(r'plant-based bake lab', re.I), 'bake lab'),
+    (re.compile(r'plant-based mini pizzas', re.I), 'mini pizzas'),
+    (re.compile(r'plant-based gingerbread', re.I), 'gingerbread'),
+    (re.compile(r'plant-based swaps', re.I), 'swaps'),
+    (re.compile(r'laminating and swaps'), 'laminating, and swaps'),
+    (re.compile(r'are plant-based,', re.I), 'are'),
+    (re.compile(r'plant-based bake', re.I), 'bake'),
+    (re.compile(r'\bplant[-\s]based\b', re.I), ''),
+]
+
+
+def scrub(value):
+    """Drop the banned baking wording. Does not write anything back to Supabase."""
+    if not isinstance(value, str) or not value:
+        return value
+    text = value
+    for pattern, repl in SCRUB_RULES:
+        text = pattern.sub(repl, text)
+    # Only runs that follow a character, so a whole-file pass does not flatten line indents.
+    text = re.sub(r'(?<=\S) {2,}', ' ', text)
+    text = re.sub(r' +([,.;:])', r'\1', text)
+    text = re.sub(r'\( +', '(', text)
+    return text
+
+
+def scrub_post(post):
+    out = dict(post)
+    for key in ('title', 'excerpt', 'seo_description', 'body_html', 'cover_alt', 'author'):
+        if key in out and isinstance(out[key], str):
+            out[key] = scrub(out[key])
+    return out
+
+
+def mentions_banned(post):
+    blob = ' '.join(str(post.get(key) or '') for key in ('title', 'excerpt', 'seo_description', 'body_html', 'cover_alt', 'author'))
+    return bool(re.search(r'plant[-\s]based', blob, re.I))
 
 
 def esc(s):
@@ -61,13 +114,13 @@ def card(p):
     cover = (f'<img class="cover" src="{esc(abs_url(p.get("cover_image")))}" alt="{esc(p.get("cover_alt"))}" loading="lazy">'
              if p.get('cover_image') else '<div class="cover ph"><img src="/logo.svg" alt=""></div>')
     tag = f' · {esc(p["tags"][0])}' if p.get('tags') else ''
-    return (f'<a class="post-card" href="/blog/{esc(p["slug"])}.html">{cover}<div class="meta">{fmt_date(p.get("published_at"))}{tag}</div>'
+    return (f'<a class="post-card" href="/blog/{esc(p["slug"])}/">{cover}<div class="meta">{fmt_date(p.get("published_at"))}{tag}</div>'
             f'<h3>{esc(p["title"])}</h3><p>{esc(p.get("excerpt"))}</p><span class="more">Read article</span></a>')
 
 
 def build(template, p, others):
     slug, title = p['slug'], p['title']
-    url = f'{SITE}/blog/{slug}.html'
+    url = f'{SITE}/blog/{slug}/'
     desc = p.get('seo_description') or p.get('excerpt') or ''
     body = bleach.clean(p.get('body_html') or '', tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS,
                         protocols=['http', 'https', 'mailto', 'tel'], strip=True)
@@ -87,7 +140,7 @@ def build(template, p, others):
     cover = f'<img loading="lazy" class="cover" src="{esc(abs_url(p.get("cover_image")))}" alt="{esc(p.get("cover_alt"))}">' if p.get('cover_image') else ''
     meta = ''.join(f'<span>{esc(x)}</span>' for x in [fmt_date(p.get('published_at')), p.get('author') or 'Master Artist', *(p.get('tags') or [])[:3]] if x)
     schema = {
-        '@context': 'https://schema.org', '@type': 'BlogPosting', 'headline': title, 'description': desc,
+        '@context': 'https://schema.org', '@type': ['Article', 'BlogPosting'], 'headline': title, 'description': desc,
         'datePublished': p.get('published_at'), 'dateModified': p.get('updated_at') or p.get('published_at'),
         'author': {'@type': 'Organization', 'name': p.get('author') or 'Master Artist'},
         'publisher': {'@type': 'Organization', 'name': 'Master Artist', 'logo': {'@type': 'ImageObject', 'url': SITE + '/logo.svg'}},
@@ -96,7 +149,7 @@ def build(template, p, others):
         schema['image'] = abs_url(p['cover_image'])
     crumbs = {'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': [
         {'@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': SITE + '/'},
-        {'@type': 'ListItem', 'position': 2, 'name': 'Blog', 'item': SITE + '/blog.html'},
+        {'@type': 'ListItem', 'position': 2, 'name': 'Blog', 'item': SITE + '/blog/'},
         {'@type': 'ListItem', 'position': 3, 'name': title, 'item': url}]}
 
     doc = template
@@ -126,19 +179,30 @@ def build(template, p, others):
     more = ''.join(card(o) for o in others[:3])
     doc = doc.replace('<section id="morePosts" class="alt" hidden>', '<section id="morePosts" class="alt"' + ('' if more else ' hidden') + '>', 1)
     doc = doc.replace('<div class="blog-grid" id="moreGrid"></div>', f'<div class="blog-grid">{more}</div>', 1)
+    doc = doc.replace('href="/blog.html"', 'href="/blog/"')
+    doc = doc.replace(SITE + '/blog.html', SITE + '/blog/')
+    published = p.get('published_at') or ''
+    modified = p.get('updated_at') or published
+    if published and 'article:published_time' not in doc:
+        doc = doc.replace('</head>', f'<meta property="article:published_time" content="{esc(published)}">\n'
+                          f'<meta property="article:modified_time" content="{esc(modified)}">\n</head>', 1)
     # post.html itself is noindex (it is only a JS template); built posts must be indexable
     doc = re.sub(r'<meta name="robots" content="noindex[^"]*">\n?', '', doc, 1)
-    # the DOMPurify loader is only needed by the dynamic post page
-    doc = re.sub(r'<script src="https://cdn\.jsdelivr\.net/npm/dompurify[^>]*></script>\n?', '', doc)
+    # the live loader is only needed by post.html; a built page already has the article
+    doc = re.sub(r'<script src="https://cdn\.jsdelivr.net/npm/dompurify[^>]*></script>\s*', '', doc)
+    doc = re.sub(r'<script>\(function \(\) \{\s*function scrub\(s\) \{.*?\}\)\(\);</script>\s*', '', doc, count=1, flags=re.S)
     return doc
 
 
 def update_sitemap(posts):
     path = ROOT / 'sitemap.xml'
     xml = path.read_text()
-    xml = re.sub(r'\s*<url>\s*<loc>https://masterartist\.co/blog/[^<]+</loc>.*?</url>', '', xml, flags=re.S)
-    entries = ''.join(f'\n  <url>\n    <loc>{SITE}/blog/{esc(p["slug"])}.html</loc>\n    <lastmod>{(p.get("updated_at") or p.get("published_at") or "")[:10]}</lastmod>\n'
-                      f'    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>' for p in posts)
+    xml = re.sub(r'\s*<url>\s*<loc>https://masterartist\.co/blog(?:\.html|/[^<]*)</loc>.*?</url>', '', xml, flags=re.S)
+    today = posts[0].get('updated_at') or posts[0].get('published_at') or '' if posts else ''
+    entries = (f'\n  <url>\n    <loc>{SITE}/blog/</loc>\n    <lastmod>{today[:10]}</lastmod>\n'
+               f'    <changefreq>daily</changefreq>\n    <priority>0.7</priority>\n  </url>')
+    entries += ''.join(f'\n  <url>\n    <loc>{SITE}/blog/{esc(p["slug"])}/</loc>\n    <lastmod>{(p.get("updated_at") or p.get("published_at") or "")[:10]}</lastmod>\n'
+                       f'    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>' for p in posts)
     xml = xml.replace('\n</urlset>', entries + '\n</urlset>')
     path.write_text(refresh_page_lastmod(xml))
 
@@ -204,9 +268,20 @@ def merge_posts(remote, local):
     return sorted(by_slug.values(), key=lambda p: p.get('published_at') or '', reverse=True)
 
 
+def redirect_page(target):
+    url = SITE + target
+    return f'''<!DOCTYPE html>
+<html lang="en-MY"><head><meta charset="utf-8"><title>Moved · Master Artist</title>
+<link rel="canonical" href="{url}"><meta name="robots" content="noindex">
+<script>location.replace({json.dumps(target)} + location.search + location.hash);</script>
+<meta http-equiv="refresh" content="0; url={target}">
+</head><body><p>This page has moved to <a href="{target}">{url}</a>.</p></body></html>
+'''
+
+
 def update_index(posts):
-    """Fill the post cards in blog.html (the page itself is built by scripts/build_site.py)."""
-    index = ROOT / 'blog.html'
+    """Fill the post cards in blog/index.html (the page itself is built by scripts/build_site.py)."""
+    index = ROOT / 'blog' / 'index.html'
     doc = index.read_text()
     cards = ''.join(card(p) for p in posts) or '<p>New articles are on the way.</p>'
     new = re.sub(r'<!--posts-->.*?<!--/posts-->', lambda m: f'<!--posts-->{cards}<!--/posts-->', doc, count=1, flags=re.S)
@@ -219,19 +294,36 @@ def main():
     remote = [p for p in fetch_posts() if re.fullmatch(r'[a-z0-9]+(-[a-z0-9]+)*', p.get('slug') or '')]
     local = load_local_posts()
     write_manifest(local)
-    posts = merge_posts(remote, local)
+    stored = merge_posts(remote, local)
+    flagged = [p['slug'] for p in stored if mentions_banned(p)]
+    posts = [scrub_post(p) for p in stored]
     out_dir = ROOT / 'blog'
     out_dir.mkdir(exist_ok=True)
-    keep = set()
+    keep_dirs, keep_files = set(), {'index.html'}
     for p in posts:
-        f = out_dir / f'{p["slug"]}.html'
-        f.write_text(build(template, p, [o for o in posts if o['slug'] != p['slug']]))
-        keep.add(f.name)
-    for f in out_dir.glob('*.html'):          # unpublished or deleted posts
-        if f.name not in keep:
+        dest = out_dir / p['slug'] / 'index.html'
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(build(template, p, [o for o in posts if o['slug'] != p['slug']]))
+        # Old /blog/<slug>.html addresses keep working.
+        (out_dir / f'{p["slug"]}.html').write_text(redirect_page(f'/blog/{p["slug"]}/'))
+        keep_dirs.add(p['slug'])
+        keep_files.add(f'{p["slug"]}.html')
+    for f in out_dir.glob('*.html'):
+        if f.name not in keep_files:
             f.unlink()
+    for d in out_dir.iterdir():
+        if d.is_dir() and d.name not in keep_dirs:
+            for child in d.rglob('*'):
+                if child.is_file():
+                    child.unlink()
+            for child in sorted(d.rglob('*'), reverse=True):
+                if child.is_dir():
+                    child.rmdir()
+            d.rmdir()
     update_index(posts)
     update_sitemap(posts)
+    if flagged:
+        print('stored text still says plant-based (not written back): ' + ', '.join(flagged))
     print(f'built {len(posts)} post(s)')
 
 

@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-22T05:35:12",
+ "generated": "2026-11-23T05:40:22",
  "currency": "MYR",
  "formats": [
   {
@@ -52,7 +52,7 @@
   },
   {
    "id": "bake-lab",
-   "name": "Plant-based Bake Lab",
+   "name": "Bake Lab",
    "discipline": "baking",
    "duration_min": 120,
    "price": 95,
@@ -61,26 +61,11 @@
    "cap": 20,
    "room": "L1 kitchen",
    "audience": "all",
-   "summary": "One plant-based bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes at RM85.",
+   "summary": "One bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes at RM85.",
    "upsell": "baking-course",
    "dine_addon": true,
    "live_from": "2026-11-04",
    "cap_specialty": 20
-  },
-  {
-   "id": "sing-your-song",
-   "name": "Sing Your Song",
-   "discipline": "voice",
-   "duration_min": 120,
-   "price": 75,
-   "cap": 12,
-   "room": "L2 recording studio",
-   "audience": "adults",
-   "summary": "A recorded group performance of one song plus a short solo technique round; the recording is sent to you.",
-   "upsell": "voice",
-   "dine_addon": true,
-   "live_from": "2026-11-08",
-   "status": "paused"
   },
   {
    "id": "reels-for-your-business",
@@ -214,7 +199,7 @@
   },
   {
    "id": "baking-course-6wk",
-   "name": "Plant-based Baking Course (6 weeks)",
+   "name": "Baking Course (6 weeks)",
    "discipline": "baking",
    "type": "course",
    "duration_min": 150,
@@ -312,7 +297,7 @@
      "max": 12,
      "room": "L1 kitchen",
      "when": "Tuesday or Wednesday 3pm, or Friday 10am in the school holidays",
-     "summary": "Plant-based mini pizzas or cinnamon rolls, shaped and baked by the children, boxed to take home."
+     "summary": "Mini pizzas or cinnamon rolls, shaped and baked by the children, boxed to take home."
     },
     {
      "id": "canvas-birthday",
@@ -348,7 +333,7 @@
    "id": "l2-studio",
    "name": "L2 recording studio",
    "floor": "L2",
-   "use": "music lessons, Sing Your Song, photo and video",
+   "use": "music lessons, photo and video",
    "cap": 12
   },
   {
@@ -381,7 +366,7 @@
     "15:00-17:30"
    ],
    "days": [
-    "Sun",
+    "Sun-afternoon-only",
     "Mon",
     "Tue",
     "Wed",
@@ -400,6 +385,11 @@
    {
     "day": "Sat",
     "all_day": true
+   },
+   {
+    "day": "Sun",
+    "until": "12:00",
+    "reason": "no workshops before 12:00 on Sunday"
    }
   ],
   "no_evening_workshops": [
@@ -454,72 +444,14 @@
   "note": "Spec 03-PROMPTS step 7: RM100, RM200 and any-workshop. Validity period TODO."
  },
  "window": {
-  "from": "2026-11-22",
+  "from": "2026-11-23",
   "days": 42
  },
  "sessions": [
   {
-   "id": "crochet-bag-2026-11-22-1000",
-   "format": "crochet-bag",
-   "name": "Chunky Crochet",
-   "variant": null,
-   "discipline": "craft",
-   "date": "2026-11-22",
-   "day": "Sun",
-   "time": "10:00",
-   "end": "12:00",
-   "label": "Sun 22 Nov · 10am",
-   "room": "L2 front room",
-   "price": 110,
-   "pair_price": 198,
-   "price_set": "launch",
-   "price_unit": null,
-   "cap": 20,
-   "cap_unit": null,
-   "booked": 0,
-   "seats_left": 20,
-   "dine": true,
-   "dine_timing": "after",
-   "theme": "Chunky Yarn Bag",
-   "public_holiday": null,
-   "surcharge_waived": false,
-   "type": "workshop",
-   "public": true,
-   "next_session": "crochet-bag-2026-11-22-1500"
-  },
-  {
-   "id": "crochet-bag-2026-11-22-1500",
-   "format": "crochet-bag",
-   "name": "Chunky Crochet",
-   "variant": null,
-   "discipline": "craft",
-   "date": "2026-11-22",
-   "day": "Sun",
-   "time": "15:00",
-   "end": "17:00",
-   "label": "Sun 22 Nov · 3pm",
-   "room": "L2 front room",
-   "price": 110,
-   "pair_price": 198,
-   "price_set": "launch",
-   "price_unit": null,
-   "cap": 20,
-   "cap_unit": null,
-   "booked": 0,
-   "seats_left": 20,
-   "dine": true,
-   "dine_timing": "after",
-   "theme": "Chunky Yarn Bag",
-   "public_holiday": null,
-   "surcharge_waived": false,
-   "type": "workshop",
-   "public": true,
-   "next_session": null
-  },
-  {
    "id": "baking-course-6wk-2026-11-23-1500",
    "format": "baking-course-6wk",
-   "name": "Plant-based Baking Course (6 weeks)",
+   "name": "Baking Course (6 weeks)",
    "variant": null,
    "discipline": "baking",
    "date": "2026-11-23",
@@ -605,38 +537,9 @@
    "next_session": null
   },
   {
-   "id": "bake-lab-2026-11-29-1000",
-   "format": "bake-lab",
-   "name": "Plant-based Bake Lab",
-   "variant": null,
-   "discipline": "baking",
-   "date": "2026-11-29",
-   "day": "Sun",
-   "time": "10:00",
-   "end": "12:00",
-   "label": "Sun 29 Nov · 10am",
-   "room": "L1 kitchen (Savor)",
-   "price": 95,
-   "pair_price": 171,
-   "price_set": "launch",
-   "price_unit": null,
-   "cap": 20,
-   "cap_unit": null,
-   "booked": 0,
-   "seats_left": 20,
-   "dine": true,
-   "dine_timing": "after",
-   "theme": "Christmas Gingerbread Cookies",
-   "public_holiday": null,
-   "surcharge_waived": false,
-   "type": "workshop",
-   "public": true,
-   "next_session": "bake-lab-2026-11-29-1500"
-  },
-  {
    "id": "bake-lab-2026-11-29-1500",
    "format": "bake-lab",
-   "name": "Plant-based Bake Lab",
+   "name": "Bake Lab",
    "variant": null,
    "discipline": "baking",
    "date": "2026-11-29",
@@ -665,7 +568,7 @@
   {
    "id": "baking-course-6wk-2026-11-30-1500",
    "format": "baking-course-6wk",
-   "name": "Plant-based Baking Course (6 weeks)",
+   "name": "Baking Course (6 weeks)",
    "variant": null,
    "discipline": "baking",
    "date": "2026-11-30",
@@ -695,7 +598,7 @@
   {
    "id": "baking-course-6wk-2026-12-07-1500",
    "format": "baking-course-6wk",
-   "name": "Plant-based Baking Course (6 weeks)",
+   "name": "Baking Course (6 weeks)",
    "variant": null,
    "discipline": "baking",
    "date": "2026-12-07",
@@ -725,7 +628,7 @@
   {
    "id": "baking-course-6wk-2026-12-14-1500",
    "format": "baking-course-6wk",
-   "name": "Plant-based Baking Course (6 weeks)",
+   "name": "Baking Course (6 weeks)",
    "variant": null,
    "discipline": "baking",
    "date": "2026-12-14",
@@ -755,7 +658,7 @@
   {
    "id": "baking-course-6wk-2026-12-21-1500",
    "format": "baking-course-6wk",
-   "name": "Plant-based Baking Course (6 weeks)",
+   "name": "Baking Course (6 weeks)",
    "variant": null,
    "discipline": "baking",
    "date": "2026-12-21",
@@ -785,7 +688,7 @@
   {
    "id": "baking-course-6wk-2026-12-28-1500",
    "format": "baking-course-6wk",
-   "name": "Plant-based Baking Course (6 weeks)",
+   "name": "Baking Course (6 weeks)",
    "variant": null,
    "discipline": "baking",
    "date": "2026-12-28",
@@ -793,6 +696,36 @@
    "time": "15:00",
    "end": "17:30",
    "label": "Mon 28 Dec · 3pm",
+   "room": "L1 kitchen (Savor)",
+   "price": 450,
+   "pair_price": null,
+   "price_set": "launch",
+   "price_unit": null,
+   "cap": 20,
+   "cap_unit": null,
+   "booked": 0,
+   "seats_left": 20,
+   "dine": false,
+   "dine_timing": "after",
+   "theme": null,
+   "public_holiday": null,
+   "surcharge_waived": false,
+   "type": "course",
+   "public": false,
+   "note": "Private / corporate hold",
+   "next_session": null
+  },
+  {
+   "id": "baking-course-6wk-2027-01-04-1500",
+   "format": "baking-course-6wk",
+   "name": "Baking Course (6 weeks)",
+   "variant": null,
+   "discipline": "baking",
+   "date": "2027-01-04",
+   "day": "Mon",
+   "time": "15:00",
+   "end": "17:30",
+   "label": "Mon 4 Jan · 3pm",
    "room": "L1 kitchen (Savor)",
    "price": 450,
    "pair_price": null,

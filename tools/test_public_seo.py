@@ -40,9 +40,10 @@ def main():
     for rel in pages:
         text = (ROOT / rel).read_text()
         want = canonical_for(rel)
-        if f'<link rel="canonical" href="{want}">' not in text:
+        noindex = 'name="robots" content="noindex' in text
+        if not noindex and f'<link rel="canonical" href="{want}">' not in text:
             errors.append(f'{rel} missing canonical {want}')
-        if want not in sitemap and 'name="robots" content="noindex' not in text:   # noindex pages (e.g. /booking/thanks/) stay out
+        if want not in sitemap and not noindex:   # noindex pages (e.g. /booking/thanks/) stay out
             errors.append(f'sitemap missing {want}')
         if rel != 'index.html' and 'http://masterartist.co' in text and not rel.endswith('/index.html'):
             errors.append(f'{rel} has an http canonical or URL')
@@ -77,7 +78,8 @@ def main():
     import build_blog
     local = build_blog.load_local_posts()
     slugs = {p['slug'] for p in local}
-    if slugs != {'choosing-piano-or-vocal-lessons-mont-kiara', 'benefits-of-kids-art-classes'}:
+    expected = {'art-workshop-kl', 'choosing-piano-or-vocal-lessons-mont-kiara', 'benefits-of-kids-art-classes'}
+    if slugs != expected:
         errors.append(f'unexpected local posts: {slugs}')
     merged = build_blog.merge_posts([{'slug': 'remote-only', 'published_at': '2026-01-01'}], local)
     merged_slugs = [p['slug'] for p in merged]
@@ -100,12 +102,14 @@ def main():
         words = re.findall(r"[A-Za-z0-9’']+", body)
         if not 900 <= len(words) <= 1400:
             errors.append(f"{post['slug']} word count {len(words)}")
-        page = ROOT / 'blog' / f"{post['slug']}.html"
+        page = ROOT / 'blog' / post['slug'] / 'index.html'
         html = page.read_text()
         if 'noindex' in html:
-            errors.append(f'{page.name} should be indexable')
-        if f'<link rel="canonical" href="{SITE}/blog/{post["slug"]}.html">' not in html:
-            errors.append(f'{page.name} canonical missing')
+            errors.append(f'{post["slug"]} should be indexable')
+        if f'<link rel="canonical" href="{SITE}/blog/{post["slug"]}/">' not in html:
+            errors.append(f'{post["slug"]} canonical missing')
+        if '"@type": "Article"' not in html and '"Article"' not in html:
+            errors.append(f'{post["slug"]} missing Article JSON-LD')
 
     # every JSON-LD block parses
     for path in [ROOT / r for r in pages]:
@@ -114,6 +118,17 @@ def main():
                 json.loads(raw)
             except json.JSONDecodeError as exc:
                 errors.append(f'{path.name} invalid JSON-LD: {exc}')
+
+    banned = ('plant' + '-based', 'plant based', 'sip and paint', 'cheaper than')
+    for rel in pages + ['404.html']:
+        visible = re.sub(r'<script\b[^>]*>.*?</script>', ' ', (ROOT / rel).read_text(), flags=re.S).lower()
+        for needle in banned:
+            if needle in visible:
+                errors.append(f'{rel} contains {needle}')
+
+    sample = build_blog.scrub('Beverly, owner of ' + banned[0] + ' restaurant Savor, brought ' + banned[0] + ' expertise. It is ' + banned[0] + ' without any substitutions at all.')
+    if any(needle in sample.lower() for needle in banned):
+        errors.append(f'scrub left banned wording: {sample}')
 
     if errors:
         print('\n'.join(errors))

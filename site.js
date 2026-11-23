@@ -665,15 +665,40 @@ async function renderGoogleReviews() {
 }
 
 /* ------------------------------------------------------------------- blog */
+function scrubCopy(s) {
+  return String(s || '')
+    .replace(/Plant-based Baking Course/g, 'Baking Course')
+    .replace(/Plant-based Bake Lab/g, 'Bake Lab')
+    .replace(/Plant-based mini pizzas/g, 'Mini pizzas')
+    .replace(/Plant-based cooking class/g, 'Baking class')
+    .replace(/Plant-based gingerbread/g, 'Gingerbread')
+    .replace(/plant-based restaurants/gi, 'restaurants')
+    .replace(/plant-based restaurant/gi, 'restaurant')
+    .replace(/plant-based expertise/gi, 'experience')
+    .replace(/it is plant-based without any substitutions at all/gi, 'it needs no substitutions at all')
+    .replace(/plant-based cooking class/gi, 'baking class')
+    .replace(/plant-based baking course/gi, 'baking course')
+    .replace(/plant-based bake lab/gi, 'bake lab')
+    .replace(/plant-based mini pizzas/gi, 'mini pizzas')
+    .replace(/plant-based gingerbread/gi, 'gingerbread')
+    .replace(/plant-based swaps/gi, 'swaps')
+    .replace(/are plant-based,/gi, 'are')
+    .replace(/plant-based bake/gi, 'bake')
+    .replace(/\bplant[-\s]based\b/gi, '')
+    .replace(/ {2,}/g, ' ')
+    .replace(/ +([,.;:])/g, '$1')
+    .replace(/\( +/g, '(');
+}
+
 function postCard(p) {
   return `
-  <a class="post-card" href="/blog/${encodeURIComponent(p.slug)}.html">
+  <a class="post-card" href="/blog/${encodeURIComponent(p.slug)}/">
     ${p.cover_image
-      ? `<img class="cover" src="${esc(p.cover_image)}" alt="${esc(p.cover_alt || '')}" loading="lazy">`
+      ? `<img class="cover" src="${esc(p.cover_image)}" alt="${esc(scrubCopy(p.cover_alt || ''))}" loading="lazy">`
       : `<div class="cover ph"><img src="/logo.svg" alt=""></div>`}
     <div class="meta">${esc(fmtDate(p.published_at))}${p.tags && p.tags.length ? ' · ' + esc(p.tags[0]) : ''}</div>
-    <h3>${esc(p.title)}</h3>
-    <p>${esc(p.excerpt || '')}</p>
+    <h3>${esc(scrubCopy(p.title))}</h3>
+    <p>${esc(scrubCopy(p.excerpt || ''))}</p>
     <span class="more">Read article</span>
   </a>`;
 }
@@ -737,14 +762,15 @@ function renderPost(p, more) {
   if (!p) {
     $('postTitle').textContent = 'Article not found';
     $('postMeta').textContent = '';
-    host.innerHTML = `<div class="empty"><h3>This article isn't available</h3><p>It may have been moved or unpublished. <a href="/blog.html" style="color:var(--purple);font-weight:600">See all articles</a>.</p></div>`;
+    host.innerHTML = `<div class="empty"><h3>This article isn't available</h3><p>It may have been moved or unpublished. <a href="/blog/" style="color:var(--purple);font-weight:600">See all articles</a>.</p></div>`;
     return;
   }
-  const url = 'https://masterartist.co/blog/' + encodeURIComponent(p.slug) + '.html';
-  const desc = p.seo_description || p.excerpt || '';
-  document.title = p.title + ' — Master Artist';
+  const url = 'https://masterartist.co/blog/' + encodeURIComponent(p.slug) + '/';
+  const desc = scrubCopy(p.seo_description || p.excerpt || '');
+  const title = scrubCopy(p.title);
+  document.title = title + ' — Master Artist';
   setMeta('description', desc);
-  setMeta('og:title', p.title, 'property');
+  setMeta('og:title', title, 'property');
   setMeta('og:description', desc, 'property');
   setMeta('og:type', 'article', 'property');
   setMeta('og:url', url, 'property');
@@ -754,7 +780,7 @@ function renderPost(p, more) {
   const ld = document.createElement('script');
   ld.type = 'application/ld+json';
   ld.textContent = JSON.stringify({
-    '@context': 'https://schema.org', '@type': 'BlogPosting', headline: p.title, description: desc,
+    '@context': 'https://schema.org', '@type': ['Article', 'BlogPosting'], headline: title, description: desc,
     datePublished: p.published_at, dateModified: p.updated_at || p.published_at,
     author: { '@type': 'Organization', name: p.author || 'Master Artist' },
     publisher: { '@type': 'Organization', name: 'Master Artist', logo: { '@type': 'ImageObject', url: 'https://masterartist.co/logo.svg' } },
@@ -762,20 +788,21 @@ function renderPost(p, more) {
   });
   document.head.appendChild(ld);
 
-  $('postTitle').textContent = p.title;
-  $('postCrumb').textContent = p.title;
+  $('postTitle').textContent = title;
+  $('postCrumb').textContent = title;
   $('postMeta').innerHTML = [esc(fmtDate(p.published_at)), esc(p.author || 'Master Artist'), ...(p.tags || []).slice(0, 3).map(esc)].filter(Boolean).map(x => `<span>${x}</span>`).join('');
 
   // Post bodies come from the blog automation, so they are sanitised before
   // being inserted. If the sanitiser failed to load, fall back to plain text.
+  const rawBody = scrubCopy(p.body_html || '');
   const body = window.DOMPurify
-    ? window.DOMPurify.sanitize(p.body_html || '', { USE_PROFILES: { html: true }, FORBID_TAGS: ['style', 'form', 'input', 'iframe'], FORBID_ATTR: ['style'] })
+    ? window.DOMPurify.sanitize(rawBody, { USE_PROFILES: { html: true }, FORBID_TAGS: ['style', 'form', 'input', 'iframe'], FORBID_ATTR: ['style'] })
     : null;
   host.innerHTML = `
-    ${p.cover_image ? `<img class="cover" src="${esc(p.cover_image)}" alt="${esc(p.cover_alt || '')}">` : ''}
+    ${p.cover_image ? `<img class="cover" src="${esc(p.cover_image)}" alt="${esc(scrubCopy(p.cover_alt || ''))}">` : ''}
     <div class="prose" id="postBody"></div>`;
   const bodyEl = $('postBody');
-  if (body != null) bodyEl.innerHTML = body; else bodyEl.textContent = (p.body_html || '').replace(/<[^>]+>/g, ' ');
+  if (body != null) bodyEl.innerHTML = body; else bodyEl.textContent = rawBody.replace(/<[^>]+>/g, ' ');
   bodyEl.querySelectorAll('a[href^="http"]').forEach(a => { if (!a.href.includes('masterartist.co')) { a.target = '_blank'; a.rel = 'noopener'; } });
 
   const moreHost = $('moreGrid');

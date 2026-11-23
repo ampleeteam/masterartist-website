@@ -2383,8 +2383,8 @@ window.delEvent = async id => {
 
 /* ---------- blog posts ----------
    Drafts come from the scheduled blog agent (always unpublished). Review,
-   edit and publish them here. Publishing shows the post on /blog.html at
-   once; the hourly GitHub Action then builds its static /blog/<slug>.html. */
+   edit and publish them here. Publishing shows the post on /blog/ at
+   once via the live post page; the hourly GitHub Action then builds /blog/<slug>/. */
 let blogPosts = [], blogFilter = 'draft', blogOpenSlug = null;
 const clean = h => window.DOMPurify
   ? DOMPurify.sanitize(h || '', { FORBID_TAGS:['style','script','iframe','form','input'], FORBID_ATTR:['style'] })

@@ -52,7 +52,7 @@
     },
     {
       "id": "bake-lab",
-      "name": "Plant-based Bake Lab",
+      "name": "Bake Lab",
       "discipline": "baking",
       "duration_min": 120,
       "price": 95,
@@ -61,26 +61,11 @@
       "cap": 20,
       "room": "L1 kitchen",
       "audience": "all",
-      "summary": "One plant-based bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes at RM85.",
+      "summary": "One bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes at RM85.",
       "upsell": "baking-course",
       "dine_addon": true,
       "live_from": "2026-11-04",
       "cap_specialty": 20
-    },
-    {
-      "id": "sing-your-song",
-      "name": "Sing Your Song",
-      "discipline": "voice",
-      "duration_min": 120,
-      "price": 75,
-      "cap": 12,
-      "room": "L2 recording studio",
-      "audience": "adults",
-      "summary": "A recorded group performance of one song plus a short solo technique round; the recording is sent to you.",
-      "upsell": "voice",
-      "dine_addon": true,
-      "live_from": "2026-11-08",
-      "status": "paused"
     },
     {
       "id": "reels-for-your-business",
@@ -214,7 +199,7 @@
     },
     {
       "id": "baking-course-6wk",
-      "name": "Plant-based Baking Course (6 weeks)",
+      "name": "Baking Course (6 weeks)",
       "discipline": "baking",
       "type": "course",
       "duration_min": 150,
@@ -312,7 +297,7 @@
           "max": 12,
           "room": "L1 kitchen",
           "when": "Tuesday or Wednesday 3pm, or Friday 10am in the school holidays",
-          "summary": "Plant-based mini pizzas or cinnamon rolls, shaped and baked by the children, boxed to take home."
+          "summary": "Mini pizzas or cinnamon rolls, shaped and baked by the children, boxed to take home."
         },
         {
           "id": "canvas-birthday",
@@ -348,7 +333,7 @@
       "id": "l2-studio",
       "name": "L2 recording studio",
       "floor": "L2",
-      "use": "music lessons, Sing Your Song, photo and video",
+      "use": "music lessons, photo and video",
       "cap": 12
     },
     {
@@ -381,7 +366,7 @@
         "15:00-17:30"
       ],
       "days": [
-        "Sun",
+        "Sun-afternoon-only",
         "Mon",
         "Tue",
         "Wed",
@@ -408,6 +393,11 @@
       {
         "day": "Sat",
         "all_day": true
+      },
+      {
+        "day": "Sun",
+        "until": "12:00",
+        "reason": "no workshops before 12:00 on Sunday"
       }
     ],
     "no_evening_workshops": [
@@ -484,14 +474,6 @@
       },
       {
         "date": "2026-11-08",
-        "time": "10:00",
-        "end": "12:00",
-        "format": "acrylic-canvas",
-        "theme": "Chasing Sunsets",
-        "room": "l2-front"
-      },
-      {
-        "date": "2026-11-08",
         "time": "15:00",
         "end": "17:00",
         "format": "acrylic-canvas",
@@ -524,14 +506,6 @@
       },
       {
         "date": "2026-11-15",
-        "time": "10:00",
-        "end": "12:00",
-        "format": "candle-making",
-        "theme": "Christmas Glow: Candle Making & Gifting",
-        "room": "l1-front"
-      },
-      {
-        "date": "2026-11-15",
         "time": "15:00",
         "end": "17:00",
         "format": "candle-making",
@@ -552,14 +526,6 @@
         "end": "21:00",
         "format": "glow-canvas",
         "theme": "Glow Lagoon: Jellyfish",
-        "room": "l2-front"
-      },
-      {
-        "date": "2026-11-22",
-        "time": "10:00",
-        "end": "12:00",
-        "format": "crochet-bag",
-        "theme": "Chunky Yarn Bag",
         "room": "l2-front"
       },
       {
@@ -585,14 +551,6 @@
         "format": "textured-canvas",
         "theme": "Golden Impasto Sky",
         "room": "l2-front"
-      },
-      {
-        "date": "2026-11-29",
-        "time": "10:00",
-        "end": "12:00",
-        "format": "bake-lab",
-        "theme": "Christmas Gingerbread Cookies",
-        "room": "l1-kitchen"
       },
       {
         "date": "2026-11-29",

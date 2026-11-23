@@ -28,7 +28,7 @@ jobs:
       - name: Commit changes
         id: commit
         run: |
-          git add blog blog.html sitemap.xml
+          git add blog blog.html sitemap.xml content/blog/manifest.json
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git config user.name "blog-bot"
           git config user.email "blog-bot@users.noreply.github.com"
@@ -39,6 +39,6 @@ jobs:
         if: steps.commit.outputs.changed == 'yes'
         run: |
           sleep 90
-          URLS=$(git diff --name-only HEAD~1 HEAD -- 'blog/*.html' | sed 's#^#https://masterartist.co/#'; echo https://masterartist.co/blog.html)
+          URLS=$(git diff --name-only HEAD~1 HEAD -- blog blog.html | python3 tools/indexnow_urls.py)
           JSON=$(printf '%s\n' $URLS | python3 -c 'import sys,json; print(json.dumps({"host":"masterartist.co","key":"475d9c85bff5d57bf277e4d7e5d51074","keyLocation":"https://masterartist.co/475d9c85bff5d57bf277e4d7e5d51074.txt","urlList":[l.strip() for l in sys.stdin if l.strip()]}))')
           curl -sS -o /dev/null -w "IndexNow response: %{http_code}\n" -X POST https://api.indexnow.org/indexnow -H 'Content-Type: application/json; charset=utf-8' -d "$JSON"
