@@ -276,6 +276,13 @@ export function nextRoundRobin(members, lastUserId) {
   return list[(index + 1) % list.length];
 }
 
+// Next staff member for a new chat. Staff marked off duty are skipped; staff with
+// no duty row count as on duty, so the rota works before anyone fills it in.
+export function pickAssignee(activeIds, dutyRows, lastUserId) {
+  const off = new Set((dutyRows || []).filter((row) => row && row.on_duty === false).map((row) => row.staff_id));
+  return nextRoundRobin((activeIds || []).filter((id) => id && !off.has(id)), lastUserId);
+}
+
 export function isEnrolmentStatus(value) {
   return ENROLMENT_STATUSES.includes(value);
 }

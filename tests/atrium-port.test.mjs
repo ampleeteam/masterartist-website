@@ -12,6 +12,7 @@ import {
   linkEnrolment,
   matchKeyword,
   nextRoundRobin,
+  pickAssignee,
   parseCalls,
   parseReferral,
   parseWebhook,
@@ -284,6 +285,13 @@ describe("hours, keywords, and round-robin", () => {
     assert.equal(nextRoundRobin(["maya", "amir"], "maya"), "amir");
     assert.equal(nextRoundRobin(["maya", "amir"], "amir"), "maya");
     assert.equal(nextRoundRobin([], "maya"), null);
+  });
+
+  it("skips staff who are off duty and keeps the rota moving", () => {
+    const duty = [{ staff_id: "amir", on_duty: false }];
+    assert.equal(pickAssignee(["maya", "amir", "lee"], duty, "maya"), "lee");
+    assert.equal(pickAssignee(["maya", "amir", "lee"], [], "maya"), "amir");
+    assert.equal(pickAssignee(["amir"], duty, null), null);
   });
 });
 

@@ -72,7 +72,7 @@ create table if not exists public.data_requests (
   constraint data_requests_status check (status in ('open', 'done'))
 );
 
-alter table public.conversations add column if not exists needs_human boolean not null default true;
+alter table public.conversations add column if not exists needs_human boolean not null default false;
 alter table public.conversations add column if not exists bot_only boolean not null default false;
 alter table public.conversations add column if not exists reminder_notified_at timestamptz;
 alter table public.contacts add column if not exists opted_out_at timestamptz;
@@ -80,7 +80,7 @@ alter table public.contacts add column if not exists opted_out_at timestamptz;
 comment on column public.conversations.bot_only is
   'A bot is handling this chat. With human_queue_only on, it stays out of Unassigned and Assigned to me until needs_human is true.';
 comment on column public.conversations.needs_human is
-  'True after a handoff keyword, a booking or price question, or a question the knowledge draft could not answer.';
+  'True when the customer asks for a person, complains or asks for a refund, or when the knowledge draft could not answer. Booking and price questions stay with the bot. Defaults to false, so a new chat is not flagged.';
 
 alter table public.messages add column if not exists search_vector tsvector
   generated always as (to_tsvector('simple', coalesce(body, ''))) stored;
@@ -351,7 +351,7 @@ set search_path = public
 as $$
 begin
   if new.direction = 'in' and new.sender_type = 'customer' and new.conversation_id is not null
-     and coalesce(new.body, '') ~* '\m(human|staff|person|manager|complaint|refund|book|enrol|price|how much)\M' then
+     and coalesce(new.body, '') ~* '\m(human|staff|person|manager|complaint|complain|refund|speak to someone|talk to someone)\M' then
     update public.conversations set needs_human = true where id = new.conversation_id;
   end if;
   return new;

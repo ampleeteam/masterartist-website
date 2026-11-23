@@ -2,16 +2,18 @@
 // Signature check, Click-to-WhatsApp referral, wa.me ref codes, and call events
 // come from the Atrium port. Messages are stored through ingest_whatsapp_webhook.
 // Set META_APP_SECRET or D360_WEBHOOK_SECRET before this is switched on.
+// Greeting and away replies are queued by the database when a message is stored
+// (private.maybe_auto_reply). This function assigns new chats and then asks
+// whatsapp-send to drain the queue.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
   applyAttribution,
-  automationDecision,
   describeCall,
   extractRefCode,
-  nextRoundRobin,
   parseCalls,
   parseWebhook,
+  pickAssignee,
   phoneFromWaId,
   resolveEntry,
   verifySignature,
@@ -68,7 +70,7 @@ Deno.serve(async (req) => {
   };
 
   const saved = [];
-  const inboundBodies: string[] = [];
+  const newMessageIds: string[] = [];
   for (const event of parseWebhook(payload)) {
     if (event.type === "status") {
       if (event.waMessageId) {
@@ -77,7 +79,6 @@ Deno.serve(async (req) => {
       saved.push({ type: "status", id: event.waMessageId });
       continue;
     }
-    inboundBodies.push(event.body || "");
     const refCode = extractAdRef(event.body) || (event.referral ? null : extractRefCode(event.body));
     const linked = matchAdLink({
       sourceId: event.referral && event.referral.sourceId,
@@ -121,6 +122,7 @@ Deno.serve(async (req) => {
         ref_code: refCode,
       },
     });
+    if (!error && data && data.message_id && !data.duplicate) newMessageIds.push(data.message_id);
     saved.push(error ? { error: error.message } : { id: data, entry: stored.entryLabel });
   }
 
@@ -143,29 +145,57 @@ Deno.serve(async (req) => {
     saved.push(error ? { error: error.message } : { call: call.callId });
   }
 
-  const settings = await sb.from("inbox_settings").select("timezone, business_hours, welcome_reply, sabbath_reply, greeting_enabled, away_enabled").eq("id", 1).maybeSingle();
-  const rules = await sb.from("keyword_rules").select("phrase, reply, active").eq("active", true);
-  const decision = automationDecision({
-    now: new Date(),
-    timeZone: settings.data?.timezone || "Asia/Kuala_Lumpur",
-    hours: settings.data?.business_hours,
-    greetingEnabled: settings.data?.greeting_enabled !== false,
-    greetingMessage: settings.data?.welcome_reply,
-    awayEnabled: settings.data?.away_enabled !== false,
-    awayMessage: settings.data?.sabbath_reply,
-    body: inboundBodies.join("\n"),
-    rules: (rules.data || []).map((rule) => ({ keyword: rule.phrase, reply: rule.reply, enabled: rule.active })),
-  });
-  const cursor = await sb.from("assignment_cursor").select("last_user_id").eq("id", 1).maybeSingle();
-  const staff = await sb.from("profiles").select("id").eq("active", true).order("id");
-  const assignee = nextRoundRobin((staff.data || []).map((row) => row.id), cursor.data?.last_user_id || null);
+  const assigned = await assignNewChats(sb, newMessageIds);
+  const sendQueue = newMessageIds.length ? await kickSender() : "nothing new";
 
-  return json({
-    ok: true,
-    received: true,
-    saved,
-    openNow: decision.openNow,
-    suggestedReplies: decision.messages.map((message) => message.kind),
-    nextAssignee: assignee,
-  });
+  return json({ ok: true, received: true, saved, assigned, sendQueue });
 });
+
+// Gives each new chat with no owner to the next staff member on duty.
+// The update only applies while assigned_to is still empty, so two webhooks
+// arriving together cannot assign the same chat twice.
+// deno-lint-ignore no-explicit-any
+async function assignNewChats(sb: any, messageIds: string[]) {
+  if (!messageIds.length) return [];
+  const msgs = await sb.from("messages").select("conversation_id").in("id", messageIds);
+  const conversationIds = [...new Set((msgs.data || []).map((m: { conversation_id: string }) => m.conversation_id).filter(Boolean))];
+  if (!conversationIds.length) return [];
+  const open = await sb.from("conversations").select("id").in("id", conversationIds).is("assigned_to", null);
+  if (!(open.data || []).length) return [];
+  const staff = await sb.from("profiles").select("id").eq("active", true).order("id");
+  const duty = await sb.from("staff_duty").select("staff_id, on_duty");
+  const cursor = await sb.from("assignment_cursor").select("last_user_id").eq("id", 1).maybeSingle();
+  const active = (staff.data || []).map((row: { id: string }) => row.id);
+  let last = cursor.data?.last_user_id || null;
+  const out = [];
+  for (const row of open.data || []) {
+    const who = pickAssignee(active, duty.data || [], last);
+    if (!who) break;
+    const done = await sb.from("conversations").update({ assigned_to: who }).eq("id", row.id).is("assigned_to", null).select("id");
+    if ((done.data || []).length) {
+      last = who;
+      out.push({ conversation: row.id, assigned_to: who });
+    }
+  }
+  if (out.length) await sb.from("assignment_cursor").update({ last_user_id: last }).eq("id", 1);
+  return out;
+}
+
+// Asks whatsapp-send to send whatever the database queued (greeting, away reply).
+// whatsapp-send still does nothing unless D360_SEND_ENABLED=true.
+async function kickSender() {
+  const url = Deno.env.get("SUPABASE_URL") || "";
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  if (!url || !key) return "not configured";
+  try {
+    const res = await fetch(url + "/functions/v1/whatsapp-send", {
+      method: "POST",
+      headers: { authorization: "Bearer " + key, "content-type": "application/json" },
+      body: "{}",
+    });
+    const body = await res.json().catch(() => ({}));
+    return body;
+  } catch (e) {
+    return { ok: false, reason: String(e) };
+  }
+}
