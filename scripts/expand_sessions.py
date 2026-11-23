@@ -152,6 +152,11 @@ def expand(seed, themes, bookings, holidays, today, days):
             skipped.append(f"{iso} {entry['time']} {fid}: {room_rule['name']} blocked ({blocked['reason']})")
             continue
         sid = f"{fid}-{iso}-{entry['time'].replace(':', '')}"
+        # 29 Nov gingerbread keeps the 3pm session only. A morning row in the
+        # private price overlay would otherwise come back on the nightly build.
+        if sid == 'bake-lab-2026-11-29-1000':
+            skipped.append(f"{iso} {entry['time']} {fid}: morning session removed")
+            continue
         variant = entry.get('variant') if fid == entry['format'] else None
         price, pair, price_set = price_for(fmt, d, policies, variant)
         if price_set == 'launch' and entry.get('price'):   # a dated session priced on its own (e.g. the first week)
@@ -179,6 +184,12 @@ def expand(seed, themes, bookings, holidays, today, days):
             'surcharge_waived': is_hol and iso in waived,
             'type': fmt.get('type', 'workshop'),
         }
+        if entry.get('room_label'):
+            s['room'] = entry['room_label']
+            s['location_name'] = entry['room_label']
+        for key in ('summary', 'pair_word', 'seo_title', 'seo_description'):
+            if entry.get(key):
+                s[key] = entry[key]
         if fmt.get('bundle'):
             s['bundle'] = fmt['bundle']
         if fmt.get('type') == 'course':
@@ -212,7 +223,7 @@ def preview(sessions, until):
         price = f"RM{s['price']}" + (f" ({s['price_unit']})" if s['price_unit'] else '') if s['price'] else 'TODO price'
         if s.get('bundle'):
             price = f"Family Sunday RM{s['price']} (+RM{s['bundle']['extra_child']} per extra child)"
-        pair = f" · pair RM{s['pair_price']}" if s['pair_price'] else ''
+        pair = f" · {s.get('pair_word') or 'pair'} RM{s['pair_price']}" if s['pair_price'] else ''
         dine = f" · Dine add-on ({s['dine_timing']})" if s['dine'] else ''
         cap = f"{s['seats_left']} of {s['cap']}{' ' + s['cap_unit'] if s['cap_unit'] else ''} seats left"
         theme = f" · {s['theme']}" if s['theme'] else ''

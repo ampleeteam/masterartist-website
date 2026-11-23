@@ -205,7 +205,17 @@ def WhatsAppButton(message, voice, label='WhatsApp us', cls='btn wa', fmt='', pr
 
 
 def wa_studio(s):
-    return f"Hi, I'd like to book {s['name']} on {day_date(s['date'])} at {fmt_time(s['time'])}. Source: {{source}}."
+    who = f"{s['theme']} ({s['name']})" if s.get('summary') and s.get('theme') else s['name']
+    return f"Hi, I'd like to book {who} on {day_date(s['date'])} at {fmt_time(s['time'])}. Source: {{source}}."
+
+
+def two_pax_price(s):
+    """'RM160 <small>per person · 2 pax RM310 (save RM10)</small>' for a session that says so."""
+    save = 2 * s['price'] - s['pair_price']
+    extra = f"{e(s['pair_word'])} {rm(s['pair_price'])}"
+    if save:
+        extra += f" (save {rm(save)})"
+    return f"{rm(s['price'])} <small>per person · {extra}</small>"
 
 
 def wa_trial(p):
@@ -232,9 +242,12 @@ def SessionCard(s, link=True):
     if s.get('bundle'):
         price = f'<div class="price">{rm(s["price"])} <small>Family Sunday: one adult Textured Canvas + one child, same hour · extra child {rm(s["bundle"]["extra_child"])}</small></div>'
     else:
-        unit = f' {s["price_unit"]}' if s.get('price_unit') else ''
-        pair = f'<small>Pair {rm(s["pair_price"])}</small>' if s.get('pair_price') else ''
-        price = f'<div class="price">{rm(s["price"])}{e(unit)} {pair}</div>'
+        if s.get('pair_word') and s.get('pair_price'):
+            price = f'<div class="price">{two_pax_price(s)}</div>'
+        else:
+            unit = f' {s["price_unit"]}' if s.get('price_unit') else ''
+            pair = f'<small>Pair {rm(s["pair_price"])}</small>' if s.get('pair_price') else ''
+            price = f'<div class="price">{rm(s["price"])}{e(unit)} {pair}</div>'
     badges = []
     if s.get('dine'):
         badges.append('<span class="badge dine">Dine + workshop</span>')
@@ -350,8 +363,16 @@ PAY = bool(SITE.get('payments', {}).get('stripe'))   # online payment through St
 def BookingEmbed(s):
     """WhatsApp booking until a payment tool is chosen (spec §3 fallback: booking: whatsapp)."""
     dine = WS['addons']['dine']
-    pair_opt = (f'<div><label for="tk">Ticket</label><select id="tk" name="ticket"><option value="single">Single · {rm(s["price"])}</option>'
-                f'<option value="pair">Pair · {rm(s["pair_price"])}</option></select></div>') if s.get('pair_price') else '<input type="hidden" name="ticket" value="single">'
+    if s.get('pair_price') and s.get('pair_word'):
+        save = 2 * s['price'] - s['pair_price']
+        pair_label = f"{s['pair_word']} · {rm(s['pair_price'])}" + (f" (save {rm(save)})" if save else '')
+        pair_opt = (f'<div><label for="tk">Ticket</label><select id="tk" name="ticket"><option value="single">1 person · {rm(s["price"])}</option>'
+                    f'<option value="pair">{e(pair_label)}</option></select></div>')
+    elif s.get('pair_price'):
+        pair_opt = (f'<div><label for="tk">Ticket</label><select id="tk" name="ticket"><option value="single">Single · {rm(s["price"])}</option>'
+                    f'<option value="pair">Pair · {rm(s["pair_price"])}</option></select></div>')
+    else:
+        pair_opt = '<input type="hidden" name="ticket" value="single">'
     # Savor meals are ordered and paid on Savor's own menu: the field is a link to it, and clicking it
     # marks the booking as dining (ma.js). TODO: addons.dine.order_url is still empty
     when_dine = 'after' if s.get('dine_timing') == 'after' else 'before'
@@ -366,8 +387,9 @@ def BookingEmbed(s):
     msg_unit = {'Pairs': 'pair(s)', 'Families': 'Family Sunday ticket(s)'}.get(unit, 'seat(s)')
     when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
     full_name = f"{s['theme']} ({s['name']})" if s.get('theme') else s['name']
+    pair_attr = f' data-pair-label="{e(s["pair_word"])}"' if s.get('pair_word') else ''
     return f'''<form class="booking v-studio" data-session="{e(s['id'])}" data-format="{e(s['format'])}" data-name="{e(full_name)}" data-when="{e(when)}"
-  data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-booking="whatsapp" data-unit="{msg_unit}" data-dine-url="{e(dine.get('order_url') or '')}"
+  data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}"{pair_attr} data-booking="whatsapp" data-unit="{msg_unit}" data-dine-url="{e(dine.get('order_url') or '')}"
   data-date="{s['date']}" data-cap="{s.get('cap') or ''}">
   <h2 class="h3">Book {e(s.get('theme') or s['name'])}</h2>
   <p class="book-for">{e(s['name']) + ' · ' if s.get('theme') else ''}{e(when)}</p>
@@ -984,10 +1006,19 @@ def SoldOut(s):
 
 def event_ld(s, url):
     f = FORMATS[s['format']]
-    return {'@context': 'https://schema.org', '@type': 'Event', 'name': f"{s['name']}" + (f" · {s['theme']}" if s.get('theme') else ''),
-            'description': f['summary'], 'startDate': f"{s['date']}T{s['time']}:00+08:00", 'endDate': f"{s['date']}T{s['end']}:00+08:00",
+    loc = place()
+    if s.get('location_name'):
+        loc = dict(loc, name=s['location_name'])
+    # A session with its own summary is named on its own. One Offer, matching the per-person price.
+    if s.get('summary') and s.get('theme'):
+        name, desc = s['theme'], s['summary']
+    else:
+        name = f"{s['name']}" + (f" · {s['theme']}" if s.get('theme') else '')
+        desc = f['summary']
+    return {'@context': 'https://schema.org', '@type': 'Event', 'name': name,
+            'description': desc, 'startDate': f"{s['date']}T{s['time']}:00+08:00", 'endDate': f"{s['date']}T{s['end']}:00+08:00",
             'eventStatus': 'https://schema.org/EventScheduled', 'eventAttendanceMode': 'https://schema.org/OfflineEventAttendanceMode',
-            'location': place(), 'image': [SITE['url'] + '/' + PHOTOS[s['format']][0]] if s['format'] in PHOTOS and s['format'] not in STAND_INS else [],
+            'location': loc, 'image': [SITE['url'] + '/' + PHOTOS[s['format']][0]] if s['format'] in PHOTOS and s['format'] not in STAND_INS else [],
             'organizer': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']},
             'offers': {'@type': 'Offer', 'price': s['price'], 'priceCurrency': 'MYR', 'url': SITE['url'] + url,
                        'availability': 'https://schema.org/SoldOut' if s['seats_left'] == 0 else 'https://schema.org/InStock'}}
@@ -1005,9 +1036,12 @@ def build_session_day(slots):
             for i, s in enumerate(slots)) + '</div>'
     blocks = []
     for s in slots:
-        price_line = rm(s['price']) + (f" <small>{e(s['price_unit'])}</small>" if s.get('price_unit') else '')
-        if s.get('pair_price'):
-            price_line += f" <small>· pair {rm(s['pair_price'])}</small>"
+        if s.get('pair_word') and s.get('pair_price'):
+            price_line = two_pax_price(s)
+        else:
+            price_line = rm(s['price']) + (f" <small>{e(s['price_unit'])}</small>" if s.get('price_unit') else '')
+            if s.get('pair_price'):
+                price_line += f" <small>· pair {rm(s['pair_price'])}</small>"
         if s.get('bundle'):
             price_line = f"{rm(s['price'])} <small>{e(s['bundle']['name'])}, adult + child · extra child {rm(s['bundle']['extra_child'])}</small>"
         items = [('Date', long_date(s['date'])), ('Time', f"{fmt_time(s['time'])}–{fmt_time(s['end'])}"), ('Length', e(length(f))),
@@ -1017,9 +1051,10 @@ def build_session_day(slots):
         action = SoldOut(s) if s['seats_left'] == 0 else BookingEmbed(s)
         blocks.append(f'<div class="slot" id="t{s["time"].replace(":", "")}">{FactsBlock(items, price_line, "studio")}<div style="margin-top:16px">{action}</div></div>')
     theme = next((s['theme'] for s in slots if s.get('theme')), None)
+    blurb = next((s['summary'] for s in slots if s.get('summary')), f['summary'])
     t0 = fmt_time(s0['time']) if len(slots) == 1 else ' or '.join(fmt_time(s['time']) for s in slots)
     h1 = f"{d.strftime('%A')} {d.day} {d.strftime('%B')}, {t0}. <em>{e(theme or f['name'])}.</em>"
-    lede = e(f['summary'])
+    lede = e(blurb)
     if any(s.get('dine') for s in slots):
         lede += f" Add a meal at Savor downstairs, from {rm(WS['addons']['dine']['price_from'])}."
     more = [x for x in week_from(s0['date']) if x['format'] != f['id']][:8]
@@ -1029,7 +1064,7 @@ def build_session_day(slots):
     body += f'''<section class="sec v-studio"><div class="wrap listing book">
   <div class="aside">{times}{''.join(blocks)}</div>
   <div class="prose">{photo(f['id'], cls='rounded')}
-    <h2>What you'll <em>make</em></h2><p class="lead">{e(f['summary'])}</p>
+    <h2>What you'll <em>make</em></h2><p class="lead">{e(blurb)}</p>
     {IconFacts([('palette', f"{e(POL['included'].capitalize())} included"), ('star', 'Beginners welcome'), ('bag', 'Take it home the same day')])}
     {f'<h2>Who runs <em>it</em></h2><p>Taught by working artists from the Master Artist team.</p>{team}' if team else ''}
     <h2>Good to <em>know</em></h2>{Accordion(policy_items())}
@@ -1038,8 +1073,19 @@ def build_session_day(slots):
     if more:
         body += f'<section class="sec alt v-studio"><div class="wrap"><div class="sec-head"><h2>More this <em>week</em></h2></div>{WeekStrip(more)}</div></section>'
     head_ld = ''.join(ld(event_ld(s, url)) for s in slots)
-    title = f"{theme + ' · ' + f['name'] if theme else f['name']} · {day_date(s0['date'])} {t0} · {rm(s0['price'])} · Master Artist KL"
-    page(url, title, f"{f['name']} on {long_date(s0['date'])} at {t0}, {s0['room']}, Desa Sri Hartamas. {rm(s0['price'])}. {f['summary']}",
+    if s0.get('seo_title'):
+        title = s0['seo_title']
+        if len(title) > 60:
+            raise SystemExit(f'seo title is {len(title)} characters: {title}')
+    else:
+        title = f"{theme + ' · ' + f['name'] if theme else f['name']} · {day_date(s0['date'])} {t0} · {rm(s0['price'])} · Master Artist KL"
+    if s0.get('seo_description'):
+        desc = s0['seo_description']
+        if len(desc) > 155:
+            raise SystemExit(f'seo description is {len(desc)} characters: {desc}')
+    else:
+        desc = f"{f['name']} on {long_date(s0['date'])} at {t0}, {s0['room']}, Desa Sri Hartamas. {rm(s0['price'])}. {blurb}"
+    page(url, title, desc,
          body, voice='studio', active='/workshops/', extra_head=head_ld,
          data_attrs=f' data-page="session" data-format="{e(f["id"])}"', wa={'msg': wa_studio(s0), 'fmt': f['id'], 'session': s0['id']})
 
