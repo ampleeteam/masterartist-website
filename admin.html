@@ -644,8 +644,33 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
    policy in the database still applies to it. The service_role key is a
    different thing entirely and must NEVER appear in this file.
    --------------------------------------------------------------------------- */
-const SUPABASE_URL  = 'https://fudaosneozobacdalncv.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
+const LIVE_SUPABASE_URL  = 'https://fudaosneozobacdalncv.supabase.co';
+const LIVE_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
+
+/* Staging switch, on localhost only. Open
+     http://localhost:8765/admin.html?staging=<project ref>&anon=<staging anon key>
+   once and this browser keeps using that project; ?staging=off goes back to live.
+   On masterartist.co this block does nothing, so the live admin always uses live. */
+const STAGING = (() => {
+  if (!['localhost', '127.0.0.1'].includes(location.hostname)) return null;
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.get('staging') === 'off') { localStorage.removeItem('ma.staging'); return null; }
+    if (/^[a-z0-9]{20}$/.test(q.get('staging') || '') && q.get('anon')) {
+      localStorage.setItem('ma.staging', JSON.stringify({ ref: q.get('staging'), anon: q.get('anon') }));
+    }
+    const saved = JSON.parse(localStorage.getItem('ma.staging') || 'null');
+    return saved && saved.ref && saved.anon ? saved : null;
+  } catch (e) { return null; }
+})();
+const SUPABASE_URL  = STAGING ? 'https://' + STAGING.ref + '.supabase.co' : LIVE_SUPABASE_URL;
+const SUPABASE_ANON = STAGING ? STAGING.anon : LIVE_SUPABASE_ANON;
+if (STAGING) document.addEventListener('DOMContentLoaded', () => {
+  const tag = document.createElement('div');
+  tag.textContent = 'STAGING · ' + STAGING.ref;
+  tag.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:9999;background:#b45309;color:#fff;font:600 12px/1 sans-serif;padding:6px 12px;border-radius:0 0 8px 8px';
+  document.body.appendChild(tag);
+});
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
