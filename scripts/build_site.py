@@ -1417,7 +1417,18 @@ def build_groups():
   <div><label for="gm">Anything else? <span class="muted">(optional)</span></label><textarea id="gm" name="notes" rows="2" maxlength="600"></textarea></div>'''
     form = WaForm("Hi, I'd like a quote for a {package} for {n} people on {date}.{company}{notes} Name: {name}. Source: {source}.", fields, 'Send on WhatsApp', fmt='groups')
     friday = fmt_time(g['friday_hard_stop'])
-    body = hero_band('Master Artist Studio Sessions', 'Team days and <em>private groups</em>',
+    # Approved 23 Nov 2026. Keep this wording verbatim, including the package prices.
+    group_faqs = [
+        ('What team building activities do you run in KL?',
+         'We run art, baking and mixed team days at our studio in Desa Sri Hartamas, KL. Up to four rooms run side by side, so your team can split into streams. Every stream is taught by working artists, and everyone takes something home. You can add a team dinner at Savor downstairs.'),
+        ('How much does a team day cost?',
+         'An art team day is RM1,200 for up to 10 people. A baking team day is RM1,700 for up to 15. A mixed team day, with two or three streams in parallel, is RM2,400 for up to 20. Each extra person is RM100. Prices include materials and a teacher for each stream.'),
+        ('How many people do we need?',
+         'Team days run from 6 people. Each package covers a set number, up to 10 for art, 15 for baking and 20 for a mixed day, and each extra person is RM100. For a dinner and evening workshop, the team package is RM150 a person and starts from 10 people.'),
+        ('How do we book a team day?',
+         'Send us your package, numbers and a preferred date on WhatsApp, or use the quote form on the groups page. We plan the streams across our rooms and confirm the plan with you. Then we send payment details on WhatsApp. Seats are prepaid. Friday team days finish by 12:30pm.'),
+    ]
+    body = hero_band('Master Artist Studio Sessions', 'Team building activities in KL: team days and <em>private groups</em>',
                      f'Art, baking or a mix, with up to {len(g["rooms_in_parallel"])} rooms running side by side. Taught by working artists; everyone takes something home.',
                      '<a class="btn" href="#quote">Ask for a quote</a><a class="btn ghost" href="#packages">Packages</a>',
                      crumbs(('/', 'Home'), (None, 'Groups')), img=('focaccia-workshop-3.jpg', 'A group shaping dough at the kitchen tables'))
@@ -1429,7 +1440,9 @@ def build_groups():
   <div class="hero-cta"><a class="btn" href="/birthdays/">Birthday parties</a></div></div></div></section>
 <section class="sec alt v-studio" id="quote"><div class="wrap listing book">
   <div class="aside">{form}</div>
-  <div class="prose"><h2 style="margin-top:0">How a team day <em>works</em></h2>
+  <div class="prose"><h2 style="margin-top:0">Art and baking team building in KL</h2>
+    <p><a href="/workshops/">see the public workshop dates</a></p>
+    <h2>How a team day <em>works</em></h2>
     <ol class="steps">
       <li><span class="ic">{icon('chat')}</span><b>Tell us</b><span>Package, numbers and a date, on WhatsApp.</span></li>
       <li><span class="ic">{icon('calendar')}</span><b>We plan it</b><span>Streams in parallel in the {e(rooms)}.</span></li>
@@ -1440,10 +1453,15 @@ def build_groups():
         ('Minimum numbers', f"Team days run from {POL['minimum_to_run']} people. Each extra person over a package is {rm(g['extra_pax'])}."),
         ('Payment', "We confirm the plan and send payment details on WhatsApp. Seats are prepaid."),
     ])}</div>
-</div></section>'''
-    page('/groups/', 'Team building workshops in KL · art and baking team days · Master Artist',
-         f'Art, baking and mixed team days in Desa Sri Hartamas, KL, from {rm(min(pk["price"] for pk in g["packages"] if pk.get("price")))}. Rooms in parallel, dinner at Savor, quotes on WhatsApp.',
-         body, voice='studio', active='/groups/', data_attrs=' data-page="groups"', wa={'msg': "Hi, I'd like a quote for a team day or group. Source: {source}.", 'fmt': 'groups'})
+</div></section>
+<section class="sec v-studio" id="faq"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Questions</h2></div>{FaqList(group_faqs)}</div></section>'''
+    schema = ld(faq_ld(group_faqs)) + '\n' + ld(breadcrumb_ld([
+        ('Home', 'https://masterartist.co/'),
+        ('Groups', 'https://masterartist.co/groups/'),
+    ]))
+    page('/groups/', 'Team Building Activities KL: Art & Baking · Master Artist',
+         'Team building activities in KL: art, baking and mixed team days in Desa Sri Hartamas from RM1,200. Rooms run side by side, everyone takes something home.',
+         body, voice='studio', active='/groups/', extra_head=schema, data_attrs=' data-page="groups"', wa={'msg': "Hi, I'd like a quote for a team day or group. Source: {source}.", 'fmt': 'groups'})
 
 
 def strip(*pics):
