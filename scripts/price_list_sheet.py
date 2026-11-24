@@ -35,11 +35,11 @@ if private.exists():
 SUGGESTED_POST = {'glow-canvas': 99, 'candle-making': 109, 'crochet-bag': 119}
 WHY = {
     'watercolour-botanicals': 'RM80 / pair RM144 through Sun 6 Dec 2026. From 7 Dec: early bird RM95 / pair RM170, then RM115 / RM205. All-inclusive.',
-    'acrylic-canvas': 'RM80 / pair RM144 through Sun 6 Dec 2026, then the same early bird and late prices as the other single-session art workshops.',
+    'acrylic-canvas': 'RM89 / pair RM160 through Sun 6 Dec 2026, then the same early bird and late prices as the other single-session art workshops.',
     'textured-canvas': 'RM89 / pair RM160 through Sun 6 Dec 2026. From 7 Dec: early bird RM95 / pair RM170, then RM115 / RM205.',
-    'glow-canvas': 'RM89 / pair RM160 through Sun 6 Dec 2026. From 7 Dec: early bird RM95 / pair RM170, then RM115 / RM205.',
-    'candle-making': 'RM99 / pair RM178 through Sun 6 Dec 2026. From 7 Dec: early bird RM95 / pair RM170, then RM115 / RM205. Wax, jars and scents included.',
-    'crochet-bag': 'RM110 / pair RM198 through Sun 6 Dec 2026, then RM115 / RM210. Chunky yarn and a hook to take home.',
+    'glow-canvas': 'RM85 / pair RM153 through Sun 6 Dec 2026. From 7 Dec: early bird RM95 / pair RM170, then RM115 / RM205.',
+    'candle-making': 'RM89 / pair RM160 through Sun 6 Dec 2026. From 7 Dec: early bird RM95 / pair RM170, then RM115 / RM205. Wax, jars and scents included.',
+    'crochet-bag': 'RM95 / pair RM171 through Sun 6 Dec 2026, then RM115 / RM210. Chunky yarn and a hook to take home.',
     'bake-lab': 'RM95 / pair RM171 through Sun 6 Dec 2026, then RM99 / RM180. Specialty bakes stay RM85. The 29 Nov Gingerbread Baking Workshop is RM160 per person, 2 pax RM310.',
     'kids-art-studio': 'Sold only as Family Sunday: adult Textured Canvas plus a child, same hour.',
     'adult-art-class': 'A class, not a party: drop in, or four for the price of about three.',

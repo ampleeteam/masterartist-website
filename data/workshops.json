@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-24T20:56:36",
+ "generated": "2026-11-24T20:58:29",
  "currency": "MYR",
  "formats": [
   {
@@ -185,8 +185,8 @@
    "duration_min": 120,
    "price": 115,
    "pair_price": 210,
-   "price_before": 110,
-   "pair_price_before": 198,
+   "price_before": 95,
+   "pair_price_before": 171,
    "cap": 20,
    "room": "L2 front room",
    "audience": "adults and teens",
