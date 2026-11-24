@@ -219,7 +219,7 @@
       }
       var lines = [
         'Hi, I\'d like to book ' + d.name + ' on ' + d.when + '.',
-        (t.isPair ? t.qty + ' pair ticket(s)' : t.qty + ' ' + (d.unit || 'seat(s)')) + ' — RM' + t.sum + '.' + (f.get('dine') === 'yes' ? ' Plus a meal at Savor for ' + t.people + (d.dineUrl ? ' (I\'ll order from the menu link).' : ': please send me Savor\'s menu link.') : '')
+        (t.isPair ? (d.pairLabel ? (t.people + ' pax — RM' + t.sum) : (t.qty + ' pair ticket(s) — RM' + t.sum)) : (t.qty + ' ' + (d.unit || 'seat(s)') + ' — RM' + t.sum)) + '.' + (f.get('dine') === 'yes' ? ' Plus a meal at Savor for ' + t.people + (d.dineUrl ? ' (I\'ll order from the menu link).' : ': please send me Savor\'s menu link.') : '')
       ];
       lines.push('Name: ' + get('first_name') + ' ' + get('last_name'), 'WhatsApp: ' + phone, 'Email: ' + get('email'));
       var children = kids ? kids.list() : [];

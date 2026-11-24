@@ -557,8 +557,15 @@
         "time": "15:00",
         "end": "17:00",
         "format": "bake-lab",
-        "theme": "Christmas Gingerbread Cookies",
-        "room": "l1-kitchen"
+        "theme": "Gingerbread Baking Workshop",
+        "summary": "Bake your own gingerbread man. Decorate your own gingerbread house.",
+        "room": "l1-kitchen",
+        "room_label": "Savor Level 1, Sri Hartamas",
+        "price": 160,
+        "pair_price": 310,
+        "pair_word": "2 pax",
+        "seo_title": "Gingerbread Baking Workshop · Sun 29 Nov 3pm",
+        "seo_description": "Gingerbread baking workshop, Sun 29 Nov, 3pm–5pm, Savor Level 1, Sri Hartamas. Bake a gingerbread man and decorate a gingerbread house. RM160; 2 pax RM310."
       }
     ]
   }
