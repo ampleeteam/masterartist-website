@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-23T05:40:22",
+ "generated": "2026-11-24T10:51:07",
  "currency": "MYR",
  "formats": [
   {
@@ -444,40 +444,10 @@
   "note": "Spec 03-PROMPTS step 7: RM100, RM200 and any-workshop. Validity period TODO."
  },
  "window": {
-  "from": "2026-11-23",
+  "from": "2026-11-24",
   "days": 42
  },
  "sessions": [
-  {
-   "id": "baking-course-6wk-2026-11-23-1500",
-   "format": "baking-course-6wk",
-   "name": "Baking Course (6 weeks)",
-   "variant": null,
-   "discipline": "baking",
-   "date": "2026-11-23",
-   "day": "Mon",
-   "time": "15:00",
-   "end": "17:30",
-   "label": "Mon 23 Nov · 3pm",
-   "room": "L1 kitchen (Savor)",
-   "price": 450,
-   "pair_price": null,
-   "price_set": "launch",
-   "price_unit": null,
-   "cap": 20,
-   "cap_unit": null,
-   "booked": 0,
-   "seats_left": 20,
-   "dine": false,
-   "dine_timing": "after",
-   "theme": null,
-   "public_holiday": null,
-   "surcharge_waived": false,
-   "type": "course",
-   "public": false,
-   "note": "Private / corporate hold",
-   "next_session": null
-  },
   {
    "id": "textured-canvas-2026-11-25-1900",
    "format": "textured-canvas",
