@@ -4,6 +4,11 @@ var SHELL = [
   '/assets/crm-app.css',
   '/assets/crm-growth.js',
   '/assets/crm-shell.js',
+  '/assets/crm-case.js',
+  '/assets/crm-events.js',
+  '/assets/crm-inbox-views.js',
+  '/assets/crm-ads.js',
+  '/assets/crm-finish.js',
   '/assets/inbox.js',
   '/assets/wa-export.js',
   '/logo.svg',
@@ -11,13 +16,22 @@ var SHELL = [
 ];
 
 self.addEventListener('install', function (event) {
-  event.waitUntil(caches.open('ma-crm-shell-v1').then(function (cache) {
+  event.waitUntil(caches.open('ma-crm-shell-v2').then(function (cache) {
     return cache.addAll(SHELL);
   }).then(function () { return self.skipWaiting(); }));
 });
 
 self.addEventListener('activate', function (event) {
   event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('push', function (event) {
+  var payload = {};
+  try { payload = event.data ? event.data.json() : {}; } catch (e) { payload = { title: event.data ? event.data.text() : 'New chat' }; }
+  event.waitUntil(self.registration.showNotification(payload.title || 'New chat assigned', {
+    body: payload.body || 'Open the inbox to reply.',
+    icon: '/logo.svg'
+  }));
 });
 
 self.addEventListener('fetch', function (event) {
@@ -28,7 +42,7 @@ self.addEventListener('fetch', function (event) {
   event.respondWith(fetch(event.request).then(function (res) {
     if (res && res.ok) {
       var copy = res.clone();
-      caches.open('ma-crm-shell-v1').then(function (cache) { cache.put(event.request, copy); });
+      caches.open('ma-crm-shell-v2').then(function (cache) { cache.put(event.request, copy); });
     }
     return res;
   }).catch(function () {

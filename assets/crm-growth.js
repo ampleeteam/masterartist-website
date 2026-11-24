@@ -264,31 +264,209 @@
       + '</div></div>';
   }
 
-  var STAGES = ['enquiry', 'proposal_sent', 'negotiating', 'won', 'lost'];
-  var STAGE_LABEL = { enquiry: 'Enquiry', proposal_sent: 'Proposal sent', negotiating: 'Negotiating', won: 'Won', lost: 'Lost' };
-  var STAGE_TONE = { enquiry: 'muted', proposal_sent: 'warn', negotiating: 'info', won: 'ok', lost: 'bad' };
+  var STAGES = ['enquiry', 'qualified', 'proposal_sent', 'negotiating', 'won', 'lost'];
+  var STAGE_LABEL = {
+    enquiry: 'New enquiry', qualified: 'Qualified', proposal_sent: 'Proposal sent',
+    negotiating: 'Negotiating', won: 'Booked', lost: 'Lost'
+  };
+  var STAGE_TONE = { enquiry: 'muted', qualified: 'info', proposal_sent: 'warn', negotiating: 'info', won: 'ok', lost: 'bad' };
+  var STAGE_WEIGHT = { enquiry: 0.2, qualified: 0.4, proposal_sent: 0.6, negotiating: 0.8, won: 1, lost: 0 };
+  var STAGE_BAR = {
+    enquiry: '#E6B44C', qualified: '#C6B7E2', proposal_sent: '#7E5A10',
+    negotiating: '#3B1C5A', won: '#2E6B4A', lost: '#A3401E'
+  };
+  var KIND_LABEL = { school: 'School', team_building: 'Team building', birthday: 'Birthday', other: 'Other' };
 
   function stagePill(stage) {
     return pill(STAGE_LABEL[stage] || stage || '—', STAGE_TONE[stage] || 'muted');
   }
 
-  function dealBoard(deals) {
+  function rm(n) {
+    return 'RM' + Number(n || 0).toLocaleString('en-MY', { maximumFractionDigits: 0 });
+  }
+
+  function initials(name) {
+    var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '·';
+    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+  }
+
+  function klWhen(iso) {
+    if (!iso) return '';
+    var when = new Date(iso);
+    if (isNaN(when.getTime())) return '';
+    return when.toLocaleString('en-MY', {
+      timeZone: 'Asia/Kuala_Lumpur',
+      day: 'numeric', month: 'short', year: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+
+  function klDay(iso) {
+    if (!iso) return '';
+    var when = new Date(iso);
+    if (isNaN(when.getTime())) return String(iso).slice(0, 10);
+    return when.toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
+  }
+
+  function inCreatedRange(deal, from, to) {
+    var day = klDay(deal && deal.created_at);
+    if (from && (!day || day < from)) return false;
+    if (to && (!day || day > to)) return false;
+    return true;
+  }
+
+  function idleDays(deal, today) {
+    var from = (deal.updated_at || deal.created_at || '').slice(0, 10);
+    if (!from || !today) return 0;
+    return Math.floor((Date.parse(today) - Date.parse(from)) / 86400000);
+  }
+
+  function activityState(deal, today) {
+    if (!deal.next_due) return { cls: 'act-none', label: 'No next activity' };
+    if (deal.next_due < today) return { cls: 'act-over', label: 'Overdue' };
+    if (deal.next_due === today) return { cls: 'act-soon', label: 'Due today' };
+    return { cls: 'act-soon', label: 'Upcoming task' };
+  }
+
+  function dealCard(d, opts) {
+    var today = opts.today;
+    var owner = (opts.owners && opts.owners[d.owner]) || '';
+    var idle = idleDays(d, today);
+    var rotten = d.stage !== 'won' && d.stage !== 'lost' && idle >= (opts.rotDays || 7);
+    var act = activityState(d, today);
+    var when = (d.expected_on || '').slice(0, 10);
+    return '<article class="pipe-card' + (rotten ? ' rotten' : '') + '" draggable="true" data-id="' + esc(d.id) + '" ondragstart="dealDrag(event,\'' + esc(d.id) + '\')" onclick="ixPreview(\'deals\',\'' + esc(d.id) + '\')">'
+      + '<b>' + esc(d.title) + '</b>'
+      + '<p class="pipe-who">' + esc(d.company || d.contact_name || 'No contact yet') + '</p>'
+      + '<p class="pipe-val">' + esc(rm(d.value_rm)) + ' · ' + esc(d.headcount || '—') + ' people</p>'
+      + '<p class="pipe-meta"><span class="pipe-date">' + esc(when || 'No date') + '</span>'
+      + '<span class="pipe-kind kind-' + esc(d.kind || 'other') + '">' + esc(KIND_LABEL[d.kind] || d.kind || 'Other') + '</span></p>'
+      + '<footer><span class="pipe-av" title="' + esc(owner || 'Unassigned') + '">' + esc(initials(owner)) + '</span>'
+      + '<span class="pipe-act ' + act.cls + '" title="' + esc(act.label) + '">◷</span>'
+      + (rotten ? '<span class="pipe-rot">' + idle + 'd idle</span>' : '')
+      + '<button type="button" class="pipe-move" onclick="event.stopPropagation();dealMoveOpen(\'' + esc(d.id) + '\')">Move</button>'
+      + '</footer></article>';
+  }
+
+  function dealBoard(deals, opts) {
+    var o = opts || {};
     var rows = deals || [];
-    return '<div class="kanban">' + STAGES.map(function (stage) {
+    var stages = STAGES.filter(function (stage) { return stage !== 'lost' || o.showLost; });
+    return '<div class="pipe">' + stages.map(function (stage) {
       var mine = rows.filter(function (d) { return d.stage === stage; });
       var sum = mine.reduce(function (n, d) { return n + Number(d.value_rm || 0); }, 0);
-      return '<section class="kanban-col"><h3>' + esc(STAGE_LABEL[stage]) + ' <small>' + mine.length + ' · RM' + sum + '</small></h3>'
-        + (mine.length ? mine.map(function (d) {
-          return '<article class="deal"><b>' + esc(d.title) + '</b><p>RM' + esc(d.value_rm || 0) + ' · ' + esc(d.headcount || '—') + ' people</p><p class="help">'
-            + esc(d.kind || '') + (d.expected_on ? ' · ' + esc(d.expected_on) : '') + '</p>'
-            + '<select onchange="dealStage(\'' + esc(d.id) + '\', this.value)">'
-            + STAGES.map(function (s) {
-              return '<option value="' + s + '"' + (s === d.stage ? ' selected' : '') + '>' + esc(STAGE_LABEL[s]) + '</option>';
-            }).join('')
-            + '</select></article>';
-        }).join('') : '<p class="help">Empty</p>')
+      return '<section class="pipe-col" style="--stage:' + STAGE_BAR[stage] + '" ondragover="event.preventDefault()" ondrop="dealDrop(event,\'' + stage + '\')">'
+        + '<header><b>' + esc(STAGE_LABEL[stage]) + '</b><span>' + mine.length + ' · ' + esc(rm(sum)) + '</span></header>'
+        + '<div class="pipe-cards">' + (mine.length ? mine.map(function (d) { return dealCard(d, o); }).join('') : '<p class="pipe-empty">No deals yet. Drag one here.</p>') + '</div>'
         + '</section>';
     }).join('') + '</div>';
+  }
+
+  function dealTable(deals, opts) {
+    var o = opts || {};
+    var today = o.today || '';
+    var owners = o.owners || {};
+    var sort = o.sort || { key: 'value', dir: 'desc' };
+    var selected = o.selected || {};
+    var columns = [
+      { key: 'name', label: 'Deal' },
+      { key: 'stage', label: 'Stage' },
+      { key: 'value', label: 'Value' },
+      { key: 'people', label: 'Headcount' },
+      { key: 'event', label: 'Event date' },
+      { key: 'created', label: 'Created' },
+      { key: 'owner', label: 'Owner' },
+      { key: 'idle', label: 'Idle days' }
+    ];
+    var rows = (deals || []).map(function (d) {
+      var owner = owners[d.owner] || '';
+      var idle = idleDays(d, today);
+      return {
+        id: d.id,
+        deal: d,
+        owner: owner,
+        idle: idle,
+        sort: {
+          name: d.title || '',
+          stage: STAGE_LABEL[d.stage] || d.stage || '',
+          value: Number(d.value_rm || 0),
+          people: Number(d.headcount || 0),
+          event: d.expected_on || '9999-99-99',
+          created: klDay(d.created_at) || '9999-99-99',
+          owner: owner || 'Unassigned',
+          idle: idle
+        }
+      };
+    });
+    var sorted = sortRows(rows, sort.key, sort.dir);
+    var win = pageWindow(sorted.length, o.page, 25);
+    var pageRows = sorted.slice(win.start, win.end);
+    o.page = win.page;
+    o.pageIds = pageRows.map(function (row) { return row.id; });
+    var allOn = pageRows.length > 0 && pageRows.every(function (row) { return selected[row.id]; });
+    var arrow = function (key) {
+      return sort.key === key ? (sort.dir === 'desc' ? ' ↓' : ' ↑') : '';
+    };
+    var head = '<th class="ix-checkcol"><input type="checkbox" aria-label="Select rows on this page" ' + (allOn ? 'checked' : '') + ' onchange="ixPagePick(\'deals\',this.checked)"></th>'
+      + columns.map(function (col) {
+        return '<th><button type="button" class="ix-sort" onclick="ixSort(\'deals\',\'' + col.key + '\')">' + esc(col.label) + arrow(col.key) + '</button></th>';
+      }).join('');
+    var body = pageRows.map(function (row) {
+      var d = row.deal;
+      var rotten = d.stage !== 'won' && d.stage !== 'lost' && row.idle >= (o.rotDays || 7);
+      return '<tr class="ix-row' + (selected[row.id] ? ' on' : '') + '" onclick="ixPreview(\'deals\',\'' + esc(row.id) + '\')">'
+        + '<td class="ix-checkcol" onclick="event.stopPropagation()"><input type="checkbox" aria-label="Select ' + esc(d.title) + '" ' + (selected[row.id] ? 'checked' : '') + ' onchange="ixPick(\'deals\',\'' + esc(row.id) + '\',this.checked)"></td>'
+        + '<td><b>' + esc(d.title) + '</b><br><span class="pipe-who">' + esc(d.company || 'No contact yet') + '</span></td>'
+        + '<td>' + stagePill(d.stage) + '</td>'
+        + '<td>' + esc(rm(d.value_rm)) + '</td>'
+        + '<td>' + esc(d.headcount || '—') + '</td>'
+        + '<td>' + esc((d.expected_on || '').slice(0, 10) || '—') + '</td>'
+        + '<td>' + esc(klWhen(d.created_at) || '—') + '</td>'
+        + '<td><span class="pipe-av" title="' + esc(row.owner || 'Unassigned') + '">' + esc(initials(row.owner)) + '</span></td>'
+        + '<td>' + (rotten ? '<span class="pipe-rot">' + row.idle + 'd</span>' : esc(String(row.idle))) + '</td>'
+        + '</tr>';
+    }).join('') || '<tr><td class="ix-empty" colspan="9">No deals yet. Add one to start the pipeline.</td></tr>';
+    var cards = pageRows.map(function (row) {
+      var d = row.deal;
+      var rotten = d.stage !== 'won' && d.stage !== 'lost' && row.idle >= (o.rotDays || 7);
+      return '<article class="pipe-mcard' + (rotten ? ' rotten' : '') + (selected[row.id] ? ' on' : '') + '">'
+        + '<label onclick="event.stopPropagation()"><input type="checkbox" aria-label="Select ' + esc(d.title) + '" ' + (selected[row.id] ? 'checked' : '') + ' onchange="ixPick(\'deals\',\'' + esc(row.id) + '\',this.checked)"></label>'
+        + '<button type="button" onclick="ixPreview(\'deals\',\'' + esc(row.id) + '\')">'
+        + '<b>' + esc(d.title) + '</b>'
+        + '<span class="pipe-who">' + esc(d.company || 'No contact yet') + '</span>'
+        + stagePill(d.stage)
+        + '<span class="pipe-val">' + esc(rm(d.value_rm)) + ' · ' + esc(d.headcount || '—') + ' people</span>'
+        + '<span class="pipe-meta">Event ' + esc((d.expected_on || '').slice(0, 10) || '—') + '</span>'
+        + '<span class="pipe-meta">Created ' + esc(klWhen(d.created_at) || '—') + '</span>'
+        + '<footer><span class="pipe-av" title="' + esc(row.owner || 'Unassigned') + '">' + esc(initials(row.owner)) + '</span>'
+        + '<span class="' + (rotten ? 'pipe-rot' : 'pipe-who') + '">' + row.idle + 'd idle</span></footer>'
+        + '</button></article>';
+    }).join('') || '<p class="pipe-empty">No deals yet. Add one to start the pipeline.</p>';
+    var bulkCount = Object.keys(selected).filter(function (id) { return selected[id]; }).length;
+    var stageOpts = STAGES.map(function (stage) {
+      return '<option value="' + stage + '">' + esc(STAGE_LABEL[stage]) + '</option>';
+    }).join('');
+    var bulk = bulkCount
+      ? '<div class="ix-bulk"><b>' + bulkCount + ' selected</b><select id="ixDealStage" aria-label="Move to stage"><option value="">Stage…</option>' + stageOpts + '</select><button type="button" class="ix-btn" onclick="ixBulk(\'deals\',\'stage\')">Move stage</button><button type="button" class="ix-btn" onclick="ixBulk(\'deals\',\'export\')">Export</button></div>'
+      : '';
+    var sortOpts = columns.map(function (col) {
+      return '<option value="' + col.key + '"' + (sort.key === col.key ? ' selected' : '') + '>' + esc(col.label) + '</option>';
+    }).join('');
+    return bulk
+      + '<div class="pipe-table-wrap"><table class="ix-table pipe-table"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>'
+      + '<div class="pipe-mcards"><label class="pipe-sort-m">Sort <select aria-label="Sort deals" onchange="ixSort(\'deals\', this.value)">' + sortOpts + '</select></label>' + cards + '</div>';
+  }
+
+  function dealSummary(deals, today) {
+    var open = (deals || []).filter(function (d) { return d.stage !== 'won' && d.stage !== 'lost'; });
+    var openValue = open.reduce(function (n, d) { return n + Number(d.value_rm || 0); }, 0);
+    var weighted = open.reduce(function (n, d) { return n + Number(d.value_rm || 0) * (STAGE_WEIGHT[d.stage] || 0); }, 0);
+    var month = (today || '').slice(0, 7);
+    var won = (deals || []).filter(function (d) {
+      return d.stage === 'won' && ((d.updated_at || d.expected_on || '').slice(0, 7) === month);
+    }).reduce(function (n, d) { return n + Number(d.value_rm || 0); }, 0);
+    return { openValue: openValue, weighted: Math.round(weighted), won: won };
   }
 
   function checklistState(draft) {
@@ -448,6 +626,10 @@
     recordFrame: recordFrame,
     stagePill: stagePill,
     dealBoard: dealBoard,
+    dealTable: dealTable,
+    klWhen: klWhen,
+    klDay: klDay,
+    inCreatedRange: inCreatedRange,
     checklistState: checklistState,
     checklistHtml: checklistHtml,
     editorHtml: editorHtml,
@@ -459,6 +641,9 @@
     folds: folds,
     icon: icon,
     STAGES: STAGES,
-    STAGE_LABEL: STAGE_LABEL
+    STAGE_LABEL: STAGE_LABEL,
+    KIND_LABEL: KIND_LABEL,
+    dealSummary: dealSummary,
+    rm: rm
   };
 });
