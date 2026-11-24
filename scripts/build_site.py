@@ -954,7 +954,7 @@ WORKSHOP_HUB_FAQS = [
     ('Where is the studio?',
      'We are at 38-2, Jalan 28/70A, Desa Sri Hartamas, 50480 Kuala Lumpur, upstairs above Savor. Painting and crochet run in the L2 front room. Bake Lab is in the L1 kitchen and candle making is in the L1 front room. Seats are prepaid, and we confirm your booking and payment details on WhatsApp.'),
     ('Can I come with a friend or bring a group?',
-     'Yes. Book two seats together and you both get 10% off, shown as the pair price on each date. Seats are limited to 20 a session, and each session needs at least 6 people to run. For a team or private group, our team days run art, baking or a mix, with rooms side by side, from 6 people.'),
+     'Yes. Book two seats together and you both get 10% off, shown as the pair price on each date. Each workshop shows its own seat limit, and each session needs at least 6 people to run. For a team or private group, our team days run art, baking or a mix, with rooms side by side, from 6 people.'),
 ]
 
 
