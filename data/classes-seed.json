@@ -2,7 +2,8 @@
   "generated": "2026-10-28",
   "currency": "MYR",
   "trial": {
-    "price": 50,
+    "price": 55,
+    "price_before": 50,
     "credited": true,
     "note": "credited in full against the first month"
   },

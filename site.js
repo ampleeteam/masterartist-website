@@ -19,7 +19,7 @@ let waDigits = '60102779426';
 
 /* Google Ads conversions. GA4 (G-2X9E7MWMWM) is linked to AW-18457946758.
    send_to is the full label from Google Ads → Goals → Conversions → Tag setup.
-   The trial-form conversion is the RM50 trial (value 50, currency MYR).
+   The trial-form conversion uses data-trial-price (RM50 through 6 Dec 2026, RM55 from 7 Dec).
    Set a label to '' to switch that conversion off. */
 const GOOGLE_ADS_LABELS = {
   trial_form: 'AW-18457946758/YaQtCP7vkp8dEIbVt-FE',
@@ -187,13 +187,19 @@ function rotator(items, dotHost, dotClass, interval, hoverHost, slide) {
    Each call is wrapped so a blocked tracker can never break the page. */
 // WhatsApp opens in a new tab, so this page stays open and the event always
 // has time to send — no delayed-navigation helper is needed.
+function trialPrice() {
+  // The page sets this from the price in effect: RM50 through 6 Dec 2026, RM55 from 7 Dec.
+  const n = Number(document.documentElement.getAttribute('data-trial-price'));
+  return Number.isFinite(n) && n > 0 ? n : 55;
+}
+
 function adsLead(source, where) {
   const label = GOOGLE_ADS_LABELS[source];
   if (!label || !window.gtag) return;
   // beacon transport survives a tab switch or unload, same as before.
   const payload = { send_to: label, link_location: where, transport_type: 'beacon' };
   if (source === 'trial_form') {
-    payload.value = 50;
+    payload.value = trialPrice();
     payload.currency = 'MYR';
   }
   try {
@@ -215,7 +221,7 @@ function track(kind, detail) {
   if (kind === 'trial') {
     allowLeadHit();
     try { window.fbq && fbq('track', 'Lead', { content_name: detail.programme || 'Trial class' }); } catch {}
-    try { window.gtag && gtag('event', 'generate_lead', { programme: detail.programme || '', link_location: where, value: 50, currency: 'MYR', transport_type: 'beacon' }); } catch {}
+    try { window.gtag && gtag('event', 'generate_lead', { programme: detail.programme || '', link_location: where, value: trialPrice(), currency: 'MYR', transport_type: 'beacon' }); } catch {}
     adsLead('trial_form', where);
   } else if (kind === 'whatsapp') {
     try { window.fbq && fbq('track', 'Contact', { content_name: where }); } catch {}
@@ -369,7 +375,7 @@ function addContactFields(form, n) {
         referrer: blank(touch.referrer),
       };
       const lines = [
-        "Hi Master Artist! I'd like to book a RM50 trial class.",
+        "Hi Master Artist! I'd like to book a RM" + trialPrice() + " trial class.",
         '',
         'Name: ' + name,
         'Phone: ' + phone,

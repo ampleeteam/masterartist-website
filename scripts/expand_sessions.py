@@ -17,6 +17,10 @@ Rules (handoff 02-SITE-SPEC §2):
   up by that id; seats_left = cap - booked;
 - prices: Launch Season prices until policies.pricing_window.until, then the
   post_launch_prices set, so the site switches on the date without page edits;
+- early bird: formats with early_bird and late_price keep the early bird price
+  until 19:00 MYT, policies.early_bird.days_before days before the session
+  (default 7). After that the late price is the price in effect. The seat
+  cutoff is applied at checkout, where live booking counts exist;
 - public holidays (data/public-holidays.json) carry the surcharge unless the
   date is in policies.public_holiday_surcharge_waived_dates.
 
@@ -30,6 +34,7 @@ import pathlib
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA = ROOT / 'data'
 DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+MYT = dt.timezone(dt.timedelta(hours=8))
 
 
 def load(name, default=None):
@@ -82,6 +87,27 @@ def closed(day, start, closures):
     return False
 
 
+def prices_from(policies):
+    """New workshop, trial and Studio Pass prices apply to sessions on this date onward."""
+    return dt.date.fromisoformat(policies.get('prices_from') or '2026-12-07')
+
+
+def early_bird_until(session_date, policies):
+    """7 days before the session at 19:00 MYT, unless policies.early_bird says otherwise."""
+    rule = policies.get('early_bird') or {}
+    days = int(rule.get('days_before', 7))
+    hh, mm = map(int, str(rule.get('until_time', '19:00')).split(':'))
+    return dt.datetime.combine(session_date - dt.timedelta(days=days), dt.time(hh, mm), tzinfo=MYT)
+
+
+def with_holiday(amount, iso, hol, waived, surcharge):
+    if amount is None:
+        return None
+    if iso in hol and iso not in waived and surcharge:
+        return round(amount * (1 + surcharge))
+    return amount
+
+
 def price_for(fmt, date, policies, variant=None):
     """(price, pair_price, price_set) for a format on a date."""
     window = policies.get('pricing_window', {})
@@ -104,7 +130,7 @@ def price_for(fmt, date, policies, variant=None):
     return price, pair, ('launch' if launch else 'post_launch')
 
 
-def expand(seed, themes, bookings, holidays, today, days):
+def expand(seed, themes, bookings, holidays, today, days, now):
     formats = {f['id']: f for f in seed['formats']}
     closures = seed.get('closures', {})
     policies = seed.get('policies', {})
@@ -158,12 +184,35 @@ def expand(seed, themes, bookings, holidays, today, days):
             skipped.append(f"{iso} {entry['time']} {fid}: morning session removed")
             continue
         variant = entry.get('variant') if fid == entry['format'] else None
-        price, pair, price_set = price_for(fmt, d, policies, variant)
-        if price_set == 'launch' and entry.get('price'):   # a dated session priced on its own (e.g. the first week)
-            price, pair = entry['price'], entry.get('pair_price', pair)
-        is_hol = iso in hol
-        if is_hol and iso not in waived and price:
-            price = round(price * (1 + surcharge))
+        eb = fmt.get('early_bird') if isinstance(fmt.get('early_bird'), dict) else None
+        until = None
+        early_price = early_pair = late_price = late_pair = None
+        # Sessions through the day before prices_from keep the current price, including a
+        # dated one-off such as the 29 Nov gingerbread workshop. A row with its own price
+        # keeps that price after the cutover too.
+        new_prices = d >= prices_from(policies) and not entry.get('price')
+        if new_prices and eb and eb.get('price') is not None and fmt.get('late_price') is not None:
+            until = early_bird_until(d, policies)
+            is_hol = iso in hol
+            early_price = with_holiday(eb['price'], iso, hol, waived, surcharge)
+            early_pair = with_holiday(eb.get('pair_price'), iso, hol, waived, surcharge)
+            late_price = with_holiday(fmt['late_price'], iso, hol, waived, surcharge)
+            late_pair = with_holiday(fmt.get('late_pair_price'), iso, hol, waived, surcharge)
+            if now < until:
+                price, pair, price_set = early_price, early_pair, 'early_bird'
+            else:
+                price, pair, price_set = late_price, late_pair, 'late'
+        else:
+            priced = fmt
+            if d < prices_from(policies) and 'price_before' in fmt:
+                priced = dict(fmt, price=fmt['price_before'],
+                              pair_price=fmt.get('pair_price_before', fmt.get('pair_price')))
+            price, pair, price_set = price_for(priced, d, policies, variant)
+            if price_set == 'launch' and entry.get('price'):   # a dated session priced on its own (e.g. the first week)
+                price, pair = entry['price'], entry.get('pair_price', pair)
+            is_hol = iso in hol
+            if is_hol and iso not in waived and price:
+                price = round(price * (1 + surcharge))
         # A dated session can pin its own cap. The 29 Nov gingerbread stays at 20
         # while Bake Lab's usual cap is 24.
         cap = entry.get('cap')
@@ -194,6 +243,16 @@ def expand(seed, themes, bookings, holidays, today, days):
         for key in ('summary', 'pair_word', 'seo_title', 'seo_description'):
             if entry.get(key):
                 s[key] = entry[key]
+        if until is not None:
+            rule = policies.get('early_bird') or {}
+            s['early_bird_price'] = early_price
+            s['late_price'] = late_price
+            s['early_bird_until'] = until.isoformat()
+            s['early_bird_seats'] = int(rule.get('seats', 15))
+            if early_pair is not None:
+                s['early_bird_pair_price'] = early_pair
+            if late_pair is not None:
+                s['late_pair_price'] = late_pair
         if fmt.get('bundle'):
             s['bundle'] = fmt['bundle']
         if fmt.get('type') == 'course':
@@ -227,7 +286,14 @@ def preview(sessions, until):
         price = f"RM{s['price']}" + (f" ({s['price_unit']})" if s['price_unit'] else '') if s['price'] else 'TODO price'
         if s.get('bundle'):
             price = f"Family Sunday RM{s['price']} (+RM{s['bundle']['extra_child']} per extra child)"
-        pair = f" · {s.get('pair_word') or 'pair'} RM{s['pair_price']}" if s['pair_price'] else ''
+        if s.get('early_bird_until'):
+            pair = ''
+            if s.get('early_bird_pair_price'):
+                pair = f" · early bird pair RM{s['early_bird_pair_price']}, then RM{s['late_pair_price']}"
+            price = (f"early bird RM{s['early_bird_price']} until {s['early_bird_until'][0:16]}, "
+                     f"then RM{s['late_price']} (in effect RM{s['price']})")
+        else:
+            pair = f" · {s.get('pair_word') or 'pair'} RM{s['pair_price']}" if s['pair_price'] else ''
         dine = f" · Dine add-on ({s['dine_timing']})" if s['dine'] else ''
         cap = f"{s['seats_left']} of {s['cap']}{' ' + s['cap_unit'] if s['cap_unit'] else ''} seats left"
         theme = f" · {s['theme']}" if s['theme'] else ''
@@ -251,7 +317,10 @@ def main():
     themes = load('themes.json', {})
     bookings = load('bookings.json', {})
     holidays = load('public-holidays.json', {}).get('holidays', [])
-    sessions, skipped = expand(seed, themes, bookings, holidays, today, args.days)
+    now = dt.datetime.now(MYT)
+    if today != now.date():
+        now = dt.datetime.combine(today, dt.time(12, 0), tzinfo=MYT)
+    sessions, skipped = expand(seed, themes, bookings, holidays, today, args.days, now)
 
     out = {k: v for k, v in public_seed.items() if k not in ('weekly_schedule_template', 'schedule')}
     out['generated'] = dt.datetime.now().isoformat(timespec='seconds')

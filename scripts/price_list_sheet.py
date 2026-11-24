@@ -34,13 +34,13 @@ if private.exists():
 # 1 May 2027 prices not in the plan yet: suggestions, marked as such
 SUGGESTED_POST = {'glow-canvas': 99, 'candle-making': 109, 'crochet-bag': 119}
 WHY = {
-    'watercolour-botanicals': 'Entry painting price, as posted on Facebook 1 Nov; drink and materials included.',
-    'acrylic-canvas': 'Same entry price as Watercolour (Facebook 1 Nov).',
-    'textured-canvas': 'RM80 in the first week (5 Nov), RM89 after (Facebook 1 Nov); paste and impasto medium cost more.',
-    'glow-canvas': 'Glow paints cost more; the strongest ad hook of the month (Facebook 1 Nov).',
-    'candle-making': 'Wax, jars and scents; Christmas gifting (Facebook 1 Nov).',
-    'crochet-bag': 'Chunky yarn and a hook to take home (Facebook 1 Nov).',
-    'bake-lab': 'Usual Bake Lab is RM95 (Facebook 1 Nov). The 29 Nov Gingerbread Baking Workshop is RM160 per person, 2 pax RM310. Focaccia at RM75 drew 25 people; ciabatta at RM120 drew 12.',
+    'watercolour-botanicals': 'RM80 / pair RM144 through Sun 6 Dec 2026. From 7 Dec: early bird RM95 / pair RM170, then RM115 / RM205. All-inclusive.',
+    'acrylic-canvas': 'RM89 / pair RM160 through Sun 6 Dec 2026, then the same early bird and late prices as the other single-session art workshops.',
+    'textured-canvas': 'RM89 / pair RM160 through Sun 6 Dec 2026. From 7 Dec: early bird RM95 / pair RM170, then RM115 / RM205.',
+    'glow-canvas': 'RM85 / pair RM153 through Sun 6 Dec 2026. From 7 Dec: early bird RM95 / pair RM170, then RM115 / RM205.',
+    'candle-making': 'RM89 / pair RM160 through Sun 6 Dec 2026. From 7 Dec: early bird RM95 / pair RM170, then RM115 / RM205. Wax, jars and scents included.',
+    'crochet-bag': 'RM95 / pair RM171 through Sun 6 Dec 2026, then RM115 / RM210. Chunky yarn and a hook to take home.',
+    'bake-lab': 'RM95 / pair RM171 through Sun 6 Dec 2026, then RM99 / RM180. Specialty bakes stay RM85. The 29 Nov Gingerbread Baking Workshop is RM160 per person, 2 pax RM310.',
     'kids-art-studio': 'Sold only as Family Sunday: adult Textured Canvas plus a child, same hour.',
     'adult-art-class': 'A class, not a party: drop in, or four for the price of about three.',
 }
@@ -75,7 +75,7 @@ rows.append(([], 'blank'))
 # Workshops
 rows.append((['Studio Sessions · workshops'], 'section'))
 rows.append((['Workshop', 'Status (Nov 2026)', 'Length', 'Room', 'Max seats', f'Price now (to {until:%d %b %Y})',
-              '2 people (10% off)', 'Meal add-on', 'From 1 May 2027', 'Why this price'], 'head'))
+              'Pair', 'Meal add-on', 'From 1 May 2027', 'Why this price'], 'head'))
 dine = ws_seed['addons']['dine']
 for f in ws_seed['formats']:
     if f.get('type') == 'course':
@@ -91,10 +91,15 @@ for f in ws_seed['formats']:
         now, pair = f"{rm(f['bundle']['price'])} adult + child", f"extra child {rm(f['bundle']['extra_child'])}"
         later = rm(post.get('family-sunday')) or 'to set'
     else:
-        now = rm(f['price']) + (f" {f['price_unit']}" if f.get('price_unit') else '')
-        if f.get('pack_price'):
-            now += f" · {f['pack_size']} for {rm(f['pack_price'])}"
-        pair = rm(f.get('pair_price')) or '—'
+        eb = f.get('early_bird') if isinstance(f.get('early_bird'), dict) else None
+        if eb and eb.get('price') is not None and f.get('late_price') is not None:
+            now = f"early bird {rm(eb['price'])}, then {rm(f['late_price'])}"
+            pair = f"early bird {rm(eb['pair_price'])}, then {rm(f['late_pair_price'])}" if eb.get('pair_price') else '—'
+        else:
+            now = rm(f['price']) + (f" {f['price_unit']}" if f.get('price_unit') else '')
+            if f.get('pack_price'):
+                now += f" · {f['pack_size']} for {rm(f['pack_price'])}"
+            pair = rm(f.get('pair_price')) or '—'
         later = rm(post.get(fid)) or (f"{rm(SUGGESTED_POST[fid])} (suggested)" if fid in SUGGESTED_POST else 'to set')
     if f.get('price_specialty'):
         now += f" · specialty {rm(f['price_specialty'])}"
@@ -125,7 +130,7 @@ if sp:
 gv = ws_seed.get('gift_vouchers', {})
 rows.append((['Gift vouchers', 'Amount vouchers, or one workshop seat at that workshop\'s price (validity: to confirm)',
               ' / '.join(rm(a) for a in gv.get('amounts', [])), 'unchanged'], 'row'))
-rows.append((['RM50 trial voucher', 'Given to every workshop attendee; credited against a first month of classes',
+rows.append(([f"{rm(pol['trial_voucher']['value'])} trial voucher", 'Given to every workshop attendee; credited against a first month of classes',
               rm(pol['trial_voucher']['value']), 'unchanged'], 'row'))
 rows.append(([], 'blank'))
 
@@ -141,7 +146,9 @@ for pk in g['packages']:
 b = g.get('birthdays')
 if b:
     for pk in b['packages']:
-        if pk.get('price_format'):
+        if pk.get('price_per_person'):
+            price, extra, inc = f"{rm(pk['price_per_person'])} a person", '—', f"{pk['min']}–{pk['max']} people, ages {pk['ages']}"
+        elif pk.get('price_format'):
             fp = next(f for f in ws_seed['formats'] if f['id'] == pk['price_format'])
             price, extra, inc = f"{rm(fp['price'])} a person", '—', f"{pk['min']}–{pk['max']} people, ages {pk['ages']}"
         else:
