@@ -1311,7 +1311,7 @@ def build_session_day(slots):
         if len(desc) > 155:
             raise SystemExit(f'seo description is {len(desc)} characters: {desc}')
     else:
-        price_bit = session_sentence(s0) or rm(s0['price'])
+        price_bit = session_sentence(s0) or f"{rm(s0['price'])}."
         desc = f"{f['name']} on {long_date(s0['date'])} at {t0}, {s0['room']}, Desa Sri Hartamas. {price_bit} {blurb}"
     page(url, title, desc,
          body, voice='studio', active='/workshops/', extra_head=head_ld,
