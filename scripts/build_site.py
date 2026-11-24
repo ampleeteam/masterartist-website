@@ -769,6 +769,21 @@ def Accordion(items):
     return '<div class="acc-list">' + ''.join(f'<details class="acc"><summary>{e(q)}</summary><div><p>{a}</p></div></details>' for q, a in items) + '</div>'
 
 
+def FaqList(items):
+    """Questions and answers shown on the page, matching the FAQPage schema text."""
+    return '<div class="prose">' + ''.join(f'<h3>{e(q)}</h3><p>{e(a)}</p>' for q, a in items) + '</div>'
+
+
+def faq_ld(items):
+    return {'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': [
+        {'@type': 'Question', 'name': q, 'acceptedAnswer': {'@type': 'Answer', 'text': a}} for q, a in items]}
+
+
+def breadcrumb_ld(items):
+    return {'@context': 'https://schema.org', '@type': 'BreadcrumbList', 'itemListElement': [
+        {'@type': 'ListItem', 'position': i, 'name': name, 'item': url} for i, (name, url) in enumerate(items, start=1)]}
+
+
 def policy_items():
     pw = POL['pricing_window']
     until = dt.date.fromisoformat(pw['until'])
@@ -928,10 +943,25 @@ def studio_hero_note():
             f'<span>{icon("tag")}{e(pw["name"])} prices until {until.day} {until.strftime("%B %Y")}</span></div>')
 
 
+# Approved by David 23-24 Nov 2026. No prices in this FAQ.
+WORKSHOP_HUB_FAQS = [
+    ('What workshops can I join in Kuala Lumpur at Master Artist?',
+     'Master Artist runs painting, candle making, chunky crochet and Bake Lab baking workshops at our studio in Desa Sri Hartamas, KL. There is a new theme every week. Each session is two hours, taught step by step by working artists, and beginners are welcome. Every date is listed on the workshops page, and you book your seat on WhatsApp.'),
+    ('What is included in a workshop?',
+     'Your seat covers all the materials, a teacher who takes you through it step by step, and a drink on us. You take your piece home the same day, whether that is a finished canvas, your own candles, a small crochet bag or a boxed bake. You can add a meal at Savor downstairs too.'),
+    ('How long is a workshop, and when do they run?',
+     'Every workshop is two hours. Sessions run on weeknight evenings and Sunday afternoons. On Sundays there are no workshops before 12pm, and on Fridays none after 12:30pm. The studio is closed from Friday 5pm and all day Saturday. Please arrive 15 minutes early so you can settle in before the start.'),
+    ('Where is the studio?',
+     'We are at 38-2, Jalan 28/70A, Desa Sri Hartamas, 50480 Kuala Lumpur, upstairs above Savor. Painting and crochet run in the L2 front room. Bake Lab is in the L1 kitchen and candle making is in the L1 front room. Seats are prepaid, and we confirm your booking and payment details on WhatsApp.'),
+    ('Can I come with a friend or bring a group?',
+     'Yes. Book two seats together and you both get 10% off, shown as the pair price on each date. Seats are limited to 20 a session, and each session needs at least 6 people to run. For a team or private group, our team days run art, baking or a mix, with rooms side by side, from 6 people.'),
+]
+
+
 def build_workshops_index():
     sunday = coming_sunday()
-    body = hero_band('Master Artist Studio Sessions', 'Workshops in <em>the room with the view</em>',
-                     'Painting, candle making, crochet and baking, with a new theme every week. Two hours, taught properly, with something to take home.',
+    body = hero_band('Master Artist Studio Sessions', 'Workshops in Kuala Lumpur, in <em>the room with the view</em>',
+                     'Art and painting workshops in KL, plus candle making, crochet and baking, with a new theme every week. Two hours, taught properly, with something to take home.',
                      (f'<a class="btn" href="/this-sunday/">This Sunday</a>' if sunday else '') + '<a class="btn ghost" href="#formats">All workshops</a>',
                      crumbs(('/', 'Home'), (None, 'Workshops')), studio_hero_note(), img=('golden-shores-workshop-1.jpg', 'Adults painting at a Sunday workshop'))
     body += f'''<section class="sec v-studio"><div class="wrap">
@@ -942,12 +972,17 @@ def build_workshops_index():
   <div class="sec-head"><span class="eyebrow">Choose a workshop</span><h2>Every <em>workshop</em></h2><p>Pick one to see its next dates, then book a seat.</p></div>
   <div class="grid-cards">{''.join(FormatCard(f) for f in WORKSHOP_FORMATS)}</div>
 </div></section>
-<section class="sec v-studio"><div class="wrap"><div class="cta-card"><div><h2>Bringing a <em>team?</em></h2><p>Art, baking or mixed team days, with rooms running side by side.</p></div>
+<section class="sec v-studio"><div class="wrap"><div class="cta-card"><div><h2>Bringing a <em>team?</em></h2><p>Art, baking or mixed team days, with rooms running side by side. <a href="/groups/">team building activities in KL</a>.</p></div>
   <div class="hero-cta"><a class="btn" href="/groups/">Group packages</a></div></div></div></section>
-<section class="sec tight v-studio"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Good to <em>know</em></h2></div>{Accordion(policy_items())}</div></section>'''
-    page('/workshops/', 'Painting, candle and crochet workshops in KL · Master Artist Studio Sessions',
-         'Themed painting, candle making, crochet and baking workshops in Desa Sri Hartamas, KL. See every date, pick one and book a seat.',
-         body, voice='studio', active='/workshops/', data_attrs=' data-page="workshops"', wa={'msg': "Hi, I'd like to book a workshop. What's on this week? Source: {source}.", 'fmt': 'workshops'})
+<section class="sec tight v-studio"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Good to <em>know</em></h2></div>{Accordion(policy_items())}</div></section>
+<section class="sec alt v-studio" id="faq"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Questions</h2></div>{FaqList(WORKSHOP_HUB_FAQS)}</div></section>'''
+    schema = ld(faq_ld(WORKSHOP_HUB_FAQS)) + '\n' + ld(breadcrumb_ld([
+        ('Home', 'https://masterartist.co/'),
+        ('Workshops', 'https://masterartist.co/workshops/'),
+    ]))
+    page('/workshops/', 'Workshop Kuala Lumpur · Painting & Baking · Master Artist',
+         'Workshops in Kuala Lumpur at Desa Sri Hartamas: painting, candle making, crochet and baking. Two hours, materials and a drink included, take it home.',
+         body, voice='studio', active='/workshops/', extra_head=schema, data_attrs=' data-page="workshops"', wa={'msg': "Hi, I'd like to book a workshop. What's on this week? Source: {source}.", 'fmt': 'workshops'})
 
 
 def build_format(f):
