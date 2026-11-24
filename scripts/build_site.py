@@ -943,10 +943,10 @@ def studio_hero_note():
             f'<span>{icon("tag")}{e(pw["name"])} prices until {until.day} {until.strftime("%B %Y")}</span></div>')
 
 
-# Approved 23 Nov 2026. Keep this wording verbatim. No prices in this FAQ.
+# Approved by David 23-24 Nov 2026. No prices in this FAQ.
 WORKSHOP_HUB_FAQS = [
     ('What workshops can I join in Kuala Lumpur at Master Artist?',
-     'Master Artist runs painting, candle making, chunky crochet and Bake Lab baking workshops at our studio in Desa Sri Hartamas, KL. There is a new theme every week. Each session is two hours, taught step by step by working artists, and beginners are welcome. Every date is listed on the workshops page, and you book a seat online.'),
+     'Master Artist runs painting, candle making, chunky crochet and Bake Lab baking workshops at our studio in Desa Sri Hartamas, KL. There is a new theme every week. Each session is two hours, taught step by step by working artists, and beginners are welcome. Every date is listed on the workshops page, and you book your seat on WhatsApp.'),
     ('What is included in a workshop?',
      'Your seat covers all the materials, a teacher who takes you through it step by step, and a drink on us. You take your piece home the same day, whether that is a finished canvas, your own candles, a small crochet bag or a boxed bake. You can add a meal at Savor downstairs too.'),
     ('How long is a workshop, and when do they run?',
@@ -954,7 +954,7 @@ WORKSHOP_HUB_FAQS = [
     ('Where is the studio?',
      'We are at 38-2, Jalan 28/70A, Desa Sri Hartamas, 50480 Kuala Lumpur, upstairs above Savor. Painting and crochet run in the L2 front room. Bake Lab is in the L1 kitchen and candle making is in the L1 front room. Seats are prepaid, and we confirm your booking and payment details on WhatsApp.'),
     ('Can I come with a friend or bring a group?',
-     'Yes. Two of you booking together get 10% off the pair price. Seats are limited to 20 a session, and each session needs at least 6 people to run. For a team or private group, our team days run art, baking or a mix, with rooms side by side, from 6 people.'),
+     'Yes. Book two seats together and you both get 10% off, shown as the pair price on each date. Seats are limited to 20 a session, and each session needs at least 6 people to run. For a team or private group, our team days run art, baking or a mix, with rooms side by side, from 6 people.'),
 ]
 
 
