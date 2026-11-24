@@ -352,12 +352,14 @@ def BookingEmbed(s):
     dine = WS['addons']['dine']
     pair_opt = (f'<div><label for="tk">Ticket</label><select id="tk" name="ticket"><option value="single">Single · {rm(s["price"])}</option>'
                 f'<option value="pair">Pair · {rm(s["pair_price"])}</option></select></div>') if s.get('pair_price') else '<input type="hidden" name="ticket" value="single">'
-    # Savor meals are ordered and paid on Savor's own menu: the field is a link to it, and clicking it
-    # marks the booking as dining (ma.js). TODO: addons.dine.order_url is still empty
+    # Savor meals are ordered and paid on Savor's own pre-order page for this session (addons.dine.order_url,
+    # with {session} = this session's id); clicking it marks the booking as dining (ma.js). Savor gets the
+    # guest's details only if they order there.
     when_dine = 'after' if s.get('dine_timing') == 'after' else 'before'
-    if dine.get('order_url'):
-        order = (f'<input type="hidden" name="dine" value="no"><a class="btn ghost block dine-link" href="{e(dine["order_url"])}" target="_blank" rel="noopener">'
-                 f'Order from Savor\'s menu · from {rm(dine["price_from"])}</a><p class="note">Choose your meal and pay on Savor\'s menu.</p>')
+    dine_url = (dine.get('order_url') or '').replace('{session}', s['id'])
+    if dine_url:
+        order = (f'<input type="hidden" name="dine" value="no"><a class="btn ghost block dine-link" href="{e(dine_url)}" target="_blank" rel="noopener">'
+                 f'Pre-order a meal from Savor · from {rm(dine["price_from"])}</a><p class="note">Choose your meal for this session and pay on Savor\'s page. Your meal order and details go to Savor.</p>')
     else:  # no link yet: ask, and we send Savor's menu on WhatsApp
         order = (f'<label class="check"><input type="checkbox" name="dine" value="yes"> Yes, send me Savor\'s menu (from {rm(dine["price_from"])})</label>'
                  f'<p class="note">We\'ll WhatsApp you the menu to choose your meal.</p>')
@@ -367,7 +369,7 @@ def BookingEmbed(s):
     when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
     full_name = f"{s['theme']} ({s['name']})" if s.get('theme') else s['name']
     return f'''<form class="booking v-studio" data-session="{e(s['id'])}" data-format="{e(s['format'])}" data-name="{e(full_name)}" data-when="{e(when)}"
-  data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-booking="whatsapp" data-unit="{msg_unit}" data-dine-url="{e(dine.get('order_url') or '')}"
+  data-price="{s['price'] or 0}" data-pair="{s.get('pair_price') or 0}" data-booking="whatsapp" data-unit="{msg_unit}" data-dine-url="{e(dine_url)}"
   data-date="{s['date']}" data-cap="{s.get('cap') or ''}">
   <h2 class="h3">Book {e(s.get('theme') or s['name'])}</h2>
   <p class="book-for">{e(s['name']) + ' · ' if s.get('theme') else ''}{e(when)}</p>

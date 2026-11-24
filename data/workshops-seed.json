@@ -232,9 +232,9 @@
     "dine": {
       "name": "Dine + workshop",
       "price_from": 25,
-      "description": "A meal at Savor downstairs with any workshop: choose from Savor's menu and pay online through Savor's Stripe link. Mains from RM25, some dishes more. Before an evening session, after a daytime one.",
+      "description": "A meal at Savor downstairs with any workshop: choose from Savor's menu for that session and pay online on Savor's pre-order page. Mains from RM25, some dishes more. Before an evening session, after a daytime one.",
       "applies_to": "formats with dine_addon true, every session",
-      "order_url": null
+      "order_url": "https://event.savoroflife.com/ma/{session}"
     }
   },
   "groups": {
