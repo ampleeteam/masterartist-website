@@ -164,7 +164,11 @@ def expand(seed, themes, bookings, holidays, today, days):
         is_hol = iso in hol
         if is_hol and iso not in waived and price:
             price = round(price * (1 + surcharge))
-        cap = fmt.get(f'cap_{variant}', fmt.get('cap')) if variant else fmt.get('cap')
+        # A dated session can pin its own cap. The 29 Nov gingerbread stays at 20
+        # while Bake Lab's usual cap is 24.
+        cap = entry.get('cap')
+        if cap is None:
+            cap = fmt.get(f'cap_{variant}', fmt.get('cap')) if variant else fmt.get('cap')
         booked = int(bookings.get(sid, 0))
         dine = bool(entry.get('dine') or fmt.get('dine_addon'))
         evening = hm_to_min(entry['time']) >= 18 * 60

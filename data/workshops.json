@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-24T20:32:51",
+ "generated": "2026-11-24T20:52:18",
  "currency": "MYR",
  "formats": [
   {
@@ -522,10 +522,10 @@
    "pair_price": 310,
    "price_set": "launch",
    "price_unit": null,
-   "cap": 24,
+   "cap": 20,
    "cap_unit": null,
    "booked": 0,
-   "seats_left": 24,
+   "seats_left": 20,
    "dine": true,
    "dine_timing": "after",
    "theme": "Gingerbread Baking Workshop",
