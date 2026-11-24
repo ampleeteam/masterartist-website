@@ -1,0 +1,450 @@
+{
+  "_note": "Every dated /workshops/<format>/<date>/ URL found in past sitemap commits. The build writes a redirect for each one that is not on sale, and appends a session here when it drops off the schedule.",
+  "sessions": [
+    {
+      "format": "acrylic-canvas",
+      "date": "2026-11-08",
+      "url": "/workshops/acrylic-canvas/2026-11-08/"
+    },
+    {
+      "format": "acrylic-canvas",
+      "date": "2026-11-17",
+      "url": "/workshops/acrylic-canvas/2026-11-17/"
+    },
+    {
+      "format": "acrylic-canvas",
+      "date": "2026-12-01",
+      "url": "/workshops/acrylic-canvas/2026-12-01/"
+    },
+    {
+      "format": "adult-art-class",
+      "date": "2026-11-12",
+      "url": "/workshops/adult-art-class/2026-11-12/"
+    },
+    {
+      "format": "adult-art-class",
+      "date": "2026-11-19",
+      "url": "/workshops/adult-art-class/2026-11-19/"
+    },
+    {
+      "format": "adult-art-class",
+      "date": "2026-11-26",
+      "url": "/workshops/adult-art-class/2026-11-26/"
+    },
+    {
+      "format": "adult-art-class",
+      "date": "2026-12-03",
+      "url": "/workshops/adult-art-class/2026-12-03/"
+    },
+    {
+      "format": "adult-art-class",
+      "date": "2026-12-10",
+      "url": "/workshops/adult-art-class/2026-12-10/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-11-08",
+      "url": "/workshops/bake-lab/2026-11-08/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-11-12",
+      "url": "/workshops/bake-lab/2026-11-12/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-11-15",
+      "url": "/workshops/bake-lab/2026-11-15/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-11-19",
+      "url": "/workshops/bake-lab/2026-11-19/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-11-22",
+      "url": "/workshops/bake-lab/2026-11-22/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-11-26",
+      "url": "/workshops/bake-lab/2026-11-26/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-11-29",
+      "url": "/workshops/bake-lab/2026-11-29/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-12-02",
+      "url": "/workshops/bake-lab/2026-12-02/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-12-03",
+      "url": "/workshops/bake-lab/2026-12-03/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-12-06",
+      "url": "/workshops/bake-lab/2026-12-06/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-12-10",
+      "url": "/workshops/bake-lab/2026-12-10/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-12-13",
+      "url": "/workshops/bake-lab/2026-12-13/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-12-16",
+      "url": "/workshops/bake-lab/2026-12-16/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-12-17",
+      "url": "/workshops/bake-lab/2026-12-17/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-12-23",
+      "url": "/workshops/bake-lab/2026-12-23/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-12-24",
+      "url": "/workshops/bake-lab/2026-12-24/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-12-27",
+      "url": "/workshops/bake-lab/2026-12-27/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-12-30",
+      "url": "/workshops/bake-lab/2026-12-30/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2026-12-31",
+      "url": "/workshops/bake-lab/2026-12-31/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-03",
+      "url": "/workshops/bake-lab/2027-01-03/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-06",
+      "url": "/workshops/bake-lab/2027-01-06/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-07",
+      "url": "/workshops/bake-lab/2027-01-07/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-10",
+      "url": "/workshops/bake-lab/2027-01-10/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-13",
+      "url": "/workshops/bake-lab/2027-01-13/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-14",
+      "url": "/workshops/bake-lab/2027-01-14/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-17",
+      "url": "/workshops/bake-lab/2027-01-17/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-20",
+      "url": "/workshops/bake-lab/2027-01-20/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-21",
+      "url": "/workshops/bake-lab/2027-01-21/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-24",
+      "url": "/workshops/bake-lab/2027-01-24/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-27",
+      "url": "/workshops/bake-lab/2027-01-27/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-28",
+      "url": "/workshops/bake-lab/2027-01-28/"
+    },
+    {
+      "format": "bake-lab",
+      "date": "2027-01-31",
+      "url": "/workshops/bake-lab/2027-01-31/"
+    },
+    {
+      "format": "candle-making",
+      "date": "2026-11-15",
+      "url": "/workshops/candle-making/2026-11-15/"
+    },
+    {
+      "format": "crochet-bag",
+      "date": "2026-11-22",
+      "url": "/workshops/crochet-bag/2026-11-22/"
+    },
+    {
+      "format": "glow-canvas",
+      "date": "2026-11-12",
+      "url": "/workshops/glow-canvas/2026-11-12/"
+    },
+    {
+      "format": "glow-canvas",
+      "date": "2026-11-19",
+      "url": "/workshops/glow-canvas/2026-11-19/"
+    },
+    {
+      "format": "kids-art-studio",
+      "date": "2026-11-08",
+      "url": "/workshops/kids-art-studio/2026-11-08/"
+    },
+    {
+      "format": "kids-art-studio",
+      "date": "2026-11-15",
+      "url": "/workshops/kids-art-studio/2026-11-15/"
+    },
+    {
+      "format": "kids-art-studio",
+      "date": "2026-11-22",
+      "url": "/workshops/kids-art-studio/2026-11-22/"
+    },
+    {
+      "format": "kids-art-studio",
+      "date": "2026-11-29",
+      "url": "/workshops/kids-art-studio/2026-11-29/"
+    },
+    {
+      "format": "kids-art-studio",
+      "date": "2026-12-06",
+      "url": "/workshops/kids-art-studio/2026-12-06/"
+    },
+    {
+      "format": "parent-child-studio",
+      "date": "2026-12-06",
+      "url": "/workshops/parent-child-studio/2026-12-06/"
+    },
+    {
+      "format": "photo-walk-edit",
+      "date": "2026-11-08",
+      "url": "/workshops/photo-walk-edit/2026-11-08/"
+    },
+    {
+      "format": "photo-walk-edit",
+      "date": "2026-11-22",
+      "url": "/workshops/photo-walk-edit/2026-11-22/"
+    },
+    {
+      "format": "photo-walk-edit",
+      "date": "2026-12-06",
+      "url": "/workshops/photo-walk-edit/2026-12-06/"
+    },
+    {
+      "format": "reels-for-your-business",
+      "date": "2026-11-10",
+      "url": "/workshops/reels-for-your-business/2026-11-10/"
+    },
+    {
+      "format": "reels-for-your-business",
+      "date": "2026-11-15",
+      "url": "/workshops/reels-for-your-business/2026-11-15/"
+    },
+    {
+      "format": "reels-for-your-business",
+      "date": "2026-11-17",
+      "url": "/workshops/reels-for-your-business/2026-11-17/"
+    },
+    {
+      "format": "reels-for-your-business",
+      "date": "2026-11-24",
+      "url": "/workshops/reels-for-your-business/2026-11-24/"
+    },
+    {
+      "format": "reels-for-your-business",
+      "date": "2026-11-29",
+      "url": "/workshops/reels-for-your-business/2026-11-29/"
+    },
+    {
+      "format": "reels-for-your-business",
+      "date": "2026-12-01",
+      "url": "/workshops/reels-for-your-business/2026-12-01/"
+    },
+    {
+      "format": "reels-for-your-business",
+      "date": "2026-12-08",
+      "url": "/workshops/reels-for-your-business/2026-12-08/"
+    },
+    {
+      "format": "sing-your-song",
+      "date": "2026-11-12",
+      "url": "/workshops/sing-your-song/2026-11-12/"
+    },
+    {
+      "format": "sing-your-song",
+      "date": "2026-11-19",
+      "url": "/workshops/sing-your-song/2026-11-19/"
+    },
+    {
+      "format": "sing-your-song",
+      "date": "2026-11-26",
+      "url": "/workshops/sing-your-song/2026-11-26/"
+    },
+    {
+      "format": "sing-your-song",
+      "date": "2026-12-03",
+      "url": "/workshops/sing-your-song/2026-12-03/"
+    },
+    {
+      "format": "sing-your-song",
+      "date": "2026-12-10",
+      "url": "/workshops/sing-your-song/2026-12-10/"
+    },
+    {
+      "format": "textured-canvas",
+      "date": "2026-11-05",
+      "url": "/workshops/textured-canvas/2026-11-05/"
+    },
+    {
+      "format": "textured-canvas",
+      "date": "2026-11-08",
+      "url": "/workshops/textured-canvas/2026-11-08/"
+    },
+    {
+      "format": "textured-canvas",
+      "date": "2026-11-10",
+      "url": "/workshops/textured-canvas/2026-11-10/"
+    },
+    {
+      "format": "textured-canvas",
+      "date": "2026-11-11",
+      "url": "/workshops/textured-canvas/2026-11-11/"
+    },
+    {
+      "format": "textured-canvas",
+      "date": "2026-11-15",
+      "url": "/workshops/textured-canvas/2026-11-15/"
+    },
+    {
+      "format": "textured-canvas",
+      "date": "2026-11-22",
+      "url": "/workshops/textured-canvas/2026-11-22/"
+    },
+    {
+      "format": "textured-canvas",
+      "date": "2026-11-24",
+      "url": "/workshops/textured-canvas/2026-11-24/"
+    },
+    {
+      "format": "textured-canvas",
+      "date": "2026-11-25",
+      "url": "/workshops/textured-canvas/2026-11-25/"
+    },
+    {
+      "format": "textured-canvas",
+      "date": "2026-11-26",
+      "url": "/workshops/textured-canvas/2026-11-26/"
+    },
+    {
+      "format": "textured-canvas",
+      "date": "2026-11-29",
+      "url": "/workshops/textured-canvas/2026-11-29/"
+    },
+    {
+      "format": "textured-canvas",
+      "date": "2026-12-06",
+      "url": "/workshops/textured-canvas/2026-12-06/"
+    },
+    {
+      "format": "textured-canvas",
+      "date": "2026-12-08",
+      "url": "/workshops/textured-canvas/2026-12-08/"
+    },
+    {
+      "format": "watercolour-botanicals",
+      "date": "2026-11-04",
+      "url": "/workshops/watercolour-botanicals/2026-11-04/"
+    },
+    {
+      "format": "watercolour-botanicals",
+      "date": "2026-11-08",
+      "url": "/workshops/watercolour-botanicals/2026-11-08/"
+    },
+    {
+      "format": "watercolour-botanicals",
+      "date": "2026-11-10",
+      "url": "/workshops/watercolour-botanicals/2026-11-10/"
+    },
+    {
+      "format": "watercolour-botanicals",
+      "date": "2026-11-15",
+      "url": "/workshops/watercolour-botanicals/2026-11-15/"
+    },
+    {
+      "format": "watercolour-botanicals",
+      "date": "2026-11-17",
+      "url": "/workshops/watercolour-botanicals/2026-11-17/"
+    },
+    {
+      "format": "watercolour-botanicals",
+      "date": "2026-11-18",
+      "url": "/workshops/watercolour-botanicals/2026-11-18/"
+    },
+    {
+      "format": "watercolour-botanicals",
+      "date": "2026-11-22",
+      "url": "/workshops/watercolour-botanicals/2026-11-22/"
+    },
+    {
+      "format": "watercolour-botanicals",
+      "date": "2026-11-24",
+      "url": "/workshops/watercolour-botanicals/2026-11-24/"
+    },
+    {
+      "format": "watercolour-botanicals",
+      "date": "2026-11-29",
+      "url": "/workshops/watercolour-botanicals/2026-11-29/"
+    },
+    {
+      "format": "watercolour-botanicals",
+      "date": "2026-12-01",
+      "url": "/workshops/watercolour-botanicals/2026-12-01/"
+    },
+    {
+      "format": "watercolour-botanicals",
+      "date": "2026-12-06",
+      "url": "/workshops/watercolour-botanicals/2026-12-06/"
+    },
+    {
+      "format": "watercolour-botanicals",
+      "date": "2026-12-08",
+      "url": "/workshops/watercolour-botanicals/2026-12-08/"
+    }
+  ]
+}
