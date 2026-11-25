@@ -1417,37 +1417,96 @@ def build_groups():
   <div><label for="gm">Anything else? <span class="muted">(optional)</span></label><textarea id="gm" name="notes" rows="2" maxlength="600"></textarea></div>'''
     form = WaForm("Hi, I'd like a quote for a {package} for {n} people on {date}.{company}{notes} Name: {name}. Source: {source}.", fields, 'Send on WhatsApp', fmt='groups')
     friday = fmt_time(g['friday_hard_stop'])
-    # Approved 23 Nov 2026. Keep this wording verbatim, including the package prices.
+    # Package prices below are the groups.packages figures (not the suggested birthday prices).
+    by_name = {pk['name']: pk for pk in g['packages']}
+    if (by_name['Art team day']['price'], by_name['Art team day']['pax']) != (1200, 10):
+        raise SystemExit('art team day package drifted')
+    if (by_name['Baking team day']['price'], by_name['Baking team day']['pax']) != (1700, 15):
+        raise SystemExit('baking team day package drifted')
+    if (by_name['Mixed team day (two or three streams in parallel)']['price'], by_name['Mixed team day (two or three streams in parallel)']['pax']) != (2400, 20):
+        raise SystemExit('mixed team day package drifted')
+    if (by_name['Team dinner + evening workshop'].get('per_person'), by_name['Team dinner + evening workshop'].get('min_pax')) != (150, 10):
+        raise SystemExit('dinner workshop package drifted')
+    if g['extra_pax'] != 100 or POL['minimum_to_run'] != 6:
+        raise SystemExit('team day extra person or minimum drifted')
+    seat = {
+        'acrylic-canvas': (89, 160, 18),
+        'textured-canvas': (89, 160, 20),
+        'glow-canvas': (85, 153, 18),
+        'watercolour-botanicals': (80, 144, 20),
+        'candle-making': (89, 160, 16),
+        'crochet-bag': (95, 171, 20),
+        'bake-lab': (95, 171, 24),
+    }
+    for fid, (price, pair, cap) in seat.items():
+        f = FORMATS[fid]
+        if f.get('status') == 'paused' or (f.get('price'), f.get('pair_price'), f.get('cap')) != (price, pair, cap):
+            raise SystemExit(f'workshop facts drifted for {fid}')
+    if FORMATS['bake-lab'].get('price_specialty') != 85 or FORMATS['bake-lab'].get('cap_specialty') != 20:
+        raise SystemExit('bake lab specialty facts drifted')
+    lines = []
+    for fid in seat:
+        f = FORMATS[fid]
+        bits = [f'{rm(f["price"])} a person', f'pair {rm(f["pair_price"])}']
+        cap = f'Up to {f["cap"]} seats'
+        if f.get('cap_specialty'):
+            cap += f' ({f["cap_specialty"]} for a specialty bake)'
+        lines.append(
+            f'<li><a href="/workshops/{fid}/">{e(f["name"])}</a>. {e(f["summary"])} '
+            f'{e(", ".join(bits))}. {cap}. {e(length(f))} in the {e(f["room"])}.</li>')
+    activities = ''.join(lines)
+    # Package-price answer stays the approved wording. The other answers name the workshops, caps and place.
     group_faqs = [
         ('What team building activities do you run in KL?',
-         'We run art, baking and mixed team days at our studio in Desa Sri Hartamas, KL. Up to four rooms run side by side, so your team can split into streams. Every stream is taught by working artists, and everyone takes something home. You can add a team dinner at Savor downstairs.'),
+         'Team building activities in KL here are painting, candle making, crochet and Bake Lab. Watercolour is RM80. Acrylic and textured canvas are RM89. Glow canvas is RM85. Candles are RM89. Crochet and Bake Lab are RM95. A drink and all materials are included, and you take the piece home the same day.'),
         ('How much does a team day cost?',
          'An art team day is RM1,200 for up to 10 people. A baking team day is RM1,700 for up to 15. A mixed team day, with two or three streams in parallel, is RM2,400 for up to 20. Each extra person is RM100. Prices include materials and a teacher for each stream.'),
         ('How many people do we need?',
-         'Team days run from 6 people. Each package covers a set number, up to 10 for art, 15 for baking and 20 for a mixed day, and each extra person is RM100. For a dinner and evening workshop, the team package is RM150 a person and starts from 10 people.'),
-        ('How do we book a team day?',
-         'Send us your package, numbers and a preferred date on WhatsApp, or use the quote form on the groups page. We plan the streams across our rooms and confirm the plan with you. Then we send payment details on WhatsApp. Seats are prepaid. Friday team days finish by 12:30pm.'),
+         'Team days run from 6 people. Art covers up to 10, baking up to 15, and a mixed day up to 20. Each extra person is RM100. A dinner and evening workshop is RM150 a person, from 10 people. Candle making seats 16. Acrylic and glow seat 18. Crochet, textured canvas and watercolour seat 20. Bake Lab seats 24.'),
+        ('Where is team building near me in KL?',
+         'For team building near me in KL, the studio is upstairs, above Savor, at 38-2, Jalan 28/70A, Desa Sri Hartamas, 50480 Kuala Lumpur. It is a short drive from Mont Kiara. Saturday is closed. Friday team days finish by 12:30pm. Sunday workshops do not start before 12pm.'),
+        ('How do we book team building in Malaysia?',
+         'Send the package, the numbers and a preferred date on WhatsApp, or use the quote form on this page. We plan the streams and confirm the plan with you, then send payment details. Seats are prepaid. For a single public seat instead of a team day, use the workshops page.'),
     ]
+    for question, answer in group_faqs:
+        count = len(re.findall(r"[A-Za-z0-9’']+", answer))
+        if not 40 <= count <= 60:
+            raise SystemExit(f'groups FAQ answer is {count} words: {question}')
+    title = 'Team building activities KL · Master Artist'
+    desc = 'Team building activities KL in Desa Sri Hartamas: painting, candles, crochet and Bake Lab. Team building in Malaysia from RM1,200, near Mont Kiara.'
+    if len(title) > 60:
+        raise SystemExit(f'groups title is {len(title)} characters: {title}')
+    if len(desc) > 155:
+        raise SystemExit(f'groups description is {len(desc)} characters: {desc}')
     body = hero_band('Master Artist Studio Sessions', 'Team building activities in KL: team days and <em>private groups</em>',
-                     f'Art, baking or a mix, with up to {len(g["rooms_in_parallel"])} rooms running side by side. Taught by working artists; everyone takes something home.',
-                     '<a class="btn" href="#quote">Ask for a quote</a><a class="btn ghost" href="#packages">Packages</a>',
+                     f'Team building in Malaysia, for a group in KL. Art, baking or a mix, with up to {len(g["rooms_in_parallel"])} rooms side by side. Taught by working artists. Everyone takes something home.',
+                     '<a class="btn" href="#quote">Ask for a quote</a><a class="btn ghost" href="#activities">Activities</a>',
                      crumbs(('/', 'Home'), (None, 'Groups')), img=('focaccia-workshop-3.jpg', 'A group shaping dough at the kitchen tables'))
     body += f'''<section class="sec v-studio" id="packages"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Packages</span><h2>Choose a <em>package</em></h2><p>Prices include materials and a teacher for each stream.</p></div>
   <div class="grid-cards">{''.join(cards)}</div>
 </div></section>
+<section class="sec alt v-studio" id="activities"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Activities</span><h2>Team building activities in <em>KL</em></h2>
+    <p>These are the workshops we run. Each one is two hours. {e(POL['included'].capitalize())} are included, and you take the piece home the same day. The price is one public seat. A private group uses a package above.</p></div>
+  <div class="prose"><p>If you searched for a sip and paint, a painting workshop is that kind of evening: one guided canvas, with a drink included.</p>
+    <ul>{activities}</ul>
+    <p>Public dates are on the <a href="/workshops/">workshops page</a>. A team day is a separate booking, not a stack of public seat prices.</p>
+    <h2>Team building in <em>Malaysia</em></h2>
+    <p>Team building in Malaysia, for a team that wants to stay in the city, is a day at this studio. Searching for team building near me? We are upstairs above Savor, at {e(SITE['address']['street'])}, {e(SITE['address']['postcode'])} {e(SITE['address']['city'])}. Hartamas is a short drive from Mont Kiara.</p>
+    <p>Up to {len(g['rooms_in_parallel'])} rooms can run side by side: the {e(rooms)}. Friday team days finish by {friday}. Saturday is closed. Sunday workshops do not start before 12pm.</p></div>
+</div></section>
 <section class="sec tight v-studio"><div class="wrap"><div class="cta-card"><div><h2>Planning a <em>birthday?</em></h2><p>Art, clay and baking parties for kids, and canvas birthdays for teens and adults.</p></div>
   <div class="hero-cta"><a class="btn" href="/birthdays/">Birthday parties</a></div></div></div></section>
 <section class="sec alt v-studio" id="quote"><div class="wrap listing book">
   <div class="aside">{form}</div>
-  <div class="prose"><h2 style="margin-top:0">Art and baking team building in KL</h2>
-    <p><a href="/workshops/">see the public workshop dates</a></p>
-    <h2>How a team day <em>works</em></h2>
+  <div class="prose"><h2 style="margin-top:0">How a team day <em>works</em></h2>
     <ol class="steps">
       <li><span class="ic">{icon('chat')}</span><b>Tell us</b><span>Package, numbers and a date, on WhatsApp.</span></li>
       <li><span class="ic">{icon('calendar')}</span><b>We plan it</b><span>Streams in parallel in the {e(rooms)}.</span></li>
       <li><span class="ic">{icon('bag')}</span><b>Everyone makes something</b><span>And takes it home. Add dinner at Savor downstairs.</span></li>
     </ol>
+    <p><a href="/workshops/">Public workshop dates</a> are a different booking from a team day.</p>
     <h2>Good to <em>know</em></h2>{Accordion([
         ('Fridays', f"Friday team days finish by {friday}; the building closes at 5pm on Fridays and all day Saturday."),
         ('Minimum numbers', f"Team days run from {POL['minimum_to_run']} people. Each extra person over a package is {rm(g['extra_pax'])}."),
@@ -1455,12 +1514,14 @@ def build_groups():
     ])}</div>
 </div></section>
 <section class="sec v-studio" id="faq"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Questions</h2></div>{FaqList(group_faqs)}</div></section>'''
+    for needle in ('plant-based', 'plant based', 'vegan', 'cheaper than', 'hrdc', 'hrd corp'):
+        if needle in body.lower() or needle in desc.lower():
+            raise SystemExit(f'groups copy contains {needle}')
     schema = ld(faq_ld(group_faqs)) + '\n' + ld(breadcrumb_ld([
         ('Home', 'https://masterartist.co/'),
         ('Groups', 'https://masterartist.co/groups/'),
     ]))
-    page('/groups/', 'Team Building Activities KL: Art & Baking · Master Artist',
-         'Team building activities in KL: art, baking and mixed team days in Desa Sri Hartamas from RM1,200. Rooms run side by side, everyone takes something home.',
+    page('/groups/', title, desc,
          body, voice='studio', active='/groups/', extra_head=schema, data_attrs=' data-page="groups"', wa={'msg': "Hi, I'd like a quote for a team day or group. Source: {source}.", 'fmt': 'groups'})
 
 
