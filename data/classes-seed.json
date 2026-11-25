@@ -110,32 +110,15 @@
     {
       "id": "voice",
       "voice": "academy",
-      "name": "Voice",
+      "name": "Music & voice lessons",
       "discipline": "voice",
-      "price_month": 400,
-      "per_session": 100,
-      "group_price_month": 300,
-      "cap": 6,
+      "price_hour_min": 80,
+      "price_hour_max": 100,
       "room": "L2 recording studio",
-      "slots": [
-        {
-          "day": "Mon-Thu",
-          "time": "15:00-19:00"
-        },
-        {
-          "day": "Fri",
-          "time": "15:00-17:00"
-        },
-        {
-          "day": "Sun",
-          "time": "by appointment"
-        }
-      ],
-      "teacher": "Sabrina",
-      "summary": "Technique, repertoire and performance with Sabrina; recorded in the studio so you hear your own progress. Small intake to start.",
-      "term": "Monthly.",
-      "duration_min": 90,
-      "format_note": "Usually one-to-one; small groups on request."
+      "teacher": "Sabrina Hew",
+      "summary": "One-to-one music and voice lessons with Sabrina Hew. RM80 to RM100 per student per hour. Enquire to arrange a time.",
+      "term": "One-to-one lessons. There is no fixed timetable yet.",
+      "booking": "enquire"
     },
     {
       "id": "teen-photo-video",
