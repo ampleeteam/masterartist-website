@@ -57,6 +57,9 @@ SCRUB_RULES = [
     (re.compile(r'are plant-based,', re.I), 'are'),
     (re.compile(r'plant-based bake', re.I), 'bake'),
     (re.compile(r'\bplant[-\s]based\b', re.I), ''),
+    (re.compile(r'\ba vegan baker\b', re.I), 'a baker'),
+    (re.compile(r'\bvegan baker\s+', re.I), ''),
+    (re.compile(r'\bvegan\b', re.I), ''),
 ]
 
 

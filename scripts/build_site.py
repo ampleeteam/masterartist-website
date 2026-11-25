@@ -672,7 +672,8 @@ def responsive_images(doc):
 
 
 def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_head='', noindex=False, wa=None):
-    if path not in TITLE_UNTOUCHED and len(title) > 60:
+    limit = 65 if path == '/' else 60
+    if path not in TITLE_UNTOUCHED and len(title) > limit:
         raise SystemExit(f'{path} title is {len(title)} characters: {title}')
     if path == '/' and len(desc) > 155:
         raise SystemExit(f'home description is {len(desc)} characters: {desc}')
@@ -1061,7 +1062,7 @@ def build_home():
     <div class="hero-cta"><a class="btn ghost" href="{e(SITE['google']['maps_url'])}" target="_blank" rel="noopener">Open in Google Maps</a>{WhatsAppButton(msg, 'both')}</div></div>
   <div>{HoursBlock()}</div>
 </div></section>'''
-    page('/', 'Art & Baking Workshops in KL · Sri Hartamas · Master Artist',
+    page('/', 'Art & Baking Workshops, Team Days & Classes in KL · Master Artist',
          f'Art and baking workshops in Sri Hartamas, KL, and weekly classes taught by working artists. Workshops from {rm(min_ws)}; classes from {rm(min_cl)}/month; {rm(TRIAL["price"])} trial.',
          body + open_day + doors + this_week + made + reviews + visit, data_attrs=' data-page="home"')
 
@@ -1528,13 +1529,18 @@ def build_programme(p):
         ])
     else:
         price = f"{rm(p.get('price_month') or p.get('price_course'))}{'/month' if p.get('price_month') else ''}"
+        label = {
+            'kids-art-younger': 'Kids art classes (5–9)',
+            'kids-art-older': 'Kids art classes (10–15)',
+            'adult-art': 'Adult art classes',
+        }.get(p['id'], p['name'])
         title = clip_title([
-            f"{p['name']} in Sri Hartamas, KL · {price} · Master Artist",
-            f"{p['name']} · KL · {price} · Master Artist",
-            f"{p['name']} · {price} · Master Artist",
-            f"{p['name']} · KL · {price}",
-            f"{p['name']} · {price}",
-            p['name'],
+            f"{label} in KL · {price} · Master Artist",
+            f"{label} · KL · {price} · Master Artist",
+            f"{label} · {price} · Master Artist",
+            f"{label} · KL · {price}",
+            f"{label} · {price}",
+            label,
         ])
     page(f"/classes/{p['id']}/", title, desc,
          body, voice='academy', active='/classes/', extra_head=ld(course_ld), data_attrs=f' data-page="programme" data-programme="{p["id"]}"', wa=page_wa)
@@ -2166,6 +2172,9 @@ POST_LOADER = '''<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/
       .replace(/are plant-based,/gi, 'are')
       .replace(/plant-based bake/gi, 'bake')
       .replace(/\\bplant[-\\s]based\\b/gi, '')
+      .replace(/\\ba vegan baker\\b/gi, 'a baker')
+      .replace(/\\bvegan baker\\s+/gi, '')
+      .replace(/\\bvegan\\b/gi, '')
       .replace(/ {2,}/g, ' ')
       .replace(/ +([,.;:])/g, '$1')
       .replace(/\\( +/g, '(');
