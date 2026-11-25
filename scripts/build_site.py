@@ -1147,6 +1147,7 @@ def build_this_sunday():
 
 def build_workshops():
     import shutil
+    previously = dated_workshop_pages()
     for d in (ROOT / 'workshops').glob('*'):
         if d.is_dir():
             shutil.rmtree(d)   # dated pages roll daily; regenerate from scratch
@@ -1160,6 +1161,7 @@ def build_workshops():
         build_session_day(sorted(slots, key=lambda s: s['time']))
     build_this_sunday()
     build_sing_your_song_note()
+    build_past_session_redirects(previously)
     return len(days)
 
 
@@ -1480,7 +1482,8 @@ def build_prices():
     extra_rows = []
     aac = FORMATS.get('adult-art-class')
     if aac and aac.get('status') != 'paused':
-        extra_rows.append(('Adult Art Class (Thursday)', f"drop in, or {aac['pack_size']} for {rm(aac['pack_price'])}", rm(aac['price']), '/workshops/adult-art-class/'))
+        # /workshops/adult-art-class/ 404s. The live page is the weekly Adult Art class.
+        extra_rows.append(('Adult Art Class (Thursday)', f"drop in, or {aac['pack_size']} for {rm(aac['pack_price'])}", rm(aac['price']), '/classes/adult-art/'))
     extra_rows.append((d['name'], "Any workshop · choose from Savor's menu and pay online", f"from {rm(d['price_from'])}", None))
     if sp:
         extra_rows.append(('Studio Pass', f"{sp['sessions']} workshop seats", rm(sp['launch']), None))
@@ -1937,6 +1940,8 @@ def build_404():
 (function () {
   var m = location.pathname.match(/^\\/blog\\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\\/|\\.html)?$/);
   if (m) location.replace('/post.html?slug=' + m[1]);
+  var w = location.pathname.match(/^\\/workshops\\/([a-z0-9-]+)\\/\\d{4}-\\d{2}-\\d{2}\\/?$/);
+  if (w) location.replace('/workshops/' + w[1] + '/' + location.search + location.hash);
 })();
 </script>'''
     doors = '''<section class="sec"><div class="wrap"><div class="doors">
@@ -1961,17 +1966,116 @@ REDIRECTS = {
 }
 
 
-def build_redirects():
-    """Retired pages become redirect stubs that keep the visitor's UTM query (ads may still point at them)."""
-    for old, new in REDIRECTS.items():
-        url = SITE['url'] + new
-        (ROOT / old).write_text(f'''<!DOCTYPE html>
+def redirect_stub(new):
+    """Canonical, noindex stub. The script keeps the query string (UTM) and any hash."""
+    url = SITE['url'] + new
+    return f'''<!DOCTYPE html>
 <html lang="en-MY"><head><meta charset="utf-8"><title>Moved · Master Artist</title>
 <link rel="canonical" href="{url}"><meta name="robots" content="noindex">
 <script>location.replace({json.dumps(new.split('#')[0])} + location.search + ({json.dumps('#' + new.split('#')[1]) if '#' in new else 'location.hash'}));</script>
 <meta http-equiv="refresh" content="0; url={new}">
 </head><body><p>This page has moved to <a href="{new}">{url}</a>.</p></body></html>
-''')
+'''
+
+
+def build_redirects():
+    """Retired pages become redirect stubs that keep the visitor's UTM query (ads may still point at them)."""
+    for old, new in REDIRECTS.items():
+        (ROOT / old).write_text(redirect_stub(new))
+
+
+DATE_PAGE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+PAST_SESSIONS = DATA / 'past-sessions.json'
+
+
+def dated_workshop_pages():
+    """Real dated session pages on disk, before the workshop tree is wiped."""
+    found = []
+    for page in (ROOT / 'workshops').glob('*/*/index.html'):
+        fmt, date = page.parent.parent.name, page.parent.name
+        if not DATE_PAGE.match(date) or not re.fullmatch(r'[a-z0-9-]+', fmt):
+            continue
+        if 'http-equiv="refresh"' in page.read_text(errors='ignore')[:1200]:
+            continue
+        found.append({'format': fmt, 'date': date, 'url': f'/workshops/{fmt}/{date}/'})
+    return found
+
+
+def load_past_sessions():
+    if not PAST_SESSIONS.exists():
+        return []
+    data = json.loads(PAST_SESSIONS.read_text())
+    rows = data.get('sessions', []) if isinstance(data, dict) else data
+    out = []
+    for row in rows:
+        if isinstance(row, str):
+            m = re.search(r'/workshops/([a-z0-9-]+)/(\d{4}-\d{2}-\d{2})/?$', row)
+            if m:
+                out.append({'format': m.group(1), 'date': m.group(2), 'url': f'/workshops/{m.group(1)}/{m.group(2)}/'})
+        elif isinstance(row, dict) and row.get('format') and DATE_PAGE.match(str(row.get('date', ''))):
+            fmt, date = row['format'], row['date']
+            out.append({'format': fmt, 'date': date, 'url': f'/workshops/{fmt}/{date}/'})
+    return out
+
+
+def save_past_sessions(rows):
+    by_key = {}
+    for row in rows:
+        by_key[(row['format'], row['date'])] = {
+            'format': row['format'], 'date': row['date'],
+            'url': f"/workshops/{row['format']}/{row['date']}/",
+        }
+    ordered = [by_key[k] for k in sorted(by_key)]
+    note = ''
+    if PAST_SESSIONS.exists():
+        old = json.loads(PAST_SESSIONS.read_text())
+        if isinstance(old, dict):
+            note = old.get('_note', '')
+    PAST_SESSIONS.write_text(json.dumps({
+        '_note': note or 'Dated workshop URLs. Redirect any that are not on sale, and append a session when it drops off.',
+        'sessions': ordered,
+    }, indent=2) + '\n')
+
+
+def session_redirect_target(fmt):
+    """Live format page, or the adult-art class page, or the workshops hub."""
+    page = ROOT / 'workshops' / fmt / 'index.html'
+    if page.exists() and 'http-equiv="refresh"' not in page.read_text(errors='ignore')[:1200]:
+        return f'/workshops/{fmt}/'
+    if fmt == 'adult-art-class' and (ROOT / 'classes' / 'adult-art' / 'index.html').exists():
+        return '/classes/adult-art/'
+    return '/workshops/'
+
+
+def build_past_session_redirects(previously=None):
+    """Redirect dated URLs that are no longer on sale. Keep the stubs out of the sitemap.
+
+    Called at the end of build_workshops(), after the live pages exist. Sessions that were
+    real pages and are not published this run are appended to data/past-sessions.json.
+    """
+    published = {(s['format'], s['date']) for s in PUB}
+    rows = load_past_sessions()
+    known = {(r['format'], r['date']) for r in rows}
+    added = False
+    for item in previously or []:
+        key = (item['format'], item['date'])
+        if key in known or key in published:
+            continue
+        rows.append({'format': item['format'], 'date': item['date'], 'url': f"/workshops/{item['format']}/{item['date']}/"})
+        known.add(key)
+        added = True
+    if added:
+        save_past_sessions(rows)
+    n = 0
+    for row in rows:
+        if (row['format'], row['date']) in published:
+            continue
+        dest = ROOT / 'workshops' / row['format'] / row['date']
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / 'index.html').write_text(redirect_stub(session_redirect_target(row['format'])))
+        n += 1
+    print(f'{n} past-session redirects')
+    return n
 
 
 GENERATED = []   # (path, priority, changefreq) recorded by page()
