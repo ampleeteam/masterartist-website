@@ -78,7 +78,7 @@ def main():
     import build_blog
     local = build_blog.load_local_posts()
     slugs = {p['slug'] for p in local}
-    expected = {'art-workshop-kl', 'choosing-piano-or-vocal-lessons-mont-kiara', 'benefits-of-kids-art-classes', 'creative-workshops-kl-this-week'}
+    expected = {'art-workshop-kl', 'choosing-piano-or-vocal-lessons-mont-kiara', 'benefits-of-kids-art-classes', 'creative-workshops-kl-this-week', 'team-building-activities-kl'}
     if slugs != expected:
         errors.append(f'unexpected local posts: {slugs}')
     merged = build_blog.merge_posts([{'slug': 'remote-only', 'published_at': '2026-01-01'}], local)
