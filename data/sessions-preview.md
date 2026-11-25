@@ -1,10 +1,7 @@
 # Sessions preview
 
-Generated 2026-11-25 — public sessions to 2027-01-06.
+Generated 2026-11-26 — public sessions to 2027-01-07.
 
-
-## Wednesday 25 November 2026
-- **19:00–21:00** Textured & Impasto Canvas · Sunny Bloom: Impasto Sunflower · L2 front room · RM89 · pair RM160 · Dine add-on (before) · 20 of 20 seats left
 
 ## Thursday 26 November 2026
 - **19:30–21:30** Textured & Impasto Canvas · Golden Impasto Sky · L2 front room · RM89 · pair RM160 · Dine add-on (before) · 20 of 20 seats left

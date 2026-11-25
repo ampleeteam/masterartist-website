@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-25T08:33:31",
+ "generated": "2026-11-26T07:02:32",
  "currency": "MYR",
  "formats": [
   {
@@ -444,39 +444,10 @@
   "note": "Spec 03-PROMPTS step 7: RM100, RM200 and any-workshop. Validity period TODO."
  },
  "window": {
-  "from": "2026-11-25",
+  "from": "2026-11-26",
   "days": 42
  },
  "sessions": [
-  {
-   "id": "textured-canvas-2026-11-25-1900",
-   "format": "textured-canvas",
-   "name": "Textured & Impasto Canvas",
-   "variant": null,
-   "discipline": "art",
-   "date": "2026-11-25",
-   "day": "Wed",
-   "time": "19:00",
-   "end": "21:00",
-   "label": "Wed 25 Nov · 7pm",
-   "room": "L2 front room",
-   "price": 89,
-   "pair_price": 160,
-   "price_set": "launch",
-   "price_unit": null,
-   "cap": 20,
-   "cap_unit": null,
-   "booked": 0,
-   "seats_left": 20,
-   "dine": true,
-   "dine_timing": "before",
-   "theme": "Sunny Bloom: Impasto Sunflower",
-   "public_holiday": null,
-   "surcharge_waived": false,
-   "type": "workshop",
-   "public": true,
-   "next_session": "textured-canvas-2026-11-26-1930"
-  },
   {
    "id": "textured-canvas-2026-11-26-1930",
    "format": "textured-canvas",
