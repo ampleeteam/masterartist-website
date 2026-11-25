@@ -74,6 +74,24 @@ def scrub_post(post):
     return out
 
 
+def faq_items(body):
+    """Questions and answers under the visible 'Frequently asked questions' heading.
+
+    The FAQPage JSON-LD is built from this, so the schema text is the paragraph text.
+    """
+    match = re.search(r'<h2>Frequently asked questions</h2>(.*)', body or '', re.S)
+    if not match:
+        return []
+    section = re.split(r'<h2\b', match.group(1), maxsplit=1)[0]
+    items = []
+    for question, answer in re.findall(r'<h3>(.*?)</h3>\s*<p>(.*?)</p>', section, re.S):
+        q = html.unescape(re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', '', question))).strip()
+        a = html.unescape(re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', '', answer))).strip()
+        if q and a:
+            items.append((q, a))
+    return items
+
+
 def mentions_banned(post):
     blob = ' '.join(str(post.get(key) or '') for key in ('title', 'excerpt', 'seo_description', 'body_html', 'cover_alt', 'author'))
     return bool(re.search(r'plant[-\s]based', blob, re.I))
@@ -169,8 +187,24 @@ def build(template, p, others):
         doc = re.sub(r'<meta name="twitter:image" content="[^"]*">', f'<meta name="twitter:image" content="{img}">', doc, 1)
     # drop the template's own breadcrumb schema, add the article's
     doc = re.sub(r'<script type="application/ld\+json">\s*\{\s*"@context": "https://schema.org",\s*"@type": "BreadcrumbList".*?</script>', '', doc, 1, re.S)
-    doc = doc.replace('</head>', '<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False) + '</script>\n'
-                      '<script type="application/ld+json">' + json.dumps(crumbs, ensure_ascii=False) + '</script>\n</head>', 1)
+    head_ld = ('<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False) + '</script>\n'
+               '<script type="application/ld+json">' + json.dumps(crumbs, ensure_ascii=False) + '</script>\n')
+    if p.get('faq_page'):
+        items = faq_items(body)
+        if not 3 <= len(items) <= 5:
+            sys.exit(f'{slug}: FAQPage needs 3 to 5 questions, found {len(items)}')
+        for question, answer in items:
+            count = len(re.findall(r"[A-Za-z0-9’']+", answer))
+            if not 40 <= count <= 60:
+                sys.exit(f'{slug}: FAQ answer is {count} words: {question}')
+        faq_schema = {
+            '@context': 'https://schema.org', '@type': 'FAQPage',
+            'mainEntity': [{
+                '@type': 'Question', 'name': question,
+                'acceptedAnswer': {'@type': 'Answer', 'text': answer},
+            } for question, answer in items]}
+        head_ld += '<script type="application/ld+json">' + json.dumps(faq_schema, ensure_ascii=False) + '</script>\n'
+    doc = doc.replace('</head>', head_ld + '</head>', 1)
     # content — ids are renamed so site.js doesn't try to load the post again
     doc = doc.replace('<span id="postCrumb">Article</span>', f'<span>{esc(title)}</span>', 1)
     doc = doc.replace('<h1 id="postTitle">Loading…</h1>', f'<h1>{esc(title)}</h1>', 1)

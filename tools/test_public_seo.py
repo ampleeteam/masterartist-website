@@ -78,7 +78,7 @@ def main():
     import build_blog
     local = build_blog.load_local_posts()
     slugs = {p['slug'] for p in local}
-    expected = {'art-workshop-kl', 'choosing-piano-or-vocal-lessons-mont-kiara', 'benefits-of-kids-art-classes'}
+    expected = {'art-workshop-kl', 'choosing-piano-or-vocal-lessons-mont-kiara', 'benefits-of-kids-art-classes', 'creative-workshops-kl-this-week'}
     if slugs != expected:
         errors.append(f'unexpected local posts: {slugs}')
     merged = build_blog.merge_posts([{'slug': 'remote-only', 'published_at': '2026-01-01'}], local)
@@ -110,6 +110,24 @@ def main():
             errors.append(f'{post["slug"]} canonical missing')
         if '"@type": "Article"' not in html and '"Article"' not in html:
             errors.append(f'{post["slug"]} missing Article JSON-LD')
+        if post.get('faq_page'):
+            blocks = []
+            for raw in re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.S):
+                blocks.append(json.loads(raw))
+            faq = next((b for b in blocks if b.get('@type') == 'FAQPage'), None)
+            if not faq:
+                errors.append(f'{post["slug"]} missing FAQPage JSON-LD')
+            else:
+                visible = build_blog.faq_items(re.search(r'<article class="article">.*?</article>', html, re.S).group(0))
+                schema_pairs = [(q['name'], q['acceptedAnswer']['text']) for q in faq['mainEntity']]
+                if schema_pairs != visible:
+                    errors.append(f'{post["slug"]} FAQPage does not match the visible FAQ')
+                if not 3 <= len(schema_pairs) <= 5:
+                    errors.append(f'{post["slug"]} FAQ count {len(schema_pairs)}')
+                for question, answer in schema_pairs:
+                    count = len(re.findall(r"[A-Za-z0-9’']+", answer))
+                    if not 40 <= count <= 60:
+                        errors.append(f'{post["slug"]} FAQ answer length {count}: {question}')
 
     # every JSON-LD block parses
     for path in [ROOT / r for r in pages]:
