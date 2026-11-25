@@ -1430,17 +1430,46 @@ def build_programme(p):
 <section class="sec v-academy"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Questions <em>parents ask</em></h2></div>{Accordion(faqs)}</div></section>
 <section class="sec alt v-academy"><div class="wrap"><div class="sec-head"><span class="eyebrow">Google reviews</span><h2>What families <em>say</em></h2></div>{GoogleReviews(3)}</div></section>'''
     if hourly:
-        offers = {'@type': 'AggregateOffer', 'lowPrice': p['price_hour_min'], 'highPrice': p['price_hour_max'], 'priceCurrency': 'MYR'}
         title = f"{p['name']} in Sri Hartamas, KL · {hour_band(p)} per hour · Master Artist Academy"
         desc = p.get('summary', '')
     else:
-        offers = {'@type': 'Offer', 'price': p.get('price_month') or p.get('price_course'), 'priceCurrency': 'MYR', 'category': 'Paid'}
         title = f"{p['name']} in Sri Hartamas, KL · {rm(p.get('price_month') or p.get('price_course'))}{'/month' if p.get('price_month') else ''} · Master Artist Academy"
         desc = f"{p.get('summary', '')} {price_plain}." + (f" {rm(TRIAL['price'])} trial, credited against the first month." if trial else '')
-    course_ld = {'@context': 'https://schema.org', '@type': 'Course', 'name': p['name'], 'description': p.get('summary', ''),
-                 'provider': {'@type': 'Organization', 'name': SITE['labels']['academy'], 'url': SITE['url']},
-                 'offers': offers,
-                 'hasCourseInstance': {'@type': 'CourseInstance', 'courseMode': 'onsite', 'location': place()}}
+    if hourly:
+        # Same Course block as the live voice page: an hourly range, no monthly offer.
+        course_ld = {'@context': 'https://schema.org', '@type': 'Course', 'name': p['name'], 'description': p.get('summary', ''),
+                     'provider': {'@type': 'Organization', 'name': SITE['labels']['academy'], 'url': SITE['url']},
+                     'offers': {'@type': 'AggregateOffer', 'lowPrice': p['price_hour_min'], 'highPrice': p['price_hour_max'], 'priceCurrency': 'MYR'},
+                     'hasCourseInstance': {'@type': 'CourseInstance', 'courseMode': 'onsite', 'location': place()}}
+    else:
+        # The course name is the class named in the heading, so the schema and the page say the same thing.
+        headline = re.sub(r'<[^>]+>', '', c.get('headline') or p['name'])
+        course_name = {
+            'kids-art-younger': 'Weekly art classes for ages 5 to 9',
+            'kids-art-older': 'Weekly art classes for ages 10 to 15',
+            'adult-art': 'A weekly art class for adults',
+            'teen-photo-video': 'A weekly photo and video club for teens',
+            'photo-video-adult': 'Weekly photography and videography for adults and small-business owners',
+            'baking-course': 'A six-week baking course',
+        }[p['id']]
+        schema_desc = p.get('summary', '')
+        price_num = p.get('price_month') or p.get('price_course')
+        if course_name not in headline:
+            raise SystemExit(f'{p["id"]} course name is not in the heading: {course_name}')
+        if e(schema_desc) not in body:
+            raise SystemExit(f'{p["id"]} course description is not on the page')
+        a = SITE['address']
+        course_ld = {'@context': 'https://schema.org', '@type': 'Course', 'name': course_name, 'description': schema_desc,
+                     'provider': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']},
+                     'hasCourseInstance': {'@type': 'CourseInstance',
+                                           'location': {'@type': 'Place', 'name': SITE['name'],
+                                                        'address': {'@type': 'PostalAddress', 'streetAddress': a['street'],
+                                                                    'addressLocality': a['city'], 'postalCode': a['postcode']}}}}
+        # Piano has no fee. Do not invent one. A monthly or course price is included only when the page shows it.
+        if price_num is not None:
+            if rm(price_num) not in body:
+                raise SystemExit(f'{p["id"]} price {rm(price_num)} is not on the page')
+            course_ld['offers'] = {'@type': 'Offer', 'price': price_num, 'priceCurrency': 'MYR'}
     page(f"/classes/{p['id']}/", title, desc,
          body, voice='academy', active='/classes/', extra_head=ld(course_ld), data_attrs=f' data-page="programme" data-programme="{p["id"]}"', wa=page_wa)
 
