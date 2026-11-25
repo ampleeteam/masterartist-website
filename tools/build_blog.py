@@ -128,6 +128,18 @@ def abs_url(u):
     return u if re.match(r'^https?://', u) else SITE + '/' + u.lstrip('/')
 
 
+def rewrite_shadow_hrefs(doc):
+    """Point links at the directory URL. The .html stubs that used to shadow those directories are not written."""
+    doc = re.sub(
+        r'(https://masterartist\.co)?/(workshops|about|privacy|terms|blog)\.html\b',
+        lambda m: f'{m.group(1) or ""}/{m.group(2)}/',
+        doc)
+    return re.sub(
+        r'(https://masterartist\.co)?(/blog/[a-z0-9]+(?:-[a-z0-9]+)*)\.html\b',
+        lambda m: f'{m.group(1) or ""}{m.group(2)}/',
+        doc)
+
+
 def card(p):
     cover = (f'<img class="cover" src="{esc(abs_url(p.get("cover_image")))}" alt="{esc(p.get("cover_alt"))}" loading="lazy">'
              if p.get('cover_image') else '<div class="cover ph"><img src="/logo.svg" alt=""></div>')
@@ -213,8 +225,7 @@ def build(template, p, others):
     more = ''.join(card(o) for o in others[:3])
     doc = doc.replace('<section id="morePosts" class="alt" hidden>', '<section id="morePosts" class="alt"' + ('' if more else ' hidden') + '>', 1)
     doc = doc.replace('<div class="blog-grid" id="moreGrid"></div>', f'<div class="blog-grid">{more}</div>', 1)
-    doc = doc.replace('href="/blog.html"', 'href="/blog/"')
-    doc = doc.replace(SITE + '/blog.html', SITE + '/blog/')
+    doc = rewrite_shadow_hrefs(doc)
     published = p.get('published_at') or ''
     modified = p.get('updated_at') or published
     if published and 'article:published_time' not in doc:
@@ -302,17 +313,6 @@ def merge_posts(remote, local):
     return sorted(by_slug.values(), key=lambda p: p.get('published_at') or '', reverse=True)
 
 
-def redirect_page(target):
-    url = SITE + target
-    return f'''<!DOCTYPE html>
-<html lang="en-MY"><head><meta charset="utf-8"><title>Moved · Master Artist</title>
-<link rel="canonical" href="{url}"><meta name="robots" content="noindex">
-<script>location.replace({json.dumps(target)} + location.search + location.hash);</script>
-<meta http-equiv="refresh" content="0; url={target}">
-</head><body><p>This page has moved to <a href="{target}">{url}</a>.</p></body></html>
-'''
-
-
 def update_index(posts):
     """Fill the post cards in blog/index.html (the page itself is built by scripts/build_site.py)."""
     index = ROOT / 'blog' / 'index.html'
@@ -338,10 +338,7 @@ def main():
         dest = out_dir / p['slug'] / 'index.html'
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(build(template, p, [o for o in posts if o['slug'] != p['slug']]))
-        # Old /blog/<slug>.html addresses keep working.
-        (out_dir / f'{p["slug"]}.html').write_text(redirect_page(f'/blog/{p["slug"]}/'))
         keep_dirs.add(p['slug'])
-        keep_files.add(f'{p["slug"]}.html')
     for f in out_dir.glob('*.html'):
         if f.name not in keep_files:
             f.unlink()

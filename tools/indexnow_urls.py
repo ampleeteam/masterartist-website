@@ -1,7 +1,8 @@
 """Turn changed blog files (from `git diff --name-only`, on stdin) into the page URLs to send to IndexNow.
 
-Used by .github/workflows/blog.yml. blog.html and blog/index.html are the blog index at /blog/;
-blog/<slug>/index.html and blog/<slug>.html are /blog/<slug>/.
+Used by .github/workflows/blog.yml. blog/index.html is the blog index at /blog/;
+blog/<slug>/index.html is /blog/<slug>/. A diff that still names a removed stub
+(blog.html or blog/<slug>.html) maps to that same directory URL.
 """
 import sys
 
