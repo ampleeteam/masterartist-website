@@ -153,6 +153,24 @@ def main():
     if 'Ana is a baker from Colombia' not in sample or 'Baker Ana Castro' not in sample or 'Led by baker Ana Castro from Colombia' not in sample:
         errors.append(f'scrub changed the baker line: {sample}')
 
+    favicon = ROOT / 'favicon.ico'
+    if not favicon.is_file() or favicon.stat().st_size < 100:
+        errors.append('favicon.ico is missing')
+    stub = ROOT / 'workshops/textured-canvas/2026-11-25/index.html'
+    stub_html = stub.read_text() if stub.is_file() else ''
+    if 'http-equiv="refresh"' not in stub_html or 'url=/workshops/textured-canvas/' not in stub_html:
+        errors.append('25 Nov textured session should refresh to the textured canvas page')
+    if f'{SITE}/workshops/textured-canvas/2026-11-25/' in sitemap:
+        errors.append('expired 25 Nov session should stay out of the sitemap')
+    for rel in pages:
+        if not (rel.startswith('blog/') and rel.endswith('/index.html')):
+            continue
+        html = (ROOT / rel).read_text()
+        for bad in ('/art.html', '/gallery.html', '/music.html', '/pricing.html', '/visit.html',
+                    '/orchestra.html', '/workshops/textured-canvas/2026-11-25/'):
+            if bad in html:
+                errors.append(f'{rel} still links {bad}')
+
     if errors:
         print('\n'.join(errors))
         sys.exit(1)

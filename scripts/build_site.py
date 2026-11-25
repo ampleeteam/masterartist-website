@@ -2143,17 +2143,51 @@ REDIRECTS = {
 }
 
 
+# Dated session pages that have left the schedule. GitHub Pages has no 301 for a
+# path we do not want to keep as a real page, so each one is the same kind of stub
+# as REDIRECTS. The target is the live format page, which lists the next date.
+PAST_SESSION_REDIRECTS = {
+    'workshops/textured-canvas/2026-11-25/index.html': '/workshops/textured-canvas/',
+}
+
+
+def redirect_stub(new):
+    """HTML for a retired URL.
+
+    GitHub Pages cannot send a 301 or 308 for these paths. This site is prebuilt
+    HTML, not a Jekyll site, so jekyll-redirect-from does not run. That plugin
+    would still write a meta-refresh document, which is HTTP 200, not a 301.
+    There is no `_redirects` file and no way to set a Location header here.
+
+    The same limit covers `/index.html` (it is the homepage file, so it cannot
+    redirect to `/`) and `https://www.masterartist.co/index.html` (GitHub's www
+    hop keeps the path and lands on `https://masterartist.co/index.html`).
+    No page in this repo links to that www index URL.
+
+    The stub is what Pages will do: noindex, a canonical on the clean URL, an
+    immediate location.replace that keeps the query string, and a meta refresh
+    for browsers with JavaScript off.
+    """
+    url = SITE['url'] + new
+    path = new.split('#')[0]
+    hash_expr = json.dumps('#' + new.split('#')[1]) if '#' in new else 'location.hash'
+    return f'''<!DOCTYPE html>
+<html lang="en-MY"><head><meta charset="utf-8"><title>Moved · Master Artist</title>
+<link rel="canonical" href="{url}"><meta name="robots" content="noindex">
+<script>location.replace({json.dumps(path)} + location.search + ({hash_expr}));</script>
+<meta http-equiv="refresh" content="0; url={new}">
+</head><body><p>This page has moved to <a href="{new}">{url}</a>.</p></body></html>
+'''
+
+
 def build_redirects():
     """Retired pages become redirect stubs that keep the visitor's UTM query (ads may still point at them)."""
     for old, new in REDIRECTS.items():
-        url = SITE['url'] + new
-        (ROOT / old).write_text(f'''<!DOCTYPE html>
-<html lang="en-MY"><head><meta charset="utf-8"><title>Moved · Master Artist</title>
-<link rel="canonical" href="{url}"><meta name="robots" content="noindex">
-<script>location.replace({json.dumps(new.split('#')[0])} + location.search + ({json.dumps('#' + new.split('#')[1]) if '#' in new else 'location.hash'}));</script>
-<meta http-equiv="refresh" content="0; url={new}">
-</head><body><p>This page has moved to <a href="{new}">{url}</a>.</p></body></html>
-''')
+        (ROOT / old).write_text(redirect_stub(new))
+    for old, new in PAST_SESSION_REDIRECTS.items():
+        dest = ROOT / old
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(redirect_stub(new))
 
 
 GENERATED = []   # (path, priority, changefreq) recorded by page()
