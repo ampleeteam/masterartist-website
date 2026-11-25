@@ -1029,14 +1029,41 @@ def build_format(f):
   <div class="aside"><h2 style="font-size:26px">Good to <em>know</em></h2>{Accordion(policy_items())}</div>
 </div></section>'''
     title = f"{f['name']} workshop in KL · {money_from(f)} · Master Artist"
-    page(f"/workshops/{f['id']}/", title, f"{f['summary']} {money_from(f)}, {f['room']}, Desa Sri Hartamas, KL. Pick a date and book a seat.",
-         body, voice='studio', active='/workshops/', data_attrs=f' data-page="format" data-format="{e(f["id"])}"', wa={'msg': msg, 'fmt': f['id']})
+    desc = f"{f['summary']} {money_from(f)}, {f['room']}, Desa Sri Hartamas, KL. Pick a date and book a seat."
+    extra_head = ''
+    if f['id'] == 'bake-lab':
+        # Swap the h1 after the hero is built. Events use the same session objects as the cards.
+        title, h1, desc = bake_lab_seo(f)
+        marker = f'<h1>{e(f["name"])}</h1>'
+        if body.count(marker) != 1:
+            raise SystemExit(f'expected one Bake Lab h1, found {body.count(marker)}')
+        body = body.replace(marker, f'<h1>{e(h1)}</h1>', 1)
+        extra_head = '\n'.join(ld(event_ld(s, f"/workshops/{s['format']}/{s['date']}/")) for s in sessions)
+    page(f"/workshops/{f['id']}/", title, desc, body, voice='studio', active='/workshops/', extra_head=extra_head,
+         data_attrs=f' data-page="format" data-format="{e(f["id"])}"', wa={'msg': msg, 'fmt': f['id']})
 
 
 def SoldOut(s):
     nxt = next((x for x in PUB if x['id'] == s.get('next_session')), None)
     btn = f'<a class="btn block" href="{session_url(nxt)}">Sold out — next date {day_date(nxt["date"])}</a>' if nxt else ''
     return f'<div class="booking v-studio"><h2 class="h3">This session is sold out</h2><p class="muted">{e(s["name"])} on {day_date(s["date"])} is full.</p>{btn}</div>'
+
+
+def bake_lab_seo(f):
+    """Title, H1 and meta for /workshops/bake-lab/. Price and length come from the format.
+
+    A dated session can cost something else (the Gingerbread workshop is one). That price
+    belongs on the session card and its Event, not in this page's meta.
+    """
+    title = 'Baking Class KL · Bake Lab Workshop · Master Artist'
+    h1 = 'Baking workshop in Sri Hartamas, KL'
+    desc = (f"Baking class in KL. Bake Lab workshop, {money_from(f)}, {length(f)} in Desa Sri Hartamas. "
+            f"{first_sentence(f['summary'])}")
+    if len(title) > 60:
+        raise SystemExit(f'Bake Lab title is {len(title)} characters: {title}')
+    if len(desc) > 155:
+        raise SystemExit(f'Bake Lab description is {len(desc)} characters: {desc}')
+    return title, h1, desc
 
 
 def event_ld(s, url):
@@ -1848,6 +1875,8 @@ POST_LOADER = '''<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/
 <script>(function () {
   function scrub(s) {
     return String(s || '')
+      .replace(/Vegan baker/g, 'Baker')
+      .replace(/vegan baker/gi, 'baker')
       .replace(/Plant-based Baking Course/g, 'Baking Course')
       .replace(/Plant-based Bake Lab/g, 'Bake Lab')
       .replace(/Plant-based mini pizzas/g, 'Mini pizzas')

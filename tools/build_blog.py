@@ -28,7 +28,13 @@ ALLOWED_ATTRS = {'a': ['href', 'title', 'rel', 'target'], 'img': ['src', 'alt', 
 # Stored posts sometimes call the baking "plant-based". The database is left as it is;
 # this only changes the HTML we write. Longer phrases first, so a leftover adjective
 # does not turn "plant-based restaurant" into "baking restaurant".
+def _baker(match):
+    """'vegan baker' -> 'baker', keeping a capital when the phrase itself is capitalised."""
+    return 'Baker' if match.group(0)[:1].isupper() else 'baker'
+
+
 SCRUB_RULES = [
+    (re.compile(r'vegan baker', re.I), _baker),
     (re.compile(r'plant-based%20', re.I), ''),
     (re.compile(r'Plant-based Baking Course'), 'Baking Course'),
     (re.compile(r'Plant-based Bake Lab'), 'Bake Lab'),
