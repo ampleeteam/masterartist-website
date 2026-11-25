@@ -652,6 +652,8 @@ async function renderGoogleReviews() {
 /* ------------------------------------------------------------------- blog */
 function scrubCopy(s) {
   return String(s || '')
+    .replace(/Vegan baker/g, 'Baker')
+    .replace(/vegan baker/gi, 'baker')
     .replace(/Plant-based Baking Course/g, 'Baking Course')
     .replace(/Plant-based Bake Lab/g, 'Bake Lab')
     .replace(/Plant-based mini pizzas/g, 'Mini pizzas')
