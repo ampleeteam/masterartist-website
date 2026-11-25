@@ -15,6 +15,7 @@ import json
 import pathlib
 import re
 import urllib.parse
+from zoneinfo import ZoneInfo
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA = ROOT / 'data'
@@ -681,6 +682,12 @@ def build_styleguide():
 # ------------------------------------------------------------------ pages
 COPY = load('programme-copy.json')
 TODAY = dt.date.today()
+KL = ZoneInfo('Asia/Kuala_Lumpur')
+# Dated workshop URLs look like /workshops/<format>/<yyyy-mm-dd>/. A date before
+# the build date in studio time is past. This file only drops those URLs from
+# the sitemap and noindexes a page that is still generated. Redirects for dates
+# that have left the schedule belong to data/past-sessions.json, not here.
+DATED_SESSION = re.compile(r'^/workshops/[^/]+/(\d{4}-\d{2}-\d{2})/$')
 START = max(TODAY, dt.date.fromisoformat(WS.get('launch', {}).get('first_public_sessions', TODAY.isoformat()))).isoformat()
 # Workshop sessions shown on Studio Sessions pages (the 6-week course is an Academy programme)
 PUB = [s for s in WS['sessions'] if s['public'] and s.get('type') != 'course' and s['date'] >= START]
@@ -690,6 +697,26 @@ TRIAL = CL['trial']
 PROGS = [p for p in CL['programmes'] if p.get('status') != 'paused']
 EMPTY_WEEK = '<div class="empty">New workshop dates will be up shortly.</div>'
 DAY_FULL = {'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thursday', 'Fri': 'Friday', 'Sat': 'Saturday', 'Sun': 'Sunday'}
+
+
+def kl_today():
+    """Calendar date of this build in the studio's timezone."""
+    return dt.datetime.now(KL).date()
+
+
+def session_path_date(path):
+    m = DATED_SESSION.match(path)
+    if not m:
+        return None
+    try:
+        return dt.date.fromisoformat(m.group(1))
+    except ValueError:
+        return None
+
+
+def past_session(path_or_date):
+    day = path_or_date if isinstance(path_or_date, dt.date) else session_path_date(path_or_date)
+    return day is not None and day < kl_today()
 
 
 def by_format(fid):
@@ -854,7 +881,7 @@ def FormatCard(f):
     return f'''<article class="card v-studio">
   {photo(f['id'])}
   <div class="body">
-    <h3>{e(f['name'])}</h3><div class="sub">{e(first_sentence(f['summary']))}</div>
+    <h3>{e(f['name'])}</h3><div class="sub">{e(hub_card_sub(f))}</div>
     <div class="price">{money_from(f)} {pair}</div>
     <div class="meta">{when}<span>{e(length(f))} · {e(f['room'])}</span></div>
     <div class="badges">{badge}</div>
@@ -866,6 +893,26 @@ def FormatCard(f):
 def first_sentence(text):
     m = re.match(r'(.+?[.!?])(\s|$)', text or '')
     return m.group(1) if m else (text or '')
+
+
+def hub_card_sub(f):
+    """Format-card line on /workshops/. The product sentence stays the summary."""
+    sentence = first_sentence(f['summary'])
+    if sentence and f['id'] == 'textured-canvas':
+        return 'A paint night: ' + sentence[0].lower() + sentence[1:]
+    if sentence and f['id'] == 'acrylic-canvas':
+        return 'A painting workshop: ' + sentence[0].lower() + sentence[1:]
+    return sentence
+
+
+def workshops_hub_lede():
+    """Painting dates on sale are described as an evening only when they all are."""
+    art = {f['id'] for f in WORKSHOP_FORMATS if f.get('discipline') == 'art'}
+    dated = [s for s in PUB if s['format'] in art]
+    evening = bool(dated) and all(s['time'] >= '18:00' for s in dated)
+    kind = 'A sip and paint evening' if evening else 'A sip and paint session'
+    return (f'{kind}, or another painting workshop: two hours, a drink included, and you take the piece home. '
+            'Candle making, chunky crochet and baking are on this page too, with a new theme every week.')
 
 
 def SessionGrid(sessions, empty='New dates are on the way. WhatsApp us and we will tell you first.'):
@@ -960,8 +1007,15 @@ WORKSHOP_HUB_FAQS = [
 
 def build_workshops_index():
     sunday = coming_sunday()
-    body = hero_band('Master Artist Studio Sessions', 'Workshops in Kuala Lumpur, in <em>the room with the view</em>',
-                     'Art and painting workshops in KL, plus candle making, crochet and baking, with a new theme every week. Two hours, taught properly, with something to take home.',
+    title = 'Paint Night & Art Workshops in KL · Master Artist'
+    desc = ('Sip and paint in Desa Sri Hartamas, KL: an evening painting workshop, a drink included, '
+            'and a piece to take home. Candle making, crochet and baking too.')
+    if len(title) > 60:
+        raise SystemExit(f'workshops hub title is {len(title)} characters: {title}')
+    if len(desc) > 155:
+        raise SystemExit(f'workshops hub description is {len(desc)} characters: {desc}')
+    body = hero_band('Master Artist Studio Sessions', 'Workshops in Kuala Lumpur: a paint night in <em>the room with the view</em>',
+                     workshops_hub_lede(),
                      (f'<a class="btn" href="/this-sunday/">This Sunday</a>' if sunday else '') + '<a class="btn ghost" href="#formats">All workshops</a>',
                      crumbs(('/', 'Home'), (None, 'Workshops')), studio_hero_note(), img=('golden-shores-workshop-1.jpg', 'Adults painting at a Sunday workshop'))
     body += f'''<section class="sec v-studio"><div class="wrap">
@@ -969,7 +1023,7 @@ def build_workshops_index():
   {WeekStrip(PUB) if PUB else EMPTY_WEEK}
 </div></section>
 <section class="sec alt v-studio" id="formats"><div class="wrap">
-  <div class="sec-head"><span class="eyebrow">Choose a workshop</span><h2>Every <em>workshop</em></h2><p>Pick one to see its next dates, then book a seat.</p></div>
+  <div class="sec-head"><span class="eyebrow">Choose a workshop</span><h2>An art workshop, candle, crochet or <em>baking</em></h2><p>Pick one to see its next dates, then book a seat.</p></div>
   <div class="grid-cards">{''.join(FormatCard(f) for f in WORKSHOP_FORMATS)}</div>
 </div></section>
 <section class="sec v-studio"><div class="wrap"><div class="cta-card"><div><h2>Bringing a <em>team?</em></h2><p>Art, baking or mixed team days, with rooms running side by side. <a href="/groups/">team building activities in KL</a>.</p></div>
@@ -980,8 +1034,7 @@ def build_workshops_index():
         ('Home', 'https://masterartist.co/'),
         ('Workshops', 'https://masterartist.co/workshops/'),
     ]))
-    page('/workshops/', 'Workshop Kuala Lumpur · Painting & Baking · Master Artist',
-         'Workshops in Kuala Lumpur at Desa Sri Hartamas: painting, candle making, crochet and baking. Two hours, materials and a drink included, take it home.',
+    page('/workshops/', title, desc,
          body, voice='studio', active='/workshops/', extra_head=schema, data_attrs=' data-page="workshops"', wa={'msg': "Hi, I'd like to book a workshop. What's on this week? Source: {source}.", 'fmt': 'workshops'})
 
 
@@ -1147,8 +1200,9 @@ def build_session_day(slots):
             raise SystemExit(f'seo description is {len(desc)} characters: {desc}')
     else:
         desc = f"{f['name']} on {long_date(s0['date'])} at {t0}, {s0['room']}, Desa Sri Hartamas. {rm(s0['price'])}. {blurb}"
+    past = past_session(d)
     page(url, title, desc,
-         body, voice='studio', active='/workshops/', extra_head=head_ld,
+         body, voice='studio', active='/workshops/', extra_head=head_ld + ('\n' if past else ''), noindex=past,
          data_attrs=f' data-page="session" data-format="{e(f["id"])}"', wa={'msg': wa_studio(s0), 'fmt': f['id'], 'session': s0['id']})
 
 
@@ -2015,6 +2069,8 @@ def build_sitemap():
     today = TODAY.isoformat()
     rows = []
     for p_, prio, freq in GENERATED:
+        if past_session(p_):
+            continue
         rows.append(f'\n  <url>\n    <loc>{SITE["url"]}{p_}</loc>\n    <lastmod>{today}</lastmod>\n    <changefreq>{freq}</changefreq>\n    <priority>{prio}</priority>\n  </url>')
     path.write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
                     + ''.join(rows) + ''.join(blog) + '\n</urlset>\n')
