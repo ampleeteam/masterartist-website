@@ -109,6 +109,53 @@ def esc(s):
     return html.escape(str(s or ''), quote=True)
 
 
+def natural_prefixes(title):
+    """Clauses of a title, longest first, not including the title itself."""
+    found = []
+    for sep in (': ', ', ', ' — ', ' – '):
+        start = 0
+        while True:
+            i = title.find(sep, start)
+            if i == -1:
+                break
+            text = title[:i].strip(' :—–,')
+            if text and text != title and text not in found:
+                found.append(text)
+            start = i + len(sep)
+    found.sort(key=len, reverse=True)
+    return found
+
+
+def document_title(title, limit=60):
+    """The <title> for a post. Keeps the article title, and the brand when it still fits."""
+    suffix = ' — Master Artist'
+    title = ' '.join(str(title or '').split())
+    if len(title) + len(suffix) <= limit:
+        result = title + suffix
+    elif len(title) <= limit:
+        result = title
+    else:
+        result = ''
+        prefixes = natural_prefixes(title)
+        for prefix in prefixes:
+            if len(prefix) + len(suffix) <= limit:
+                result = prefix + suffix
+                break
+        if not result:
+            for prefix in prefixes:
+                if len(prefix) <= limit:
+                    result = prefix
+                    break
+        if not result:
+            cut = title[:limit].rstrip()
+            if ' ' in cut:
+                cut = cut.rsplit(' ', 1)[0]
+            result = cut.rstrip(' :—–,')
+    if len(result) > limit:
+        raise SystemExit(f'blog title is {len(result)} characters: {result}')
+    return result
+
+
 def fetch_posts():
     url = API + '?select=*&order=published_at.desc'
     req = urllib.request.Request(url, headers={'apikey': ANON, 'Authorization': 'Bearer ' + ANON})
@@ -191,7 +238,7 @@ def build(template, p, others):
         {'@type': 'ListItem', 'position': 3, 'name': title, 'item': url}]}
 
     doc = template
-    doc = re.sub(r'<title>.*?</title>', f'<title>{esc(title)} — Master Artist</title>', doc, 1, re.S)
+    doc = re.sub(r'<title>.*?</title>', f'<title>{esc(document_title(title))}</title>', doc, 1, re.S)
     doc = re.sub(r'<meta name="description" content="[^"]*">', f'<meta name="description" content="{esc(desc)}">', doc, 1)
     doc = re.sub(r'<link rel="canonical" href="[^"]*">', f'<link rel="canonical" href="{url}">', doc, 1)
     doc = re.sub(r'<meta property="og:title" content="[^"]*">', f'<meta property="og:title" content="{esc(title)}">', doc, 1)
