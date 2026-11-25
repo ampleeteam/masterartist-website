@@ -200,9 +200,15 @@
   </url>
   <url>
     <loc>https://masterartist.co/blog/</loc>
-    <lastmod>2026-11-18</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://masterartist.co/blog/creative-workshops-kl-this-week/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://masterartist.co/blog/art-workshop-kl/</loc>
