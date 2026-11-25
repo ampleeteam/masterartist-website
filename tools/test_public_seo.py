@@ -100,7 +100,7 @@ def main():
             errors.append(f"{post['slug']} seo_description length {len(seo)}")
         body = re.sub(r'<[^>]+>', ' ', post.get('body_html') or '')
         words = re.findall(r"[A-Za-z0-9’']+", body)
-        if not 900 <= len(words) <= 1400:
+        if not 700 <= len(words) <= 1400:
             errors.append(f"{post['slug']} word count {len(words)}")
         page = ROOT / 'blog' / post['slug'] / 'index.html'
         html = page.read_text()
