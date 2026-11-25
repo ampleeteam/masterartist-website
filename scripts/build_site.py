@@ -1953,11 +1953,13 @@ def build_404():
          extra_head=fallback + '\n' + blog_og('Page not found — Master Artist', desc, SITE['url'] + '/404.html'))
 
 # --- Redirects and sitemap ------------------------------------------------------------
+# Only pages with no directory of the same name. about/, blog/, privacy/, terms/ and
+# workshops/ already have index.html, so a sibling .html stub would be what GitHub Pages
+# serves for the extensionless URL and would block its own 301 to the trailing slash.
 REDIRECTS = {
-    'about.html': '/about/', 'art.html': '/classes/', 'gallery.html': '/showcase/', 'media.html': '/classes/teen-photo-video/',
-    'music.html': '/classes/voice/', 'orchestra.html': '/classes/voice/', 'pricing.html': '/prices/', 'privacy.html': '/privacy/',
-    'terms.html': '/terms/', 'visit.html': '/about/#visit', 'workshops.html': '/workshops/',
-    'blog.html': '/blog/',
+    'art.html': '/classes/', 'gallery.html': '/showcase/', 'media.html': '/classes/teen-photo-video/',
+    'music.html': '/classes/voice/', 'orchestra.html': '/classes/voice/', 'pricing.html': '/prices/',
+    'visit.html': '/about/#visit',
 }
 
 

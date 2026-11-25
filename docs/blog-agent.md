@@ -6,8 +6,8 @@ The owner approves every draft before it is published.
 ## Facts: only from the website
 Every fact about Master Artist — programmes, ages, prices, teachers, times,
 location — must come from the current website files in this repository
-(index.html, music.html, orchestra.html, art.html, media.html, workshops.html,
-pricing.html, visit.html, about.html). If a fact isn't on the site, don't state
+(index.html, music.html, orchestra.html, art.html, media.html, workshops/index.html,
+pricing.html, visit.html, about/index.html). If a fact isn't on the site, don't state
 it. Never invent testimonials, student names, statistics, awards or events.
 
 Key facts (check the files — they win if these ever differ):
