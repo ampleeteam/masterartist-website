@@ -1459,17 +1459,17 @@ def build_programme(p):
         if e(schema_desc) not in body:
             raise SystemExit(f'{p["id"]} course description is not on the page')
         a = SITE['address']
-        course_ld = {'@context': 'https://schema.org', '@type': 'Course', 'name': course_name, 'description': schema_desc,
-                     'provider': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']},
-                     'hasCourseInstance': {'@type': 'CourseInstance',
-                                           'location': {'@type': 'Place', 'name': SITE['name'],
-                                                        'address': {'@type': 'PostalAddress', 'streetAddress': a['street'],
-                                                                    'addressLocality': a['city'], 'postalCode': a['postcode']}}}}
         # Piano has no fee. Do not invent one. A monthly or course price is included only when the page shows it.
+        if price_num is not None and rm(price_num) not in body:
+            raise SystemExit(f'{p["id"]} price {rm(price_num)} is not on the page')
+        course_ld = {'@context': 'https://schema.org', '@type': 'Course', 'name': course_name, 'description': schema_desc,
+                     'provider': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']}}
         if price_num is not None:
-            if rm(price_num) not in body:
-                raise SystemExit(f'{p["id"]} price {rm(price_num)} is not on the page')
             course_ld['offers'] = {'@type': 'Offer', 'price': price_num, 'priceCurrency': 'MYR'}
+        course_ld['hasCourseInstance'] = {'@type': 'CourseInstance',
+                                          'location': {'@type': 'Place', 'name': SITE['name'],
+                                                       'address': {'@type': 'PostalAddress', 'streetAddress': a['street'],
+                                                                   'addressLocality': a['city'], 'postalCode': a['postcode']}}}
     page(f"/classes/{p['id']}/", title, desc,
          body, voice='academy', active='/classes/', extra_head=ld(course_ld), data_attrs=f' data-page="programme" data-programme="{p["id"]}"', wa=page_wa)
 
