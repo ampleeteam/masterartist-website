@@ -21,7 +21,7 @@ Do these once, in order. Steps 1–3 work without Stripe.
 3. Run `supabase/bookings.sql`.
 4. Run `supabase/crm.sql`. It also creates customers from any bookings and trial requests already saved.
 5. Run `supabase/migrations/20261120143000_crm_timeline_and_profile.sql`. This adds the rest of the customer profile, family links, and the conversation timeline. It does not turn on Stripe and it does not delete existing customers.
-6. Run `supabase/migrations/20261121103000_shared_inbox.sql`. This adds the shared inbox, saved replies, and the message queue. It does not call WhatsApp.
+6. Run `supabase/migrations/20261121103000_shared_inbox.sql`. This adds the shared inbox, saved replies, and the message queue. It does not call WhatsApp. Staff read and reply in the Master Artist CRM at https://crm.masterartist.co/#inbox. The Content Admin no longer shows the inbox.
 7. Run these in order when you want tasks, lists, the group pipeline and email campaigns. None of them send customer email. Resend DNS and `RESEND_API_KEY` are still required before any real send, and `EMAIL_SEND_ENABLED` must stay unset until then.
    - `supabase/migrations/20261122010000_contact_identities_and_lead_score.sql`
    - `supabase/migrations/20261122020000_staff_tasks.sql`
