@@ -24,7 +24,7 @@ orchestra are paused: don't write about them.
 
 ## Priority 2 — parents deciding (Academy; high intent)
 9. **How to choose an art class for your child in Mont Kiara & Hartamas** — "art classes for kids Mont Kiara" — /classes/kids-art-younger/
-10. **Group vs private singing lessons: which suits your child?** — "group singing lessons KL" — /classes/voice/
+10. **One-to-one music and voice lessons: how to arrange a time** — "singing lessons KL" — /classes/voice/
 11. **What to expect at a RM50 trial class** — "trial class KL kids" — /trial/
 12. **Is my teenager ready for a photography and video club?** — "photography class for teens KL" — /classes/teen-photo-video/
 13. **Art for adults: learning to draw and paint from scratch** — "adult art class KL" — /classes/adult-art/

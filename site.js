@@ -244,7 +244,7 @@ document.addEventListener('click', e => {
    family can send the same details. A failed save does not count as a lead. */
 const PROGRAMME_SLUGS = {
   'Voice with Sabrina Hew': 'voice',
-  'Group Voice': 'group-voice',
+  'Music & voice lessons': 'voice',
   'Piano & Instruments': 'piano',
   'Mont Kiara Orchestra': 'orchestra',
   'Art — Young Kids (4–8)': 'art-young-kids',

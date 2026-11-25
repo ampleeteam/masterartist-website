@@ -170,10 +170,14 @@ for p in cl['programmes']:
     if p.get('price_course'):
         month, sess = f"{rm(p['price_course'])} for 6 weeks", '—'
         other.append(f"{rm(p['price_at_bake_lab'])} if booked at a Bake Lab; runs with {p.get('min')}+")
+    elif p.get('price_hour_min'):
+        month, sess = '—', f"{rm(p['price_hour_min'])}–{rm(p['price_hour_max'])} per hour"
+        other.append('one-to-one; enquire to arrange')
     else:
         month, sess = rm(p['price_month']), rm(p['per_session'])
-    days = ' · '.join(f"{s['day']} {s['time']}".strip() for s in p.get('slots', []))
-    rows.append(([p['name'], month, sess, '; '.join(other), p.get('cap', ''), days], 'row'))
+    days = 'enquire to arrange' if p.get('booking') == 'enquire' else ' · '.join(f"{s['day']} {s['time']}".strip() for s in p.get('slots', []))
+    cap = '' if p.get('booking') == 'enquire' else p.get('cap', '')
+    rows.append(([p['name'], month, sess, '; '.join(other), cap, days], 'row'))
 for c in cl.get('holiday_camps', []):
     rows.append(([c['name'], rm(c['price']), '—', f"ages {c['ages']} · {c['time']}", '', c['dates']], 'row'))
 d = cl['discounts']

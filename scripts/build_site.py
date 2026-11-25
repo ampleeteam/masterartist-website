@@ -88,8 +88,7 @@ GALLERY = {
     'adult-art': [('golden-shores-workshop-1.jpg', 'Adults painting together'),
                   ('golden-shores-workshop-5.jpg', 'A finished canvas'),
                   ('painting-3.jpg', 'A painting in progress')],
-    'voice': [('vocal-teaching-1.jpg', 'A one-to-one singing lesson'),
-              ('vocal-teaching-2.jpg', 'A group singing session in the studio')],
+    'voice': [('vocal-teaching-1.jpg', 'A one-to-one singing lesson')],
     'baking-course': [('baking-2.jpg', 'Almond brownies from a baking class'),
                       ('baking-3.jpg', 'Mixing batter in a baking session'),
                       ('focaccia-workshop-3.jpg', 'Bakers at the kitchen tables')],
@@ -115,6 +114,24 @@ def per_class(p):
     h, mm = divmod(m, 60)
     span = f"{h}-hour" if not mm else f"{m}-minute"
     return f"{rm(p['per_session'])} per {span} class"
+
+
+def is_hourly(p):
+    return 'price_hour_min' in p and 'price_hour_max' in p
+
+
+def hour_band(p):
+    """Visible range, e.g. RM80–RM100. Schema uses the same two amounts in MYR."""
+    return f"{rm(p['price_hour_min'])}–{rm(p['price_hour_max'])}"
+
+
+def offers_trial(p):
+    """The RM50 trial is for weekly art classes only."""
+    return p.get('discipline') == 'art' and 'price_month' in p
+
+
+def wa_enquire(p):
+    return "Hi, I'd like to enquire to arrange one-to-one music and voice lessons with Sabrina Hew. Source: {source}."
 
 
 # Line icons (24px, stroke = currentColor) for fact rows, chips and photo placeholders.
@@ -274,20 +291,32 @@ def SessionCard(s, link=True):
 
 
 def ProgrammeCard(p):
-    """Academy card: photo · name & ages · RM/month (per session) · days · teacher · trial."""
-    if 'price_month' in p:
+    """Academy card: photo · name · price · when · teacher · the right next step."""
+    if is_hourly(p):
+        price = f'<div class="price">{hour_band(p)} <small>per student per hour</small></div>'
+        when = 'Enquire to arrange'
+        primary = WhatsAppButton(wa_enquire(p), 'academy', 'Enquire to arrange', programme=p['id'])
+    elif 'price_month' in p:
         price = f'<div class="price">{rm(p["price_month"])}/month <small>{per_class(p)}</small></div>'
+        days = sorted({s['day'] for s in p.get('slots', [])}, key=lambda d: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon-Thu', 'by arrangement'].index(d) if d in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon-Thu', 'by arrangement'] else 99)
+        when = ' · '.join(days)
+        if offers_trial(p):
+            primary = f'<a class="btn" href="/trial/?programme={e(p["id"])}">Book a RM{CL["trial"]["price"]} trial</a>'
+        else:
+            primary = WhatsAppButton(f"Hi, I'd like to ask about {p['name']}. Source: {{source}}.", 'academy', 'Ask about this class', programme=p['id'])
     else:
         price = f'<div class="price">{rm(p["price_course"])} <small>6-week course</small></div>'
-    days = sorted({s['day'] for s in p.get('slots', [])}, key=lambda d: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon-Thu', 'by arrangement'].index(d) if d in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon-Thu', 'by arrangement'] else 99)
+        days = sorted({s['day'] for s in p.get('slots', [])}, key=lambda d: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon-Thu', 'by arrangement'].index(d) if d in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon-Thu', 'by arrangement'] else 99)
+        when = ' · '.join(days)
+        primary = WhatsAppButton(f"Hi, I'd like to ask about {p['name']}. Source: {{source}}.", 'academy', 'Ask about this class', programme=p['id'])
     return f'''<article class="card v-academy">
   {photo(p['id'])}
   <div class="body">
     <h3>{e(p['name'])}</h3>
     {price}
-    <div class="meta"><span>{e(' · '.join(days))}</span><span>Taught by {e(teacher_for(p['id']))}</span></div>
+    <div class="meta"><span>{e(when)}</span><span>Taught by {e(teacher_for(p['id']))}</span></div>
     <div class="actions">
-      <a class="btn" href="/trial/?programme={e(p['id'])}">Book a RM{CL['trial']['price']} trial</a>
+      {primary}
       <a class="btn ghost" href="/classes/{e(p['id'])}/">More</a>
     </div>
   </div>
@@ -451,7 +480,10 @@ def PriceTable(voice):
         for p in CL['programmes']:
             if p.get('status') == 'paused':
                 continue
-            if 'price_month' in p:
+            if is_hourly(p):
+                price = f"{hour_band(p)}/hour"
+                extra = 'One-to-one with Sabrina Hew · enquire to arrange'
+            elif 'price_month' in p:
                 price = f"{rm(p['price_month'])}/month"
                 extra = per_class(p)
                 if p.get('term_price'):
@@ -466,7 +498,7 @@ def PriceTable(voice):
                 price, extra = rm(p['price_course']), f"6 weeks · {rm(p['price_at_bake_lab'])} if you book at a Bake Lab"
             rows.append(f'<tr><td><a href="/classes/{p["id"]}/">{e(p["name"])}</a></td><td class="muted">{e(extra)}</td><td class="num">{price}</td></tr>')
         t = CL['trial']
-        note = f'<p class="price-note">Start with a {rm(t["price"])} trial, {e(t["note"])}. Siblings {int(CL["discounts"]["sibling"] * 100)}% off.</p>'
+        note = f'<p class="price-note">The {rm(t["price"])} trial is for weekly art classes, {e(t["note"])}. Siblings {int(CL["discounts"]["sibling"] * 100)}% off.</p>'
         return f'<div class="v-academy"><table class="price-table"><caption>Academy · weekly classes</caption><thead><tr><th>Programme</th><th>Details</th><th>Price</th></tr></thead><tbody>{"".join(rows)}</tbody></table>{note}</div>'
     rows = []
     for f in WS['formats']:
@@ -650,7 +682,7 @@ def build_styleguide():
   <div class="v-academy"><div class="sg-label">Academy</div><a class="btn" href="#">Book a {rm(CL['trial']['price'])} trial</a> <a class="btn ghost" href="#">More</a></div>
   <div class="v-studio"><div class="sg-label">Studio Sessions</div><a class="btn" href="#">Book a seat</a> <a class="btn ghost" href="#">See all dates</a></div></div>
   <p style="margin-top:16px">{WhatsAppButton(wa_studio(sample), 'studio', 'WhatsAppButton (studio)', fmt=sample['format'], session=sample['id'])}
-  {WhatsAppButton(wa_trial(voice_p), 'academy', 'WhatsAppButton (academy trial)', programme=voice_p['id'], trial=True)}</p></section>
+  {WhatsAppButton(wa_trial(kids), 'academy', 'WhatsAppButton (academy trial)', programme=kids['id'], trial=True)}</p></section>
 
 <section class="sg-section"><h2>SessionCard</h2><div class="grid-cards">
   {SessionCard(sample)}{SessionCard(nearly)}{SessionCard(family) if family else ''}{SessionCard(sold)}</div>
@@ -949,7 +981,7 @@ def build_home():
     <a class="door v-studio" href="/workshops/">{photo('bake-lab')}<span class="label">{e(SITE['labels']['studio'])}</span><h3>Workshops</h3>
       <p>A weeknight or a Sunday: paint a canvas, pour a candle, crochet a bag. A new theme every week, from {rm(min_ws)}, and you take it home.</p><span class="more">Upcoming workshops</span></a>
     <a class="door v-academy" href="/classes/">{photo('kids-art-older')}<span class="label">{e(SITE['labels']['academy'])}</span><h3>Weekly classes</h3>
-      <p>Art, voice, photo and video, and baking, in small groups with the same teacher every week. From {rm(min_cl)} a month; start with a {rm(TRIAL['price'])} trial.</p><span class="more">Classes and the trial</span></a>
+      <p>Weekly art, photo, video and baking, with the same teacher every week. From {rm(min_cl)} a month. Music lessons are one to one, at {hour_band(next(p for p in PROGS if p['id'] == 'voice'))} an hour. The {rm(TRIAL['price'])} trial is for weekly art classes.</p><span class="more">Classes and the trial</span></a>
     <a class="door v-studio" href="/groups/"><img src="/golden-shores-workshop-1.jpg" alt="A group workshop at Master Artist" loading="lazy" width="800" height="600"><span class="label">Groups</span><h3>Birthdays, team days and groups</h3>
       <p>Art, clay and baking birthday parties, and team days with rooms running side by side. Team packages from {rm(groups_from)}.</p><span class="more">Groups and birthdays</span></a>
   </div></div></section>'''
@@ -1246,51 +1278,63 @@ def build_workshops():
 
 def build_sing_your_song_note():
     """The workshop is discontinued. Keep /workshops/sing-your-song/ from 404ing, and out of the sitemap."""
-    body = hero_band('Master Artist Studio Sessions', 'Coming soon: <em>kids voice lessons</em>',
-                     'Sing Your Song is no longer on the schedule. Kids voice lessons are coming soon. Weekly voice lessons are open now.',
-                     '<a class="btn" href="/classes/voice/">Voice lessons</a><a class="btn ghost" href="/workshops/">Workshops</a>',
+    vp = next(p for p in CL['programmes'] if p['id'] == 'voice')
+    band = hour_band(vp)
+    body = hero_band('Master Artist Studio Sessions', 'One-to-one <em>music and voice lessons</em>',
+                     f'Sing Your Song is no longer on the schedule. Lessons with Sabrina Hew are one to one, at {band} per hour. There is no timetable yet. Enquire to arrange a time.',
+                     WhatsAppButton(wa_enquire(vp), 'studio', 'Enquire to arrange', programme='voice') + '<a class="btn ghost" href="/workshops/">Workshops</a>',
                      crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (None, 'Sing Your Song')))
-    page('/workshops/sing-your-song/', 'Coming soon: kids voice lessons · Master Artist',
-         'Sing Your Song has ended. Kids voice lessons are coming soon. Weekly voice lessons are open now.',
+    page('/workshops/sing-your-song/', 'One-to-one music and voice lessons · Master Artist',
+         f'Lessons with Sabrina Hew are one to one, at {band} per hour. Enquire to arrange a time. There is no group class.',
          body, voice='studio', active='/workshops/', noindex=True,
          data_attrs=' data-page="sing-your-song"',
-         wa={'msg': "Hi, I'd like to ask about kids voice lessons. Source: {source}.", 'fmt': 'sing-your-song'})
+         wa={'msg': wa_enquire(vp), 'fmt': 'sing-your-song', 'programme': 'voice'})
 
 
 # --- Classes ----------------------------------------------------------------
 def academy_cta(programme=None):
-    p_msg = programme or {'name': 'a class'}
-    return f'''<div class="cta-card"><div><h2>Start with a <em>{rm(TRIAL["price"])} trial</em></h2><p>One class in the programme you choose. The {rm(TRIAL["price"])} is {e(TRIAL["note"])}.</p></div>
+    p_msg = programme or {'name': 'a weekly art class'}
+    which = f" for {programme['name']}" if programme else ''
+    return f'''<div class="cta-card"><div><h2>Start with a <em>{rm(TRIAL["price"])} trial</em></h2><p>The {rm(TRIAL["price"])} trial is for a weekly art class{which}. The {rm(TRIAL["price"])} is {e(TRIAL["note"])}.</p></div>
   <div class="hero-cta"><a class="btn" href="/trial/{f"?programme={programme['id']}" if programme else ''}">Book a {rm(TRIAL["price"])} trial</a>{WhatsAppButton(wa_trial(p_msg), "academy", "WhatsApp us", programme=(programme or {}).get("id", ""), trial=True)}</div></div>'''
 
 
 def build_classes_index():
     min_cl = min(p['price_month'] for p in PROGS if p.get('price_month'))
+    music = hour_band(next(p for p in PROGS if p['id'] == 'voice'))
     body = hero_band(e(SITE['labels']['academy']), 'Weekly classes, <em>taught by working artists</em>',
-                     f"Art, voice, photo and video, and baking, in small groups with the same teacher every week. You'll actually get better. From {rm(min_cl)} a month.",
+                     f"Weekly art, photo, video and baking, in small groups with the same teacher every week. You'll actually get better. From {rm(min_cl)} a month. Music and voice lessons are one to one, at {music} per hour.",
                      f'<a class="btn" href="/trial/">Book a {rm(TRIAL["price"])} trial</a><a class="btn ghost" href="/holiday-camps/">Holiday camps</a>',
                      crumbs(('/', 'Home'), (None, 'Classes')), img=('art-photo-1.jpg', 'Young students holding up their paintings'))
     body += f'''<section class="sec v-academy"><div class="wrap">
-  <div class="sec-head"><span class="eyebrow">Programmes</span><h2>Choose a <em>class</em></h2><p>Monthly, with a showcase every term. Siblings get {int(CL['discounts']['sibling'] * 100)}% off.</p></div>
+  <div class="sec-head"><span class="eyebrow">Programmes</span><h2>Choose a <em>class</em></h2><p>Art classes are monthly, with a showcase every term. Music lessons are one to one. Siblings get {int(CL['discounts']['sibling'] * 100)}% off.</p></div>
   <div class="grid-cards">{''.join(ProgrammeCard(p) for p in PROGS)}</div>
 </div></section>
 <section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>
 <section class="sec alt v-academy"><div class="wrap"><div class="sec-head"><span class="eyebrow">Google reviews</span><h2>What parents and students <em>say</em></h2></div>{GoogleReviews(3)}</div></section>'''
     page('/classes/', 'Kids art classes, voice lessons and more in Sri Hartamas, KL · Master Artist Academy',
-         f'Weekly art, voice, photo and video, and baking classes in Desa Sri Hartamas, KL, taught by working artists. From {rm(min_cl)}/month; {rm(TRIAL["price"])} trial.',
+         f'Weekly art, photo, video and baking classes in Desa Sri Hartamas, KL. Art is RM320 a month. One-to-one music lessons are {music} an hour. The {rm(TRIAL["price"])} trial is for weekly art classes.',
          body, voice='academy', active='/classes/', data_attrs=' data-page="classes"', wa={'msg': f"Hi, I'd like to book the {rm(TRIAL['price'])} trial. Source: {{source}}.", 'trial': True})
 
 
 def build_programme(p):
     c = COPY.get(p['id'], {})
     cap = p.get('cap')
-    intro = (c.get('intro') or p.get('summary', '')).replace('{cap}', str(cap))
-    if 'price_month' in p:
+    hourly = is_hourly(p)
+    trial = offers_trial(p)
+    intro = (c.get('intro') or p.get('summary', '')).replace('{cap}', str(cap or ''))
+    if hourly:
+        price_line = f"{hour_band(p)} <small>per student per hour</small>"
+        hero_price = f"<span><b>{hour_band(p)}</b> per hour</span>"
+        price_plain = f"{hour_band(p)} per student per hour"
+    elif 'price_month' in p:
         price_line = f"{rm(p['price_month'])}/month <small>· {per_class(p)}</small>"
         hero_price = f"<span><b>{rm(p['price_month'])}</b>/month</span>"
+        price_plain = f"{rm(p['price_month'])}/month"
     else:
         price_line = f"{rm(p['price_course'])} <small>· 6 weeks · {rm(p['price_at_bake_lab'])} if you book at a Bake Lab</small>"
         hero_price = f"<span><b>{rm(p['price_course'])}</b> for 6 weeks</span>"
+        price_plain = rm(p['price_course'])
     extras = []
     if p.get('term_price'):
         extras.append((f"{p['term_classes']}-class term", f"{rm(p['term_price'])} ({rm(round(p['term_price'] / p['term_classes']))} a class)"))
@@ -1303,53 +1347,102 @@ def build_programme(p):
     if p.get('sibling_or_student_price'):
         extras.append(('Sibling or student', f"{rm(p['sibling_or_student_price'])}/month"))
     course = FORMATS.get('baking-course-6wk') if p['id'] == 'baking-course' else None
-    starts = ''
     if course:
         nxt = [c_ for c_ in course.get('cohorts', []) if c_['start'] >= TODAY.isoformat()]
         starts = ' · '.join(f"{long_date(c_['start'])}, {fmt_time(c_['time'])}" for c_ in nxt)
         extras.append(('Next starts', starts))
         extras.append(('Runs with', f"at least {p.get('min')} bakers"))
     teacher_names = ', '.join(t['name'] for t in teachers_for(p['id']) if t.get('name')) or p.get('teacher', '')
-    items = [('Ages', e(c.get('ages', ''))), ('Class size', f'Up to {cap}' if cap else ''), ('Days', e(slot_text(p))),
-             ('Room', e(p.get('room', ''))), ('Teacher', e(teacher_names))] + [(k, e(v)) for k, v in extras]
+    if hourly:
+        items = [('Lessons', 'One to one'), ('Teacher', e(teacher_names)), ('Room', e(p.get('room', '')))]
+    else:
+        items = [('Ages', e(c.get('ages', ''))), ('Class size', f'Up to {cap}' if cap else ''), ('Days', e(slot_text(p))),
+                 ('Room', e(p.get('room', ''))), ('Teacher', e(teacher_names))] + [(k, e(v)) for k, v in extras]
+    enquire_btn = WhatsAppButton(wa_enquire(p), 'academy', 'Enquire to arrange', programme=p['id'])
     trial_btn = f'<a class="btn" href="/trial/?programme={p["id"]}">Book a {rm(TRIAL["price"])} trial</a>'
+    ask_btn = WhatsAppButton(f"Hi, I'd like to ask about {p['name']}. Source: {{source}}.", 'academy', 'Ask about this class', programme=p['id'])
+    if hourly:
+        hero_cta = enquire_btn
+        aside_action = enquire_btn
+        bottom = f'''<div class="cta-card"><div><h2>Enquire to <em>arrange</em></h2><p>Lessons are one to one with Sabrina Hew, at {hour_band(p)} per student per hour. There is no timetable yet.</p></div>
+  <div class="hero-cta">{enquire_btn}</div></div>'''
+        page_wa = {'msg': wa_enquire(p), 'programme': p['id']}
+    elif trial:
+        hero_cta = trial_btn + WhatsAppButton(wa_trial(p), 'academy', 'WhatsApp us', cls='btn ghost', programme=p['id'], trial=True)
+        aside_action = trial_btn
+        bottom = academy_cta(p)
+        page_wa = {'msg': wa_trial(p), 'programme': p['id'], 'trial': True}
+    else:
+        hero_cta = ask_btn
+        aside_action = ask_btn
+        bottom = f'''<div class="cta-card"><div><h2>Ask about <em>{e(p['name'])}</em></h2><p>The {rm(TRIAL["price"])} trial is for weekly art classes. Message us about this class and we will tell you how to start.</p></div>
+  <div class="hero-cta">{ask_btn}</div></div>'''
+        page_wa = {'msg': f"Hi, I'd like to ask about {p['name']}. Source: {{source}}.", 'programme': p['id']}
+    ages_fact = f"<span>Ages <b>{e(c['ages'])}</b></span>" if c.get('ages') and c['ages'][0].isdigit() else (f"<span>{e(c.get('ages', ''))}</span>" if c.get('ages') else '')
+    cap_fact = f"<span>Up to <b>{cap}</b> a class</span>" if cap and not hourly else ''
     body = hero_split(e(SITE['labels']['academy']), e(c.get('headline', p['name'])), e(p.get('summary', '')),
-                      hero_price + (f"<span>Ages <b>{e(c['ages'])}</b></span>" if c.get('ages') and c['ages'][0].isdigit() else f"<span>{e(c.get('ages', ''))}</span>") + (f"<span>Up to <b>{cap}</b> a class</span>" if cap else ''),
-                      trial_btn + WhatsAppButton(wa_trial(p), 'academy', 'WhatsApp us', cls='btn ghost', programme=p['id'], trial=True),
+                      hero_price + ages_fact + cap_fact, hero_cta,
                       photo(p['id'], eager=True, label=p['name']), crumbs(('/', 'Home'), ('/classes/', 'Classes'), (None, p['name'])))
     levels = Accordion([(l['name'], e(l['text'])) for l in c.get('levels', [])]) if c.get('levels') else ''
     dur = p.get('duration_min')
-    span = (f"{dur // 60}-hour" if dur % 60 == 0 else f"{dur}-minute") if dur else ''
-    glance = IconFacts([('cake', f"Ages {e(c['ages'])}" if c.get('ages') and c['ages'][0].isdigit() else e(c.get('ages', ''))),
-                        ('clock', f"One {span} class a week" if span else ''),
-                        ('users', f"Up to {cap} a class" if cap else ''),
-                        ('star', 'The same teacher every week'),
-                        ('calendar', e(slot_text(p)))], 'v-academy')
-    faqs = [
-        ('How does the trial work?', f"Book one class for {rm(TRIAL['price'])}. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}."),
-        ('When exactly is the class?', e(p.get('slot_note') or f"Classes run {slot_text(p)}. We agree the exact time with you at the trial.").capitalize()),
-        ('How big are the classes?', f"Up to {cap} students, so the teacher sees everyone's work every week." if cap else 'Small groups.'),
-        ('What do we need to bring?', e(c.get('bring', 'Nothing; materials are included.'))),
-        ('Are there discounts?', f"Siblings get {int(CL['discounts']['sibling'] * 100)}% off. Refer a friend and you get {rm(CL['discounts']['referral']['referrer_credit'])} credit; they get {rm(CL['discounts']['referral']['new_student_first_month_off'])} off their first month."),
-    ]
+    span = (f"{dur // 60}-hour" if dur and dur % 60 == 0 else f"{dur}-minute") if dur else ''
+    if hourly:
+        glance = IconFacts([('mic', 'One to one with Sabrina Hew'),
+                            ('tag', f'{hour_band(p)} per student per hour'),
+                            ('chat', 'Enquire to arrange a time')], 'v-academy')
+        faqs = [
+            ('How much is a lesson?', f"Lessons are {hour_band(p)} per student per hour, with Sabrina Hew. Each lesson is one to one."),
+            ('When are the lessons?', 'There is no timetable yet. Enquire to arrange a time that suits you.'),
+            ('Is there a group class?', 'No. Lessons are one student at a time. There is no group voice class.'),
+            ('Can I book the RM50 trial for music?', f"The {rm(TRIAL['price'])} trial is for weekly art classes. For music and voice, enquire to arrange a lesson."),
+            ('What should I bring?', e(c.get('bring', 'Water, and a song you love.'))),
+        ]
+        term_heading = 'How a lesson <em>works</em>'
+    else:
+        glance = IconFacts([('cake', f"Ages {e(c['ages'])}" if c.get('ages') and c['ages'][0].isdigit() else e(c.get('ages', ''))),
+                            ('clock', f"One {span} class a week" if span else ''),
+                            ('users', f"Up to {cap} a class" if cap else ''),
+                            ('star', 'The same teacher every week'),
+                            ('calendar', e(slot_text(p)))], 'v-academy')
+        if trial:
+            trial_faq = ('How does the trial work?', f"Book one class for {rm(TRIAL['price'])}. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}.")
+            when_faq = ('When exactly is the class?', e(p.get('slot_note') or f"Classes run {slot_text(p)}. We agree the exact time with you at the trial.").capitalize())
+        else:
+            trial_faq = ('Is the RM50 trial for this class?', f"The {rm(TRIAL['price'])} trial is for weekly art classes. Message us about {p['name']} and we will tell you how to start.")
+            when_faq = ('When exactly is the class?', e(p.get('slot_note') or f"Classes run {slot_text(p)}.").capitalize())
+        faqs = [
+            trial_faq,
+            when_faq,
+            ('How big are the classes?', f"Up to {cap} students, so the teacher sees everyone's work every week." if cap else 'Small groups.'),
+            ('What do we need to bring?', e(c.get('bring', 'Nothing; materials are included.'))),
+            ('Are there discounts?', f"Siblings get {int(CL['discounts']['sibling'] * 100)}% off. Refer a friend and you get {rm(CL['discounts']['referral']['referrer_credit'])} credit; they get {rm(CL['discounts']['referral']['new_student_first_month_off'])} off their first month."),
+        ]
+        term_heading = 'What a term <em>looks like</em>'
     team = TeacherCards(p['id'])
     body += f'''<section class="sec v-academy"><div class="wrap listing">
   <div class="prose"><p class="lead">{e(intro)}</p>{glance}
-    <h2>What a term <em>looks like</em></h2><p>{e(p.get('term', ''))}</p>{levels}
+    <h2>{term_heading}</h2><p>{e(p.get('term', ''))}</p>{levels}
     {f'<h2>Who <em>teaches</em></h2>{team}' if team else ''}</div>
-  <div class="aside">{FactsBlock(items, price_line, 'academy', f'<div class="hero-cta">{trial_btn}</div>')}</div>
+  <div class="aside">{FactsBlock(items, price_line, 'academy', f'<div class="hero-cta">{aside_action}</div>')}</div>
 </div></section>
 {PhotoRow(p['id'], 'In the <em>studio</em>', 'academy')}
-<section class="sec tight v-academy"><div class="wrap">{academy_cta(p)}</div></section>
+<section class="sec tight v-academy"><div class="wrap">{bottom}</div></section>
 <section class="sec v-academy"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Questions <em>parents ask</em></h2></div>{Accordion(faqs)}</div></section>
 <section class="sec alt v-academy"><div class="wrap"><div class="sec-head"><span class="eyebrow">Google reviews</span><h2>What families <em>say</em></h2></div>{GoogleReviews(3)}</div></section>'''
+    if hourly:
+        offers = {'@type': 'AggregateOffer', 'lowPrice': p['price_hour_min'], 'highPrice': p['price_hour_max'], 'priceCurrency': 'MYR'}
+        title = f"{p['name']} in Sri Hartamas, KL · {hour_band(p)} per hour · Master Artist Academy"
+        desc = p.get('summary', '')
+    else:
+        offers = {'@type': 'Offer', 'price': p.get('price_month') or p.get('price_course'), 'priceCurrency': 'MYR', 'category': 'Paid'}
+        title = f"{p['name']} in Sri Hartamas, KL · {rm(p.get('price_month') or p.get('price_course'))}{'/month' if p.get('price_month') else ''} · Master Artist Academy"
+        desc = f"{p.get('summary', '')} {price_plain}." + (f" {rm(TRIAL['price'])} trial, credited against the first month." if trial else '')
     course_ld = {'@context': 'https://schema.org', '@type': 'Course', 'name': p['name'], 'description': p.get('summary', ''),
                  'provider': {'@type': 'Organization', 'name': SITE['labels']['academy'], 'url': SITE['url']},
-                 'offers': {'@type': 'Offer', 'price': p.get('price_month') or p.get('price_course'), 'priceCurrency': 'MYR', 'category': 'Paid'},
+                 'offers': offers,
                  'hasCourseInstance': {'@type': 'CourseInstance', 'courseMode': 'onsite', 'location': place()}}
-    title = f"{p['name']} in Sri Hartamas, KL · {rm(p.get('price_month') or p.get('price_course'))}{'/month' if p.get('price_month') else ''} · Master Artist Academy"
-    page(f"/classes/{p['id']}/", title, f"{p.get('summary', '')} {price_line.split(' <')[0]}. {rm(TRIAL['price'])} trial, credited against the first month.",
-         body, voice='academy', active='/classes/', extra_head=ld(course_ld), data_attrs=f' data-page="programme" data-programme="{p["id"]}"', wa={'msg': wa_trial(p), 'programme': p['id'], 'trial': True})
+    page(f"/classes/{p['id']}/", title, desc,
+         body, voice='academy', active='/classes/', extra_head=ld(course_ld), data_attrs=f' data-page="programme" data-programme="{p["id"]}"', wa=page_wa)
 
 
 def build_sessions_feed():
@@ -1383,13 +1476,14 @@ def build_booking_thanks():
 
 
 def build_trial():
-    opts = ''.join(f'<option value="{p["id"]}">{e(p["name"])}</option>' for p in PROGS) + '<option value="not-sure">Not sure yet</option>'
-    # An adult booking for themselves picks from the classes adults can join (not the kids' and teen programmes)
-    adult_opts = ''.join(f'<option value="{p["id"]}">{e(p["name"])}</option>' for p in PROGS
+    trial_progs = [p for p in PROGS if offers_trial(p)]
+    opts = ''.join(f'<option value="{p["id"]}">{e(p["name"])}</option>' for p in trial_progs) + '<option value="not-sure">Not sure yet</option>'
+    # An adult booking for themselves picks from the weekly art classes adults can join
+    adult_opts = ''.join(f'<option value="{p["id"]}">{e(p["name"])}</option>' for p in trial_progs
                          if not p['id'].startswith(('kids-', 'teen-'))) + '<option value="not-sure">Not sure yet</option>'
     days = ''.join(f'<option>{d}</option>' for d in ['Any day', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Sunday'])
     body = hero_band(e(SITE['labels']['academy']), f'Book a <em>{rm(TRIAL["price"])} trial class</em>',
-                     f"One class in the programme you choose, with the teacher who will teach you every week. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}.",
+                     f"One weekly art class, with the teacher who will teach you every week. If you continue, the {rm(TRIAL['price'])} is {e(TRIAL['note'])}.",
                      '', crumbs(('/', 'Home'), ('/classes/', 'Classes'), (None, 'Trial')), img=('art-photo-4.jpg', 'A child painting at the studio table'))
     body += f'''<section class="sec v-academy"><div class="wrap listing book">
   <div class="aside"><form class="booking form trial-form v-academy" novalidate>
@@ -1424,10 +1518,11 @@ def build_trial():
     <div class="levels"><div class="level"><h3>1 · Tell us</h3><p>Send the form. WhatsApp opens with your details so we can reply quickly.</p></div>
     <div class="level"><h3>2 · We agree a time</h3><p>We find a class time that suits you and confirm it on WhatsApp.</p></div>
     <div class="level"><h3>3 · Come and try</h3><p>Meet the teacher and do a real class. Decide afterwards.</p></div></div>
-    <h2>Programmes</h2><p>{' · '.join(f'<a href="/classes/{p["id"]}/">{e(p["name"])}</a>' for p in PROGS)}</p></div>
+    <h2>Weekly art classes</h2><p>{' · '.join(f'<a href="/classes/{p["id"]}/">{e(p["name"])}</a>' for p in trial_progs)}</p>
+    <p>The {rm(TRIAL['price'])} trial is for these weekly art classes. For music and voice lessons, <a href="/classes/voice/">enquire to arrange</a> a time.</p></div>
 </div></section>'''
     page('/trial/', f'Book a {rm(TRIAL["price"])} trial class · Master Artist Academy, Sri Hartamas KL',
-         f'Try one art, voice, photo and video or baking class for {rm(TRIAL["price"])}, credited in full against your first month.',
+         f'Try one weekly art class for {rm(TRIAL["price"])}, credited in full against your first month. Music lessons are arranged separately.',
          body, voice='academy', active='/classes/', data_attrs=' data-page="trial"', wa={'msg': f"Hi, I'd like to book the {rm(TRIAL['price'])} trial. Source: {{source}}.", 'trial': True})
 
 
@@ -1578,7 +1673,7 @@ def build_prices():
                      '<a class="btn" href="#academy">Classes</a><a class="btn ghost" href="#studio">Workshops</a>',
                      crumbs(('/', 'Home'), (None, 'Prices')), img=('golden-shores-workshop-4.jpg', 'A finished canvas held up at the end of a workshop'))
     body += f'''<section class="sec v-academy" id="academy"><div class="wrap">
-  <div class="sec-head"><span class="eyebrow">{e(SITE['labels']['academy'])}</span><h2>Weekly <em>classes</em></h2><p>Monthly fees for small classes, taught by working artists.</p></div>
+  <div class="sec-head"><span class="eyebrow">{e(SITE['labels']['academy'])}</span><h2>Weekly <em>classes</em></h2><p>Monthly fees for weekly art, photo, video and baking. Music and voice lessons are one to one, at {hour_band(next(p for p in PROGS if p['id'] == 'voice'))} per hour. Enquire to arrange a time.</p></div>
   {strip(('art-photo-1.jpg', 'Young students holding up their paintings'), ('vocal-teaching-1.jpg', 'A one-to-one singing lesson'), ('painting-4.jpg', 'A teacher helping students paint'))}
   {PriceTable('academy')}{aca_notes}{camp_table}
   <p style="margin-top:24px"><a class="btn" href="/trial/">Book a {rm(TRIAL['price'])} trial</a></p>
@@ -2026,7 +2121,7 @@ def build_404():
 </script>'''
     doors = '''<section class="sec"><div class="wrap"><div class="doors">
 <a class="door" href="/workshops/"><img src="/painting-1.jpg" alt="A painting workshop on the studio table"><span class="label">Studio Sessions</span><h3>Workshops</h3><p>Painting, baking, candles and crochet, on a weeknight or a Sunday.</p><span class="more">See workshops</span></a>
-<a class="door" href="/classes/"><img src="/art-photo-1.jpg" alt="Students with finished artwork"><span class="label">Academy</span><h3>Classes</h3><p>Weekly art, voice, photo and baking classes. A RM50 trial is credited to the first month.</p><span class="more">See classes</span></a>
+<a class="door" href="/classes/"><img src="/art-photo-1.jpg" alt="Students with finished artwork"><span class="label">Academy</span><h3>Classes</h3><p>Weekly art, photo and baking classes. The RM50 trial is for weekly art. Music lessons are one to one.</p><span class="more">See classes</span></a>
 <a class="door" href="/blog/"><img src="/baking-2.jpg" alt="A loaf from a baking workshop"><span class="label">From the studio</span><h3>Blog</h3><p>Notes on workshops, classes and baking in Desa Sri Hartamas.</p><span class="more">Read the blog</span></a>
 <a class="door" href="/about/#visit"><img src="/hero-1.jpg" alt="The Master Artist studio"><span class="label">Desa Sri Hartamas</span><h3>Contact</h3><p>Visit the studio above Savor, or WhatsApp +60 10-277 9426.</p><span class="more">Contact the studio</span></a>
 </div></div></section>'''

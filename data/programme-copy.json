@@ -35,12 +35,12 @@
   },
   "voice": {
     "ages": "Kids, teens and adults",
-    "headline": "Voice lessons with Sabrina Hew, recorded so you hear your own progress.",
-    "intro": "Technique, repertoire and performance in the L2 recording studio. Lessons are recorded, so every few weeks you can hear how far you have come.",
+    "headline": "One-to-one music and voice lessons with Sabrina Hew.",
+    "intro": "Each lesson is one student with Sabrina Hew. You work on breath, songs and performance, and you can hear a recording of your own progress. The fee is RM80 to RM100 per hour. There is no group class, and there is no timetable yet. Enquire to arrange a time.",
     "levels": [
       {"name": "Foundations", "text": "Breath, posture, pitch and a healthy, comfortable range."},
-      {"name": "Repertoire", "text": "Songs chosen with you, in the styles you want to sing."},
-      {"name": "Performance", "text": "A recorded performance in the studio and a place at the showcase."}
+      {"name": "Songs", "text": "Songs chosen with you, in the styles you want to sing."},
+      {"name": "Listening back", "text": "A recording of your own lesson, so you can hear how far you have come."}
     ],
     "bring": "Water, and a song you love."
   },
