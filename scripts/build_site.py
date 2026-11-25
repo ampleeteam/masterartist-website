@@ -1444,36 +1444,38 @@ def build_groups():
             raise SystemExit(f'workshop facts drifted for {fid}')
     if FORMATS['bake-lab'].get('price_specialty') != 85 or FORMATS['bake-lab'].get('cap_specialty') != 20:
         raise SystemExit('bake lab specialty facts drifted')
-    lines = []
-    for fid in seat:
+    def activity_line(fid, name_room):
         f = FORMATS[fid]
         bits = [f'{rm(f["price"])} a person', f'pair {rm(f["pair_price"])}']
         cap = f'Up to {f["cap"]} seats'
         if f.get('cap_specialty'):
             cap += f' ({f["cap_specialty"]} for a specialty bake)'
-        lines.append(
-            f'<li><a href="/workshops/{fid}/">{e(f["name"])}</a>. {e(f["summary"])} '
-            f'{e(", ".join(bits))}. {cap}. {e(length(f))} in the {e(f["room"])}.</li>')
-    activities = ''.join(lines)
-    # Package-price answer stays the approved wording. The other answers name the workshops, caps and place.
+        where = f' {e(length(f))} in the {e(f["room"])}.' if name_room else f' {e(length(f))}.'
+        return (f'<li><a href="/workshops/{fid}/">{e(f["name"])}</a>. {e(f["summary"])} '
+                f'{e(", ".join(bits))}. {cap}.{where}</li>')
+    # Team-day packages are art, baking or mixed. Candle making and crochet stay public seats.
+    # Do not name a room for candle making: the site and the schedule sheet disagree.
+    team_ids = ['acrylic-canvas', 'textured-canvas', 'glow-canvas', 'watercolour-botanicals', 'bake-lab']
+    activities = ''.join(activity_line(fid, True) for fid in team_ids)
+    public_only = ''.join(activity_line(fid, fid != 'candle-making') for fid in ('candle-making', 'crochet-bag'))
     group_faqs = [
         ('What team building activities do you run in KL?',
-         'Team building activities in KL here are painting, candle making, crochet and Bake Lab. Watercolour is RM80. Acrylic and textured canvas are RM89. Glow canvas is RM85. Candles are RM89. Crochet and Bake Lab are RM95. A drink and all materials are included, and you take the piece home the same day.'),
+         'Team days in KL are art, baking, or a mix of the two. Art is a painting workshop. Baking is Bake Lab. Public workshops also include candle making and chunky crochet, booked as a single seat, not as a team-day stream. A drink and all materials are included, and you take the piece home the same day.'),
         ('How much does a team day cost?',
-         'An art team day is RM1,200 for up to 10 people. A baking team day is RM1,700 for up to 15. A mixed team day, with two or three streams in parallel, is RM2,400 for up to 20. Each extra person is RM100. Prices include materials and a teacher for each stream.'),
+         'An art team day is RM1,200 for up to 10 people. A baking team day is RM1,700 for up to 15. A mixed day, art and baking side by side, is RM2,400 for up to 20. Each extra person is RM100. Prices include materials and a teacher for each stream.'),
         ('How many people do we need?',
-         'Team days run from 6 people. Art covers up to 10, baking up to 15, and a mixed day up to 20. Each extra person is RM100. A dinner and evening workshop is RM150 a person, from 10 people. Candle making seats 16. Acrylic and glow seat 18. Crochet, textured canvas and watercolour seat 20. Bake Lab seats 24.'),
+         'Team days run from 6 people. Art covers up to 10, baking up to 15, and a mixed day up to 20. Each extra person is RM100. A dinner and evening workshop is RM150 a person, from 10 people. Candle making and crochet are public seats, not team-day streams.'),
         ('Where is team building near me in KL?',
          'For team building near me in KL, the studio is upstairs, above Savor, at 38-2, Jalan 28/70A, Desa Sri Hartamas, 50480 Kuala Lumpur. It is a short drive from Mont Kiara. Saturday is closed. Friday team days finish by 12:30pm. Sunday workshops do not start before 12pm.'),
         ('How do we book team building in Malaysia?',
-         'Send the package, the numbers and a preferred date on WhatsApp, or use the quote form on this page. We plan the streams and confirm the plan with you, then send payment details. Seats are prepaid. For a single public seat instead of a team day, use the workshops page.'),
+         'Send the package, the numbers and a preferred date on WhatsApp, or use the quote form on this page. We plan the art and baking streams and confirm the plan with you, then send payment details. Seats are prepaid. For a public seat, including candles or crochet, use the workshops page.'),
     ]
     for question, answer in group_faqs:
         count = len(re.findall(r"[A-Za-z0-9’']+", answer))
         if not 40 <= count <= 60:
             raise SystemExit(f'groups FAQ answer is {count} words: {question}')
     title = 'Team building activities KL · Master Artist'
-    desc = 'Team building activities KL in Desa Sri Hartamas: painting, candles, crochet and Bake Lab. Team building in Malaysia from RM1,200, near Mont Kiara.'
+    desc = 'Team building activities KL: art, baking or mixed team days in Desa Sri Hartamas from RM1,200. Public workshops also include candles and crochet.'
     if len(title) > 60:
         raise SystemExit(f'groups title is {len(title)} characters: {title}')
     if len(desc) > 155:
@@ -1488,9 +1490,11 @@ def build_groups():
 </div></section>
 <section class="sec alt v-studio" id="activities"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Activities</span><h2>Team building activities in <em>KL</em></h2>
-    <p>These are the workshops we run. Each one is two hours. {e(POL['included'].capitalize())} are included, and you take the piece home the same day. The price is one public seat. A private group uses a package above.</p></div>
+    <p>Team days are art, baking, or a mix of the two. Art is a painting workshop. Baking is Bake Lab. Each one is two hours. {e(POL['included'].capitalize())} are included, and you take the piece home the same day. The price is one public seat. A private group uses a package above.</p></div>
   <div class="prose"><p>If you searched for a sip and paint, a painting workshop is that kind of evening: one guided canvas, with a drink included.</p>
     <ul>{activities}</ul>
+    <p>Public workshops also include candle making and chunky crochet. You book these as a single seat, not as a team-day stream.</p>
+    <ul>{public_only}</ul>
     <p>Public dates are on the <a href="/workshops/">workshops page</a>. A team day is a separate booking, not a stack of public seat prices.</p>
     <h2>Team building in <em>Malaysia</em></h2>
     <p>Team building in Malaysia, for a team that wants to stay in the city, is a day at this studio. Searching for team building near me? We are upstairs above Savor, at {e(SITE['address']['street'])}, {e(SITE['address']['postcode'])} {e(SITE['address']['city'])}. Hartamas is a short drive from Mont Kiara.</p>
