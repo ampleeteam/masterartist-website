@@ -137,16 +137,21 @@ def main():
             except json.JSONDecodeError as exc:
                 errors.append(f'{path.name} invalid JSON-LD: {exc}')
 
-    banned = ('plant' + '-based', 'plant based', 'cheaper than')
+    banned = ('plant' + '-based', 'plant based', 'cheaper than', 'vegan')
     for rel in pages + ['404.html']:
         visible = re.sub(r'<script\b[^>]*>.*?</script>', ' ', (ROOT / rel).read_text(), flags=re.S).lower()
         for needle in banned:
             if needle in visible:
                 errors.append(f'{rel} contains {needle}')
 
-    sample = build_blog.scrub('Beverly, owner of ' + banned[0] + ' restaurant Savor, brought ' + banned[0] + ' expertise. It is ' + banned[0] + ' without any substitutions at all.')
+    sample = build_blog.scrub(
+        'Beverly, owner of ' + banned[0] + ' restaurant Savor, brought ' + banned[0] + ' expertise. It is ' + banned[0] + ' without any substitutions at all. '
+        'Led by vegan baker Ana Castro from Colombia. Ana is a vegan baker from Colombia. Vegan baker Ana Castro. A vegan-friendly table. It is vegan.'
+    )
     if any(needle in sample.lower() for needle in banned):
         errors.append(f'scrub left banned wording: {sample}')
+    if 'Ana is a baker from Colombia' not in sample or 'Baker Ana Castro' not in sample or 'Led by baker Ana Castro from Colombia' not in sample:
+        errors.append(f'scrub changed the baker line: {sample}')
 
     if errors:
         print('\n'.join(errors))

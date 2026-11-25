@@ -35,6 +35,8 @@ def _baker(match):
 
 SCRUB_RULES = [
     (re.compile(r'vegan baker', re.I), _baker),
+    (re.compile(r'vegan-friendly', re.I), ''),
+    (re.compile(r'\bvegan\b', re.I), ''),
     (re.compile(r'plant-based%20', re.I), ''),
     (re.compile(r'Plant-based Baking Course'), 'Baking Course'),
     (re.compile(r'Plant-based Bake Lab'), 'Bake Lab'),
@@ -100,7 +102,7 @@ def faq_items(body):
 
 def mentions_banned(post):
     blob = ' '.join(str(post.get(key) or '') for key in ('title', 'excerpt', 'seo_description', 'body_html', 'cover_alt', 'author'))
-    return bool(re.search(r'plant[-\s]based', blob, re.I))
+    return bool(re.search(r'plant[-\s]based|\bvegan\b', blob, re.I))
 
 
 def esc(s):
@@ -360,7 +362,7 @@ def main():
     update_index(posts)
     update_sitemap(posts)
     if flagged:
-        print('stored text still says plant-based (not written back): ' + ', '.join(flagged))
+        print('stored text still says plant-based or vegan (not written back): ' + ', '.join(flagged))
     print(f'built {len(posts)} post(s)')
 
 
