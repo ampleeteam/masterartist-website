@@ -49,6 +49,21 @@ const blank = v => {
   const s = String(v ?? '').trim();
   return s ? s : null;
 };
+if (touch.gclid || touch.fbclid || touch.wbraid || touch.gbraid || touch.ttclid || touch.ad_ref) {
+  sb.from('click_refs').insert({
+    ref_code: touch.ad_ref || null,
+    gclid: blank(touch.gclid),
+    wbraid: blank(touch.wbraid),
+    gbraid: blank(touch.gbraid),
+    ttclid: blank(touch.ttclid),
+    fbclid: blank(touch.fbclid),
+    utm_source: blank(touch.utm_source),
+    utm_medium: blank(touch.utm_medium),
+    utm_campaign: blank(touch.utm_campaign),
+    utm_content: blank(touch.utm_content),
+    landing_page: blank(touch.landing_page),
+  }).then(() => {}, () => {});
+}
 
 /* Google reviews come from the "google-reviews" Supabase Edge Function
    (supabase/functions/google-reviews). The Google API key lives only in

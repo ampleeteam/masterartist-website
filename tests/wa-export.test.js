@@ -66,4 +66,20 @@ test('timeline is chronological, escapes HTML, and filters', function () {
   assert.equal(filterTimeline(rows, 'notes').length, 1);
   assert.equal(filterTimeline(rows, 'bookings').length, 1);
   assert.equal(filterTimeline(rows, 'whatsapp').length, 2);
+  assert.match(html, /WhatsApp/);
+  assert.match(html, /tl-time/);
+  assert.match(html, /Booking confirmed/);
+});
+
+test('a channel change inserts a divider and outbound shows delivery ticks', function () {
+  const now = new Date('2026-11-22T02:00:00Z');
+  const html = timelineHtml([
+    { occurredAt: '2026-11-20T02:00:00Z', kind: 'message', channel: 'whatsapp', direction: 'in', senderName: 'Hana', body: 'Hello' },
+    { occurredAt: '2026-11-21T02:00:00Z', kind: 'message', channel: 'instagram', direction: 'in', senderName: 'Hana', body: 'Moving here' },
+    { occurredAt: '2026-11-22T01:00:00Z', kind: 'message', channel: 'instagram', direction: 'out', senderType: 'staff', senderName: 'Maya', body: 'Seen', status: 'read' }
+  ], now);
+  assert.match(html, /Continued on Instagram/);
+  assert.match(html, /Yesterday/);
+  assert.match(html, /Today/);
+  assert.match(html, /title="Read"/);
 });

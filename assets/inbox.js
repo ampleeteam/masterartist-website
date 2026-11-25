@@ -98,10 +98,18 @@
     return { type: 'session', to: job && job.phone_e164 || null, body: job && job.body || '', buttons: job && job.buttons || [] };
   }
 
+  function duePayloads(rows) {
+    return (rows || []).map(providerPayload);
+  }
+
   var whatsappProvider = {
-    name: '360dialog-stub',
+    name: '360dialog',
     send: function (job) {
       return Promise.resolve({ ok: false, connected: false, reason: '360dialog is not connected yet.', payload: providerPayload(job) });
+    },
+    /* Turns fetch_due_outbound rows into 360dialog payloads. The network call lives in supabase/functions/whatsapp-send and stays off until D360_SEND_ENABLED=true. */
+    sendDue: function (rows) {
+      return Promise.resolve({ ok: false, connected: false, sent: 0, payloads: duePayloads(rows) });
     }
   };
 
@@ -115,6 +123,7 @@
     copyAllowed: copyAllowed,
     mentionsIn: mentionsIn,
     providerPayload: providerPayload,
+    duePayloads: duePayloads,
     whatsappProvider: whatsappProvider
   };
 });
