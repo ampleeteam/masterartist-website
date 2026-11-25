@@ -2172,9 +2172,6 @@ POST_LOADER = '''<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/
       .replace(/are plant-based,/gi, 'are')
       .replace(/plant-based bake/gi, 'bake')
       .replace(/\\bplant[-\\s]based\\b/gi, '')
-      .replace(/\\ba vegan baker\\b/gi, 'a baker')
-      .replace(/\\bvegan baker\\s+/gi, '')
-      .replace(/\\bvegan\\b/gi, '')
       .replace(/ {2,}/g, ' ')
       .replace(/ +([,.;:])/g, '$1')
       .replace(/\\( +/g, '(');

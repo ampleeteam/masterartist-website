@@ -137,7 +137,7 @@ def main():
             except json.JSONDecodeError as exc:
                 errors.append(f'{path.name} invalid JSON-LD: {exc}')
 
-    banned = ('plant' + '-based', 'plant based', 'cheaper than', 'vegan', 'hrdc', 'hrd corp')
+    banned = ('plant' + '-based', 'plant based', 'cheaper than', 'hrdc', 'hrd corp')
     for rel in pages + ['404.html']:
         visible = re.sub(r'<script\b[^>]*>.*?</script>', ' ', (ROOT / rel).read_text(), flags=re.S).lower()
         for needle in banned:
