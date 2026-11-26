@@ -40,7 +40,7 @@ WHY = {
     'glow-canvas': 'Glow paints cost more; the strongest ad hook of the month (Facebook 1 Nov).',
     'candle-making': 'Wax, jars and scents; Christmas gifting (Facebook 1 Nov).',
     'crochet-bag': 'Chunky yarn and a hook to take home (Facebook 1 Nov).',
-    'bake-lab': 'Usual Bake Lab is RM95 (Facebook 1 Nov). The 29 Nov Gingerbread Baking Workshop is RM160 per person, 2 pax RM310. Focaccia at RM75 drew 25 people; ciabatta at RM120 drew 12.',
+    'bake-lab': 'Usual Bake Lab is RM95 (Facebook 1 Nov). The 29 Nov Gingerbread Baking Workshop is RM130 per person, 2 pax RM260. Focaccia at RM75 drew 25 people; ciabatta at RM120 drew 12.',
     'kids-art-studio': 'Sold only as Family Sunday: adult Textured Canvas plus a child, same hour.',
     'adult-art-class': 'A class, not a party: drop in, or four for the price of about three.',
 }
