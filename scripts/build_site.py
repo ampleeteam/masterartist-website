@@ -1845,7 +1845,7 @@ def build_birthdays():
     form = WaForm("Hi, I'd like to book a {package} for {n} guests on {date} (birthday: {age}).{notes} Name: {name}. Source: {source}.", fields,
                   'Send on WhatsApp', fmt='birthday', done='we will check the date and reply')
     body = hero_band('Master Artist Studio Sessions', 'Birthday parties in KL: <em>art, clay and baking</em>',
-                     'Painting, clay or baking in Desa Sri Hartamas, with a teacher, all materials and time for cake. Everyone takes their piece home.',
+                     'Painting, air-dry clay or baking in Desa Sri Hartamas, with a teacher, all materials and time for cake. Everyone takes their piece home.',
                      '<a class="btn" href="#quote">Plan a birthday</a><a class="btn ghost" href="#parties">See the parties</a>',
                      crumbs(('/', 'Home'), ('/groups/', 'Groups'), (None, 'Birthdays')), img=('painting-4.jpg', 'A teacher helping children paint'))
     body += f'''<section class="sec v-studio" id="parties"><div class="wrap">
@@ -1865,7 +1865,7 @@ def build_birthdays():
     ])}</div>
 </div></section>'''
     page('/birthdays/', 'Kids birthday party workshops in KL · art, clay and baking · Master Artist',
-         'Art, clay and baking birthday parties for kids, teens and adults in Desa Sri Hartamas, KL, with a teacher, materials and time for cake.',
+         'Art, air-dry clay and baking birthday parties for kids, teens and adults in Desa Sri Hartamas, KL, with a teacher, materials and time for cake.',
          body, voice='studio', active='/groups/', data_attrs=' data-page="birthdays"', wa={'msg': "Hi, I'd like to plan a birthday party. Source: {source}.", 'fmt': 'birthday'})
 
 
