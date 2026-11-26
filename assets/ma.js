@@ -1,9 +1,15 @@
 /* Master Artist — site behaviour (handoff 02-SITE-SPEC §3–5, §8).
    Content is readable without this file; it adds WhatsApp pre-fill with the
-   visitor's ad source, the tracking events, and the WhatsApp booking form. */
+   visitor's ad source, the tracking events, and the WhatsApp booking form.
+   Google Ads clicks also append "(ref G-XXXXXX)" via attribution.mjs. */
+import {
+  STUDIO_WA, applyGoogleClick, buildWhatsAppHref, captureVisit, dispatchAdRef,
+} from '../attribution.mjs';
+
 (function () {
   'use strict';
-  var WA = document.documentElement.getAttribute('data-wa') || '60102779426';
+  /* Paid Ads confirmed every wa.me link uses the studio number. */
+  var WA = STUDIO_WA;
   var TRIAL = Number(document.documentElement.getAttribute('data-trial-price')) || 0;   // from classes-seed.json
   var SB_URL = 'https://fudaosneozobacdalncv.supabase.co';
   var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
@@ -22,6 +28,47 @@
   }
   var utm = readUtm();
   var source = utm.utm_source ? utm.utm_source + (utm.utm_campaign ? '/' + utm.utm_campaign : '') : (utm.fbclid ? 'facebook' : utm.gclid ? 'google' : 'site');
+
+  /* 30-day first and last touch for the Google CRM ref. Session UTMs above are unchanged. */
+  var adVisit = { first: null, last: null };
+  try {
+    adVisit = captureVisit({
+      storage: localStorage,
+      now: Date.now(),
+      search: location.search,
+      landing: location.href.split('#')[0],
+      referrer: document.referrer || ''
+    });
+  } catch (e) { /* private mode */ }
+  var lastAdPostAt = 0;
+  function googleTransport(url, payload) {
+    var t = Date.now();
+    if (t - lastAdPostAt < 800) return;
+    lastAdPostAt = t;
+    dispatchAdRef(url, payload, SB_ANON);
+  }
+  /* send is true only when a WhatsApp chat is actually opening. A failed POST never blocks that. */
+  function hrefFor(msg, send) {
+    var text = msg;
+    try {
+      var stamped = applyGoogleClick({
+        storage: localStorage,
+        now: Date.now(),
+        first: adVisit.first,
+        last: adVisit.last,
+        text: msg,
+        transport: send ? googleTransport : null
+      });
+      text = stamped.text;
+    } catch (e) { text = msg; }
+    return buildWhatsAppHref('https://wa.me/' + WA, text);
+  }
+  function anchorText(a) {
+    var msg = a.getAttribute('data-wa-msg');
+    if (msg) return withSource(msg);
+    try { return new URL(a.href, location.href).searchParams.get('text') || ''; }
+    catch (e) { return ''; }
+  }
 
   /* ---------- tracking: GTM dataLayer first; direct gtag/fbq until GTM tags are live ---------- */
   window.dataLayer = window.dataLayer || [];
@@ -67,21 +114,36 @@
   }
 
   /* ---------- WhatsApp buttons: <a data-wa-msg="..." data-voice data-format> ---------- */
-  function waUrl(msg) { return 'https://wa.me/' + WA + '?text=' + encodeURIComponent(msg); }
+  function waUrl(msg) { return hrefFor(msg, false); }
   function withSource(msg) { return msg.replace(/\{source\}/g, source); }
   document.querySelectorAll('[data-wa-msg]').forEach(function (a) {
-    a.href = waUrl(withSource(a.getAttribute('data-wa-msg')));
+    a.href = hrefFor(withSource(a.getAttribute('data-wa-msg')), false);
     a.target = '_blank'; a.rel = 'noopener';
   });
+  document.querySelectorAll('a[href*="wa.me/"], a[href*="api.whatsapp.com/"]').forEach(function (a) {
+    if (a.hasAttribute('data-wa-msg')) return;
+    a.href = hrefFor(anchorText(a), false);
+  });
+  function openWhatsApp(msg) {
+    var href = hrefFor(msg, true);
+    window.open(href, '_blank', 'noopener');
+    return href;
+  }
   document.addEventListener('click', function (e) {
-    var a = e.target.closest && e.target.closest('a[href*="wa.me/"]');
+    var a = e.target.closest && e.target.closest('a[href*="wa.me/"], a[href*="api.whatsapp.com/"]');
     if (!a) return;
+    try { a.href = hrefFor(anchorText(a), true); } catch (err) {}
     track(a.hasAttribute('data-trial') ? 'trial_requested' : 'whatsapp_click', {
       voice: a.getAttribute('data-voice') || document.body.getAttribute('data-voice') || 'both',
       format: a.getAttribute('data-format') || document.body.getAttribute('data-format') || '',
       programme: a.getAttribute('data-programme') || '',
       session_id: a.getAttribute('data-session') || ''
     });
+  }, true);
+  document.addEventListener('auxclick', function (e) {
+    var a = e.target.closest && e.target.closest('a[href*="wa.me/"], a[href*="api.whatsapp.com/"]');
+    if (!a || e.button !== 1) return;
+    try { a.href = hrefFor(anchorText(a), true); } catch (err) {}
   }, true);
 
   /* ---------- page view events ---------- */
@@ -276,7 +338,7 @@
       }
 
       track('whatsapp_click', { voice: 'studio', format: d.format, session_id: d.session, value: t.sum, currency: 'MYR' });
-      window.open(waLink, '_blank', 'noopener');
+      openWhatsApp(lines.join('\n'));
       form.classList.add('sent');
       // Save the booking for the admin portal, the CRM and Sabrina's report. WhatsApp opens first (a popup opened
       // after a network wait is blocked on phones); keepalive lets the save finish as the page loses focus.
@@ -334,7 +396,7 @@
         return v;
       });
       track('whatsapp_click', { voice: form.getAttribute('data-voice') || 'studio', format: form.getAttribute('data-format') || '' });
-      window.open(waUrl(msg), '_blank', 'noopener');
+      openWhatsApp(msg);
       form.classList.add('sent');
     });
   });
@@ -456,7 +518,7 @@
           try { window.gtag && gtag('event', 'generate_lead', { programme: studentsList[0].programme, value: TRIAL * n, currency: 'MYR', transport_type: 'beacon' }); } catch (e) {}
           adsConversion('trial_form');
         }
-        window.open(waLink, '_blank', 'noopener');
+        openWhatsApp(lines.join('\n'));
         form.classList.add('sent');
       }).catch(function () {
         form.dataset.sending = ''; btn.disabled = false; btn.textContent = label;
