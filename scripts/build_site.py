@@ -834,7 +834,11 @@ def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_
 def build_styleguide():
     pub = [s for s in WS['sessions'] if s['public']]
     week = [s for s in pub if s['date'] <= (dt.date.fromisoformat(pub[0]['date']) + dt.timedelta(days=6)).isoformat()][:6]
-    sample = next(s for s in pub if s['format'] == 'textured-canvas' and s['dine'])
+    # Prefer a Textured Canvas session with Dine; when none is on sale (the dated schedule has run
+    # out), fall back to any session with Dine, then any session, so the nightly build cannot crash
+    # here and leave sitemap.xml and the dated pages stale.
+    sample = (next((s for s in pub if s['format'] == 'textured-canvas' and s['dine']), None)
+              or next((s for s in pub if s['dine']), None) or pub[0])
     bake = next(s for s in pub if s['format'] == 'bake-lab')
     family = next((s for s in pub if s.get('bundle')), None)   # Family Sunday may be paused
     sold = dict(sample, seats_left=0)
