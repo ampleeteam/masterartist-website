@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-26T10:51:25",
+ "generated": "2026-11-26T11:02:40",
  "currency": "MYR",
  "formats": [
   {
@@ -508,9 +508,9 @@
    "pair_word": "2 pax",
    "seo_title": "Gingerbread Baking Workshop · Sun 29 Nov 3pm",
    "seo_description": "Gingerbread baking workshop, Sun 29 Nov, 3–5:30pm, Savor Level 1, Sri Hartamas. Bake a gingerbread man, decorate a house. RM130 early bird · RM160 regular.",
+   "early_price": 130,
    "public": true,
-   "next_session": null,
-   "early_price": 130
+   "next_session": null
   },
   {
    "id": "baking-course-6wk-2026-11-30-1500",
