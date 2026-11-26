@@ -14,8 +14,8 @@ Generated 2026-11-26 — public sessions to 2027-01-07.
 - **19:00–21:00** Glow-in-the-Dark Canvas · Galaxy Painting · L2 front room · RM85 · pair RM153 · Dine add-on (before) · 18 of 18 seats left
 
 ## Wednesday 2 December 2026
-- **15:00–17:00** Acrylic Canvas · Silhouette Reindeer · L2 front room · RM109 · pair RM196 · Dine add-on (after) · 18 of 18 seats left
-- **19:00–21:00** Acrylic Canvas · Silhouette Reindeer · L2 front room · RM109 · pair RM196 · Dine add-on (before) · 18 of 18 seats left
+- **15:00–17:00** Acrylic Canvas · Silhouette Reindeer · L2 front room · RM89 · pair RM160 · Dine add-on (after) · 18 of 18 seats left
+- **19:00–21:00** Acrylic Canvas · Silhouette Reindeer · L2 front room · RM89 · pair RM160 · Dine add-on (before) · 18 of 18 seats left
 
 ## Thursday 3 December 2026
 - **15:00–17:00** Watercolour · Watercolour Christmas Tree · L2 front room · RM80 · pair RM144 · Dine add-on (after) · 16 of 16 seats left

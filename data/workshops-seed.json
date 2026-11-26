@@ -593,9 +593,7 @@
         "format": "acrylic-canvas",
         "theme": "Silhouette Reindeer",
         "room": "l2-front",
-        "cap": 18,
-        "price": 109,
-        "pair_price": 196
+        "cap": 18
       },
       {
         "date": "2026-12-02",
@@ -604,9 +602,7 @@
         "format": "acrylic-canvas",
         "theme": "Silhouette Reindeer",
         "room": "l2-front",
-        "cap": 18,
-        "price": 109,
-        "pair_price": 196
+        "cap": 18
       },
       {
         "date": "2026-12-03",
