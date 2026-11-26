@@ -2141,6 +2141,59 @@ def build_birthdays():
                      'Painting, air-dry clay or baking in Desa Sri Hartamas, with a teacher, all materials and time for cake. Everyone takes their piece home.',
                      '<a class="btn" href="#quote">Plan a birthday</a><a class="btn ghost" href="#parties">See the parties</a>',
                      crumbs(('/', 'Home'), ('/groups/', 'Groups'), (None, 'Birthdays')), img=('painting-4.jpg', 'A teacher helping children paint'))
+    kp = [pk for pk in b['packages'] if not pk.get('price_format')]
+    art = next(pk for pk in kp if 'art' in pk['id'])
+    bake = next(pk for pk in kp if 'bake' in pk['id'])
+    canvas = next(pk for pk in b['packages'] if pk.get('price_format'))
+    canvas_fmt = FORMATS[canvas['price_format']]
+    ph = SITE['phone']
+    per_art, per_bake = art['price'] // art['kids_included'], bake['price'] // bake['kids_included']
+    answer_block = (f"A kids birthday party at Master Artist in Desa Sri Hartamas, KL, is {rm(art['price'])} for {art['kids_included']} children, "
+                    f"{length(art)} long. A teacher and an assistant, all materials and aprons, and 30 minutes for cake are included. "
+                    f"Every child takes their piece home. Ages {art['ages']}. Ask about a date on WhatsApp.")
+    bday_faqs = [
+        ('What ages are birthday parties for?',
+         f"The Kids Art Party is for ages {art['ages']}. The Kids Bake Party is for ages {bake['ages']}. Teens and adults aged {canvas['ages']} can book the "
+         f"Teen & Adult Canvas Birthday, a private Textured Canvas session for the group. For any other age, message us on WhatsApp and ask."),
+        ('How many children can come to a birthday party?',
+         f"Both kids parties include {art['kids_included']} children and take up to {art['max']}. Each extra child is {rm(art['extra_child'])} for art and {rm(bake['extra_child'])} for baking. "
+         f"The Teen & Adult Canvas Birthday is for {canvas['min']} to {canvas['max']} people. Tell us your numbers and we will check the room for your date."),
+        ('What is included in a birthday party?',
+         f"Every party includes {b['includes']}. Art parties make a canvas or an air-dry clay piece. Bake parties make mini pizzas or cinnamon rolls. "
+         "Every child leaves with what they made."),
+        ('How much is a birthday party per child?',
+         f"The Kids Art Party is {rm(art['price'])} for {art['kids_included']} children, which is {rm(per_art)} a child. The Kids Bake Party is {rm(bake['price'])} for {bake['kids_included']} children, "
+         f"{rm(per_bake)} a child. Each extra child is {rm(art['extra_child'])} or {rm(bake['extra_child'])}. The Teen & Adult Canvas Birthday is {rm(canvas_fmt['price'])} a person."),
+        ('How long does a birthday party run?',
+         f"The Kids Art Party runs {length(art)}. The Kids Bake Party and the Teen & Adult Canvas Birthday run 2 hours 30 minutes. The last 30 minutes are yours in the room "
+         "for cake and candles. Parties run on Sundays and weekdays, because we are closed on Saturdays."),
+        ('Can we bring our own cake?',
+         "Yes. Bring your own cake. The last 30 minutes are yours in the room for cake and candles. Please tell us about allergies when you book. "
+         "Bake parties are made in a shared kitchen where gluten and nuts may be present."),
+        ('How do I book a birthday party on WhatsApp?',
+         f"Send the party, your numbers and a preferred date to {ph} on WhatsApp, or use the form on this page. We check the room and confirm on WhatsApp. "
+         f"A {rm(b['deposit'])} deposit holds the date and comes off the total."),
+    ]
+    for text in [answer_block] + [a for _, a in bday_faqs]:
+        n_words = len(re.findall(r"[A-Za-z0-9’']+", text))
+        if not 40 <= n_words <= 60:
+            raise SystemExit(f'birthdays answer is {n_words} words: {text[:60]}')
+        for needle in ('plant-based', 'plant based', 'vegan', 'cheaper than', 'hrdc', 'hrd corp'):
+            if needle in text.lower():
+                raise SystemExit(f'birthdays copy contains {needle}')
+    answer_html = f'''<section class="sec tight v-studio" id="answer"><div class="wrap" style="max-width:820px"><div class="prose">
+  <h2 style="margin-top:0">Kids birthday party in <em>KL</em></h2>
+  <p class="lead">{e(answer_block)}</p>
+  <p>Looking for something else? See <a href="/groups/">team days and groups</a>, <a href="/workshops/">public workshops</a> or <a href="/gift-vouchers/">gift vouchers</a>.</p>
+</div></div></section>'''
+    faq_html = f'''<section class="sec v-studio" id="faq"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Birthday party <em>questions</em></h2></div>{FaqList(bday_faqs)}
+  <p>Ready to plan? <a href="#quote">Fill in the form</a> or <a href="https://wa.me/{SITE['whatsapp']}">message us on WhatsApp</a>. Want a different kind of day out? Try <a href="/groups/">team days</a>, <a href="/workshops/">workshops</a> or a <a href="/gift-vouchers/">gift voucher</a>.</p></div></section>'''
+    schema = ld(faq_ld(bday_faqs)) + '\n' + ld(breadcrumb_ld([
+        ('Home', 'https://masterartist.co/'),
+        ('Groups', 'https://masterartist.co/groups/'),
+        ('Birthdays', 'https://masterartist.co/birthdays/'),
+    ]))
+    body += answer_html
     body += f'''<section class="sec v-studio" id="parties"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Parties</span><h2>Choose a <em>party</em></h2><p>Every party includes {e(b['includes'])}.</p></div>
   <div class="grid-cards">{''.join(cards)}</div>
@@ -2151,19 +2204,19 @@ def build_birthdays():
     <p class="lead">Tell us the party, the numbers and a date. We check the room and confirm on WhatsApp.</p>
     <p>A {rm(b['deposit'])} deposit holds the date and comes off the total.</p>
     <h2>Good to <em>know</em></h2>{Accordion([
-        ('Can we bring a cake?', 'Yes. The last 30 minutes are yours in the room for cake and candles.'),
         ('Do parents stay?', 'Parents are welcome to stay and watch.'),
         ('Allergies', 'Tell us about allergies when you book. Bake parties are made in a shared kitchen where gluten and nuts may be present.'),
         ('Saturdays', 'We are closed on Saturdays, so parties run on Sundays and weekdays.'),
     ])}</div>
 </div></section>'''
+    body += faq_html
     page('/birthdays/', clip_title([
              'Kids birthday party workshops in KL · art, clay and baking · Master Artist',
              'Kids birthday party workshops in KL · art, clay and baking',
              'Kids birthday party workshops in KL · Master Artist',
          ]),
          'Art, air-dry clay and baking birthday parties for kids, teens and adults in Desa Sri Hartamas, KL, with a teacher, materials and time for cake.',
-         body, voice='studio', active='/groups/', data_attrs=' data-page="birthdays"', wa={'msg': "Hi, I'd like to plan a birthday party. Source: {source}.", 'fmt': 'birthday'})
+         body, voice='studio', active='/groups/', extra_head=schema, data_attrs=' data-page="birthdays"', wa={'msg': "Hi, I'd like to plan a birthday party. Source: {source}.", 'fmt': 'birthday'})
 
 
 # --- About, Teachers, Reviews, Showcase, Terms, Privacy --------------------------------
