@@ -136,6 +136,19 @@ def abs_url(u):
     return u if re.match(r'^https?://', u) else SITE + '/' + u.lstrip('/')
 
 
+# Old stub filenames, and where each one now goes. visit.html lands on the
+# visit section of /about/. Other old hashes (#piano, #vocal, #trial) are dropped.
+LEGACY_STUBS = {
+    'art': '/classes/',
+    'gallery': '/showcase/',
+    'media': '/classes/teen-photo-video/',
+    'music': '/classes/voice/',
+    'orchestra': '/classes/voice/',
+    'pricing': '/prices/',
+    'visit': '/about/#visit',
+}
+
+
 def rewrite_shadow_hrefs(doc):
     """Point links at the directory URL. The .html stubs that used to shadow those directories are not written."""
     doc = re.sub(
@@ -145,6 +158,27 @@ def rewrite_shadow_hrefs(doc):
     return re.sub(
         r'(https://masterartist\.co)?(/blog/[a-z0-9]+(?:-[a-z0-9]+)*)\.html\b',
         lambda m: f'{m.group(1) or ""}{m.group(2)}/',
+        doc)
+
+
+def rewrite_legacy_hrefs(doc):
+    """Clean destinations for the Moved stubs, and the retired 25 Nov session.
+
+    Stored posts in Supabase still use some of the old hrefs. This only changes
+    the HTML we write. Nothing is written back to the database.
+    """
+    doc = rewrite_shadow_hrefs(doc)
+    doc = doc.replace('/workshops/textured-canvas/2026-11-25/', '/workshops/textured-canvas/')
+
+    def stub(m):
+        dest = LEGACY_STUBS[m.group(2)]
+        origin = m.group(1) or ''
+        # Old in-page hashes (#piano, #vocal, #trial) belong to the retired files.
+        return origin + dest
+
+    return re.sub(
+        r'(https://masterartist\.co)?/(art|gallery|media|music|orchestra|pricing|visit)\.html(#[A-Za-z0-9_-]*)?',
+        stub,
         doc)
 
 
@@ -233,7 +267,7 @@ def build(template, p, others):
     more = ''.join(card(o) for o in others[:3])
     doc = doc.replace('<section id="morePosts" class="alt" hidden>', '<section id="morePosts" class="alt"' + ('' if more else ' hidden') + '>', 1)
     doc = doc.replace('<div class="blog-grid" id="moreGrid"></div>', f'<div class="blog-grid">{more}</div>', 1)
-    doc = rewrite_shadow_hrefs(doc)
+    doc = rewrite_legacy_hrefs(doc)
     published = p.get('published_at') or ''
     modified = p.get('updated_at') or published
     if published and 'article:published_time' not in doc:
