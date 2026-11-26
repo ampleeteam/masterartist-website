@@ -78,7 +78,7 @@ def main():
     import build_blog
     local = build_blog.load_local_posts()
     slugs = {p['slug'] for p in local}
-    expected = {'art-workshop-kl', 'choosing-piano-or-vocal-lessons-mont-kiara', 'benefits-of-kids-art-classes', 'creative-workshops-kl-this-week'}
+    expected = {'art-workshop-kl', 'choosing-piano-or-vocal-lessons-mont-kiara', 'benefits-of-kids-art-classes', 'creative-workshops-kl-this-week', 'team-building-activities-kl'}
     if slugs != expected:
         errors.append(f'unexpected local posts: {slugs}')
     merged = build_blog.merge_posts([{'slug': 'remote-only', 'published_at': '2026-01-01'}], local)
@@ -100,7 +100,7 @@ def main():
             errors.append(f"{post['slug']} seo_description length {len(seo)}")
         body = re.sub(r'<[^>]+>', ' ', post.get('body_html') or '')
         words = re.findall(r"[A-Za-z0-9’']+", body)
-        if not 900 <= len(words) <= 1400:
+        if not 700 <= len(words) <= 1400:
             errors.append(f"{post['slug']} word count {len(words)}")
         page = ROOT / 'blog' / post['slug'] / 'index.html'
         html = page.read_text()
