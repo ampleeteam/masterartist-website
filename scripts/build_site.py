@@ -318,6 +318,16 @@ def SessionCard(s, link=True):
 </article>'''
 
 
+def class_page_name(p):
+    """The name shown on the class page title, and as the /classes/ card's page link."""
+    return {
+        'kids-art-younger': 'Kids art classes (5–9)',
+        'kids-art-older': 'Kids art classes (10–15)',
+        'adult-art': 'Adult art classes',
+        'voice': 'One-to-one voice lessons',
+    }.get(p['id'], p['name'])
+
+
 def ProgrammeCard(p):
     """Academy card: photo · name · price · when · teacher · the right next step."""
     if is_hourly(p):
@@ -345,7 +355,7 @@ def ProgrammeCard(p):
     <div class="meta"><span>{e(when)}</span><span>Taught by {e(teacher_for(p['id']))}</span></div>
     <div class="actions">
       {primary}
-      <a class="btn ghost" href="/classes/{e(p['id'])}/">More</a>
+      <a class="btn ghost" href="/classes/{e(p['id'])}/">{e(class_page_name(p))}</a>
     </div>
   </div>
 </article>'''
@@ -1681,11 +1691,7 @@ def build_programme(p):
         ])
     else:
         price = f"{rm(p.get('price_month') or p.get('price_course'))}{'/month' if p.get('price_month') else ''}"
-        label = {
-            'kids-art-younger': 'Kids art classes (5–9)',
-            'kids-art-older': 'Kids art classes (10–15)',
-            'adult-art': 'Adult art classes',
-        }.get(p['id'], p['name'])
+        label = class_page_name(p)
         title = clip_title([
             f"{label} in KL · {price} · Master Artist",
             f"{label} · KL · {price} · Master Artist",
