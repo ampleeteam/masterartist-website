@@ -886,8 +886,24 @@ def money_from(fmt):
     return rm(fmt['price']) + (f" {fmt['price_unit']}" if fmt.get('price_unit') else '')
 
 
-def length(fmt):
-    h, m = divmod(fmt.get('duration_min', 0), 60)
+def clock_min(t):
+    h, m = map(int, str(t).split(':')[:2])
+    return h * 60 + m
+
+
+def length(fmt, session=None):
+    """'2 hours', or '2h30' when the minutes are not zero.
+
+    A dated session can run longer than its format. When the session has a start
+    and an end, the span is the length on that session's page. Other callers
+    still use the format's duration_min.
+    """
+    minutes = fmt.get('duration_min', 0) or 0
+    if session and session.get('time') and session.get('end'):
+        span = clock_min(session['end']) - clock_min(session['time'])
+        if span > 0:
+            minutes = span
+    h, m = divmod(minutes, 60)
     return f"{h}h{m:02d}" if m else f"{h} hour{'s' if h != 1 else ''}"
 
 
@@ -1277,7 +1293,7 @@ def build_session_day(slots):
                 price_line += f" <small>· pair {rm(s['pair_price'])}</small>"
         if s.get('bundle'):
             price_line = f"{rm(s['price'])} <small>{e(s['bundle']['name'])}, adult + child · extra child {rm(s['bundle']['extra_child'])}</small>"
-        items = [('Date', long_date(s['date'])), ('Time', f"{fmt_time(s['time'])}–{fmt_time(s['end'])}"), ('Length', e(length(f))),
+        items = [('Date', long_date(s['date'])), ('Time', f"{fmt_time(s['time'])}–{fmt_time(s['end'])}"), ('Length', e(length(f, s))),
                  ('Room', e(s['room'])), ('Seats', seats_html(s))]
         if s.get('public_holiday'):
             items.append(('Holiday', e(s['public_holiday']) + (' · no surcharge' if s.get('surcharge_waived') else '')))
