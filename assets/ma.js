@@ -526,4 +526,34 @@ import {
       });
     });
   });
+
+  /* Past workshop dates drop off in Kuala Lumpur (UTC+8) without waiting for the next build.
+     data-start is an ISO time with a +08:00 offset. */
+  (function hidePastSessions() {
+    var now = Date.now();
+    function stillOn(nodes) {
+      var left = 0;
+      [].forEach.call(nodes, function (el) { if (!el.hidden) left++; });
+      return left;
+    }
+    document.querySelectorAll('[data-start]').forEach(function (el) {
+      var t = Date.parse(el.getAttribute('data-start'));
+      if (!isNaN(t) && t <= now) el.hidden = true;
+    });
+    document.querySelectorAll('[data-next-dates]').forEach(function (box) {
+      var left = stillOn(box.querySelectorAll('[data-start]'));
+      var list = box.querySelector('.next-list');
+      var none = box.querySelector('.next-none');
+      if (list) list.hidden = left === 0;
+      if (none) none.hidden = left > 0;
+    });
+    document.querySelectorAll('[data-schedule]').forEach(function (sched) {
+      sched.querySelectorAll('.wk').forEach(function (wk) {
+        var cards = wk.querySelectorAll('[data-start]');
+        if (cards.length && stillOn(cards) === 0) wk.hidden = true;
+      });
+      var none = sched.querySelector('.next-none');
+      if (none) none.hidden = stillOn(sched.querySelectorAll('.wk')) > 0;
+    });
+  })();
 })();

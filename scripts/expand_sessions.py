@@ -26,10 +26,33 @@ import argparse
 import datetime as dt
 import json
 import pathlib
+from zoneinfo import ZoneInfo
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA = ROOT / 'data'
 DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+KL = ZoneInfo('Asia/Kuala_Lumpur')
+
+
+def kl_today():
+    return dt.datetime.now(KL).date()
+
+
+def load_schedule(seed):
+    """The sheet import replaces the dated list when a sync has written one."""
+    path = DATA / 'schedule-import.json'
+    if not path.exists():
+        return seed
+    try:
+        doc = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        return seed
+    rows = doc.get('sessions') or []
+    if not rows:
+        return seed
+    seed = json.loads(json.dumps(seed))
+    seed.setdefault('schedule', {})['sessions'] = rows
+    return seed
 
 
 def load(name, default=None):
@@ -240,7 +263,7 @@ def preview(sessions, until):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--today', default=dt.date.today().isoformat())
+    ap.add_argument('--today', default=kl_today().isoformat())
     ap.add_argument('--days', type=int, default=42)
     args = ap.parse_args()
     today = dt.date.fromisoformat(args.today)
@@ -250,6 +273,7 @@ def main():
     private = DATA / 'private' / 'workshops-private.json'   # never copied into workshops.json
     if private.exists():
         deep_merge(seed, json.loads(private.read_text()))
+    seed = load_schedule(seed)   # a fetched sheet wins over the seed and the private overlay
     themes = load('themes.json', {})
     bookings = load('bookings.json', {})
     holidays = load('public-holidays.json', {}).get('holidays', [])

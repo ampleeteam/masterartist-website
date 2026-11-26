@@ -59,6 +59,8 @@ PHOTOS = {
     'glow-canvas': ('art-glow-canvas.svg', 'Illustration of a glow-in-the-dark canvas of glowing jellyfish in a dark lagoon'),
     'candle-making': ('candle-making-stock.jpg', 'Lit candles in white ceramic holders on a table dressed for Christmas'),
     'crochet-bag': ('art-crochet-bag.svg', 'Illustration of a chunky crochet tote bag with yarn and a hook'),
+    'kids': ('art-photo-2.jpg', 'Children painting in the studio'),
+    'painting': ('golden-shores-workshop-1.jpg', 'Adults painting at a Sunday workshop'),
 }
 STAND_INS = {'glow-canvas', 'candle-making', 'crochet-bag'}   # not our photos: kept out of Event schema images
 
@@ -89,6 +91,9 @@ GALLERY = {
                   ('golden-shores-workshop-5.jpg', 'A finished canvas'),
                   ('painting-3.jpg', 'A painting in progress')],
     'voice': [('vocal-teaching-1.jpg', 'A one-to-one singing lesson')],
+    'kids': [('art-photo-1.jpg', 'Young students holding up their paintings'),
+             ('art-photo-2.jpg', 'Children painting in the studio'),
+             ('art-photo-3.jpg', 'Older students working on a painting together')],
     'baking-course': [('baking-2.jpg', 'Almond brownies from a baking class'),
                       ('baking-3.jpg', 'Mixing batter in a baking session'),
                       ('focaccia-workshop-3.jpg', 'Bakers at the kitchen tables')],
@@ -223,7 +228,7 @@ def WhatsAppButton(message, voice, label='WhatsApp us', cls='btn wa', fmt='', pr
 
 
 def wa_studio(s):
-    who = f"{s['theme']} ({s['name']})" if s.get('summary') and s.get('theme') else s['name']
+    who = f"{s['theme']} ({s['name']})" if s.get('theme') else s['name']
     return f"Hi, I'd like to book {who} on {day_date(s['date'])} at {fmt_time(s['time'])}. Source: {{source}}."
 
 
@@ -254,11 +259,7 @@ def session_offers(s, url):
     """One Offer at the session price, or Early bird + Regular when early_price is pinned."""
     avail = 'https://schema.org/SoldOut' if s['seats_left'] == 0 else 'https://schema.org/InStock'
     page = SITE['url'] + url
-    if s.get('early_price'):
-        return [
-            {'@type': 'Offer', 'name': 'Early bird', 'price': s['early_price'], 'priceCurrency': 'MYR', 'url': page, 'availability': avail},
-            {'@type': 'Offer', 'name': 'Regular', 'price': s['price'], 'priceCurrency': 'MYR', 'url': page, 'availability': avail},
-        ]
+    # One price: the amount create-checkout charges (price × 100 sen). No early-bird comparison.
     return {'@type': 'Offer', 'price': s['price'], 'priceCurrency': 'MYR', 'url': page, 'availability': avail}
 
 
@@ -285,15 +286,12 @@ def SessionCard(s, link=True):
     f = FORMATS[s['format']]
     if s.get('bundle'):
         price = f'<div class="price">{rm(s["price"])} <small>Family Sunday: one adult Textured Canvas + one child, same hour · extra child {rm(s["bundle"]["extra_child"])}</small></div>'
-    elif s.get('early_price'):
-        price = f'<div class="price">{e(dual_price_text(s))}</div>'
     else:
         if s.get('pair_word') and s.get('pair_price'):
             price = f'<div class="price">{two_pax_price(s)}</div>'
         else:
             unit = f' {s["price_unit"]}' if s.get('price_unit') else ''
-            pair = f'<small>Pair {rm(s["pair_price"])}</small>' if s.get('pair_price') else ''
-            price = f'<div class="price">{rm(s["price"])}{e(unit)} {pair}</div>'
+            price = f'<div class="price">{rm(s["price"])}{e(unit)}</div>'
     badges = []
     if s.get('dine'):
         badges.append('<span class="badge dine">Dine + workshop</span>')
@@ -305,7 +303,7 @@ def SessionCard(s, link=True):
         action = f'<a class="btn ghost block" href="/workshops/{nxt["format"]}/{nxt["date"]}/">Sold out — next date {day_date(nxt["date"])}</a>' if nxt else ''
     else:
         action = f'<a class="btn block" href="/workshops/{s["format"]}/{s["date"]}/">Book</a>' if link else ''
-    return f'''<article class="card v-studio">
+    return f'''<article class="card v-studio" data-start="{s['date']}T{s['time']}:00+08:00">
   <div class="card-photo">{photo(s['format'])}{CalDate(s['date'])}</div>
   <div class="body">
     <div class="when">{fmt_time(s['time'])}–{fmt_time(s['end'])}</div>
@@ -406,7 +404,7 @@ def consent_kind(s):
     f = FORMATS[s['format']]
     if f['discipline'] == 'baking':
         return 'baking'
-    if 'kid' in (f.get('audience') or '') or s['format'] in ('kids-art-studio', 'parent-child-studio'):
+    if 'kid' in (f.get('audience') or '') or s['format'] in ('kids', 'kids-art-studio', 'parent-child-studio'):
         return 'child'
     return 'adult'
 
@@ -509,7 +507,10 @@ def WeekStrip(sessions):
         tag = {0: 'This week', 1: 'Next week'}.get(ahead, '')
         out.append(f'<div class="wk"><h3 class="wk-head">{f"<span>{tag}</span>" if tag else ""}{span}</h3>'
                    f'<div class="week-strip">{"".join(SessionCard(x) for x in ss)}</div></div>')
-    return '<div class="schedule">' + ''.join(out) + '</div>'
+    empty = ('<div class="next-none light" hidden><p>Nothing is open on the calendar right now. Message us and we will send the next date.</p>'
+             + WhatsAppButton("Hi, what's the next workshop date? Source: {source}.", 'studio', 'WhatsApp us')
+             + '</div>')
+    return '<div class="schedule" data-schedule>' + ''.join(out) + empty + '</div>'
 
 
 def PriceTable(voice):
@@ -547,7 +548,6 @@ def PriceTable(voice):
         else:
             price = rm(f['price']) + (f" {f['price_unit']}" if f.get('price_unit') else '')
             extra = ' · '.join(x for x in [f"pair {rm(f['pair_price'])}" if f.get('pair_price') else '',
-                                            f"specialty {rm(f['price_specialty'])}" if f.get('price_specialty') else '',
                                             f"{f['duration_min'] // 60}h{f['duration_min'] % 60:02d}".replace('h00', 'h')] if x)
         rows.append(f'<tr><td><a href="/workshops/{f["id"]}/">{e(f["name"])}</a></td><td class="muted">{e(extra)}</td><td class="num">{e(price)}</td></tr>')
     pw = WS['policies']['pricing_window']
@@ -891,8 +891,8 @@ def build_styleguide():
 
 # ------------------------------------------------------------------ pages
 COPY = load('programme-copy.json')
-TODAY = dt.date.today()
 KL = ZoneInfo('Asia/Kuala_Lumpur')
+TODAY = dt.datetime.now(KL).date()
 # Dated workshop URLs look like /workshops/<format>/<yyyy-mm-dd>/. A date before
 # the build date in studio time is past. This file only drops those URLs from
 # the sitemap and noindexes a page that is still generated. Redirects for dates
@@ -902,6 +902,7 @@ START = max(TODAY, dt.date.fromisoformat(WS.get('launch', {}).get('first_public_
 # Workshop sessions shown on Studio Sessions pages (the 6-week course is an Academy programme)
 PUB = [s for s in WS['sessions'] if s['public'] and s.get('type') != 'course' and s['date'] >= START]
 WORKSHOP_FORMATS = [f for f in WS['formats'] if f.get('type') != 'course' and f.get('status') != 'paused']
+PAINTING_IDS = ('textured-canvas', 'acrylic-canvas', 'watercolour-botanicals', 'glow-canvas')
 POL = WS['policies']
 TRIAL = CL['trial']
 PROGS = [p for p in CL['programmes'] if p.get('status') != 'paused']
@@ -1024,7 +1025,8 @@ def breadcrumb_ld(items):
 def policy_items():
     pw = POL['pricing_window']
     until = dt.date.fromisoformat(pw['until'])
-    waived = ', '.join(long_date(d) for d in POL.get('public_holiday_surcharge_waived_dates', []))
+    future = [d for d in POL.get('public_holiday_surcharge_waived_dates', []) if d >= kl_today().isoformat()]
+    waived = ', '.join(long_date(d) for d in future)
     return [
         ('Payment and refunds', f"Seats are {e(POL['refunds'])}. We confirm on WhatsApp and send payment details there."),
         ('Changing your date', f"Reschedules are {e(POL['reschedule'])}. Please give us {POL['cancel_notice_hours']} hours' notice."),
@@ -1051,10 +1053,10 @@ def place():
             'postalCode': a['postcode'], 'addressRegion': a['region'], 'addressCountry': a['country']}}
 
 
-def hero_split(eyebrow, h1, lede, facts, ctas, img, crumbs=''):
+def hero_split(eyebrow, h1, lede, facts, ctas, img, crumbs='', extra=''):
     facts_html = f'<p class="hero-facts">{facts}</p>' if facts else ''
     return f'''<section class="page-hero split-hero on-dark"><div class="wrap">
-  <div>{crumbs}<span class="eyebrow">{eyebrow}</span><h1>{h1}</h1><p>{lede}</p>{facts_html}<div class="hero-cta">{ctas}</div></div>
+  <div>{crumbs}<span class="eyebrow">{eyebrow}</span><h1>{h1}</h1><p>{lede}</p>{facts_html}{extra}<div class="hero-cta">{ctas}</div></div>
   <div class="hero-photo">{img}</div>
 </div></section>'''
 
@@ -1083,12 +1085,12 @@ def coming_sunday():
 
 def FormatCard(f):
     nxt = next((s for s in by_format(f['id']) if s['seats_left'] != 0), None)
-    pair = f'<small>Pair {rm(f["pair_price"])}</small>' if f.get('pair_price') else ''
+    pair = ''
     if f.get('bundle'):
         pair = f'<small>{e(f["bundle"]["name"])}: adult + child · extra child {rm(f["bundle"]["extra_child"])}</small>'
     when = f'<b>Next: {day_date(nxt["date"])} · {fmt_time(nxt["time"])}</b>' if nxt else '<b>New dates soon</b>'
     # A dated session can cost something else than the format (Gingerbread is RM130, not Bake Lab's RM95).
-    if nxt and nxt.get('price') not in (None, f.get('price')):
+    if nxt and not f.get('bundle') and nxt.get('price') not in (None, f.get('price')):
         short = theme_short(nxt)
         span = fmt_range(f"{nxt['time']}-{nxt['end']}")
         when = f'<b>Next: {e(short)} · {day_date(nxt["date"])} · {span} · {rm(nxt["price"])} per person</b>'
@@ -1238,7 +1240,7 @@ def build_workshops_index():
   {WeekStrip(PUB) if PUB else EMPTY_WEEK}
 </div></section>
 <section class="sec alt v-studio" id="formats"><div class="wrap">
-  <div class="sec-head"><span class="eyebrow">Choose a workshop</span><h2>An art workshop, candle, crochet or <em>baking</em></h2><p>Pick one to see its next dates, then book a seat.</p></div>
+  <div class="sec-head"><span class="eyebrow">Choose a workshop</span><h2>An art workshop, candle, crochet or <em>baking</em></h2><p>Pick one to see its next dates, then book a seat. Every painting date is also on <a href="/workshops/painting/">painting workshops</a>. One-off sessions for children are on <a href="/workshops/kids/">kids workshops</a>.</p></div>
   <div class="grid-cards">{''.join(FormatCard(f) for f in WORKSHOP_FORMATS)}</div>
 </div></section>
 <section class="sec v-studio"><div class="wrap"><div class="cta-card"><div><h2>Bringing a <em>team?</em></h2><p>Art, baking or mixed team days, with rooms running side by side. <a href="/groups/">team building activities in KL</a>.</p></div>
@@ -1253,23 +1255,57 @@ def build_workshops_index():
          body, voice='studio', active='/workshops/', extra_head=schema, data_attrs=' data-page="workshops"', wa={'msg': "Hi, I'd like to book a workshop. What's on this week? Source: {source}.", 'fmt': 'workshops'})
 
 
+def one_price_html(s):
+    """The session price only. Gingerbread keeps its 2 pax total. No early-bird line."""
+    if s.get('bundle'):
+        return f'{rm(s["price"])} <small>{e(s["bundle"]["name"])}, adult and child</small>'
+    if s.get('pair_word') and s.get('pair_price'):
+        return f'{rm(s["price"])} <small>per person · {e(s["pair_word"])} {rm(s["pair_price"])}</small>'
+    unit = f' {e(s["price_unit"])}' if s.get('price_unit') else ''
+    return f'{rm(s["price"])}{unit}'
+
+
+def UpcomingBlock(sessions, ask, limit=3, show_format=False):
+    """Next 2–3 dates, each with one price and a WhatsApp button. Empty state still has the button."""
+    rows = sessions[:limit]
+    items = []
+    for s in rows:
+        label = f"{day_date(s['date'])} · {fmt_range(s['time'] + '-' + s['end'])}"
+        theme = s.get('theme') or s['name']
+        link = session_url(s)
+        fmt_link = ''
+        if show_format:
+            fmt_link = f'<a class="fmt" href="/workshops/{s["format"]}/">{e(s["name"])}</a>'
+        items.append(
+            f'<li class="next-date" data-start="{s["date"]}T{s["time"]}:00+08:00">'
+            f'<div><b>{e(label)}</b><a class="theme" href="{link}">{e(theme)}</a>{fmt_link}'
+            f'<span class="amt">{one_price_html(s)}</span></div>'
+            f'{WhatsAppButton(wa_studio(s), "studio", "Book on WhatsApp", cls="btn wa", fmt=s["format"], session=s["id"])}'
+            f'</li>')
+    none_hidden = '' if not rows else ' hidden'
+    list_hidden = ' hidden' if not rows else ''
+    return f'''<div class="next-dates" data-next-dates>
+  <h2>Next dates</h2>
+  <ul class="next-list"{list_hidden}>{''.join(items)}</ul>
+  <div class="next-none"{none_hidden}><p>Nothing is open on the calendar right now. Message us and we will send the next date.</p>
+  {WhatsAppButton(ask["msg"], "studio", "WhatsApp us", cls="btn wa", fmt=ask["id"])}</div>
+</div>'''
+
+
 def build_format(f):
     sessions = by_format(f['id'])
-    nxt4 = sessions[:4]
-    rest = sessions[4:]
+    rest = sessions[3:]
     msg = f"Hi, I'd like to book {f['name']}. Which dates have seats? Source: {{source}}."
-    if f.get('bundle'):
-        facts = f'<span>{e(f["bundle"]["name"])} <b>{rm(f["bundle"]["price"])}</b></span><span>Extra child <b>{rm(f["bundle"]["extra_child"])}</b></span>'
-    else:
-        facts = f'<span><b>{money_from(f)}</b></span>' + (f'<span>Pair <b>{rm(f["pair_price"])}</b></span>' if f.get('pair_price') else '')
-        if f.get('price_specialty'):
-            facts += f'<span>Specialty bakes <b>{rm(f["price_specialty"])}</b></span>'
-        if f.get('pack_price'):
-            facts += f'<span>{f["pack_size"]} sessions <b>{rm(f["pack_price"])}</b></span>'
-    facts += f'<span>{e(length(f))}</span><span>{e(f["room"])}</span>'
+    facts = f'<span>{e(length(f))}</span><span>{e(f["room"])}</span>'
+    if not sessions and f.get('bundle'):
+        facts = f'<span>{e(f["bundle"]["name"])} <b>{rm(f["bundle"]["price"])}</b></span>' + facts
+    elif not sessions and f.get('price'):
+        facts = f'<span><b>{money_from(f)}</b></span>' + facts
+    upcoming = UpcomingBlock(sessions, {'id': f['id'], 'msg': msg})
     body = hero_split(e(f.get('discipline', '').capitalize() or 'Workshop'), e(f['name']), e(f['summary']), facts,
-                      f'<a class="btn" href="#dates">Choose a date</a>{WhatsAppButton(msg, "studio", "Ask on WhatsApp", cls="btn ghost", fmt=f["id"])}',
-                      photo(f['id'], eager=True), crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (None, f['name'])))
+                      WhatsAppButton(msg, "studio", "Ask on WhatsApp", cls="btn ghost", fmt=f["id"]),
+                      photo(f['id'], eager=True), crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (None, f['name'])),
+                      extra=upcoming)
     more = ''
     if rest:
         more = ('<details class="acc" style="margin-top:20px"><summary>More dates</summary><div><div class="grid-cards">'
@@ -1285,13 +1321,22 @@ def build_format(f):
         b = f['bundle']
         make.append(('users', f"{e(b['name'])}: {rm(b['price'])} for {e(b['includes'])}; extra child {rm(b['extra_child'])}"))
     team = TeacherCards(f['id'])
-    body += f'''<section class="sec v-studio" id="dates"><div class="wrap">
-  <div class="sec-head"><span class="eyebrow">Next dates</span><h2>Pick a <em>date</em></h2><p>Seats are limited to {f['cap']}{' ' + e(f['cap_unit']) if f.get('cap_unit') else ''} a session.</p></div>
-  {SessionGrid(nxt4)}{more}
-</div></section>
+    later = ''
+    if rest:
+        later = f'''<section class="sec v-studio" id="more-dates"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Later</span><h2>More <em>dates</em></h2><p>Seats are limited to {f['cap']}{' ' + e(f['cap_unit']) if f.get('cap_unit') else ''} a session.</p></div>
+  {more}
+</div></section>'''
+    classes_note = ''
+    if f['id'] == 'kids':
+        classes_note = ('<p>These dates are one-off workshops. Weekly art classes, with the same teacher every week, are on '
+                        '<a href="/classes/">the classes page</a>, including <a href="/classes/kids-art-younger/">ages 5 to 9</a> '
+                        'and <a href="/classes/kids-art-older/">ages 10 to 15</a>.</p>')
+    body += f'''{later}
 {PhotoRow(f['id'], 'What people <em>made</em>', 'studio')}
 <section class="sec alt v-studio"><div class="wrap listing">
   <div class="prose"><h2 style="margin-top:0">What you'll <em>make</em></h2><p class="lead">{e(f['summary'])}</p>
+    {classes_note}
     {IconFacts(make)}
     {f'<h2>Who runs <em>it</em></h2><p>Taught by working artists from the Master Artist team.</p>{team}' if team else ''}</div>
   <div class="aside"><h2 style="font-size:26px">Good to <em>know</em></h2>{Accordion(policy_items())}</div>
@@ -1373,14 +1418,10 @@ def build_session_day(slots):
             for i, s in enumerate(slots)) + '</div>'
     blocks = []
     for s in slots:
-        if s.get('early_price'):
-            price_line = e(dual_price_text(s))
-        elif s.get('pair_word') and s.get('pair_price'):
+        if s.get('pair_word') and s.get('pair_price'):
             price_line = two_pax_price(s)
         else:
             price_line = rm(s['price']) + (f" <small>{e(s['price_unit'])}</small>" if s.get('price_unit') else '')
-            if s.get('pair_price'):
-                price_line += f" <small>· pair {rm(s['pair_price'])}</small>"
         if s.get('bundle') and not s.get('early_price'):
             price_line = f"{rm(s['price'])} <small>{e(s['bundle']['name'])}, adult + child · extra child {rm(s['bundle']['extra_child'])}</small>"
         items = [('Date', long_date(s['date'])), ('Time', f"{fmt_time(s['time'])}–{fmt_time(s['end'])}"), ('Length', e(length(f))),
@@ -1464,6 +1505,42 @@ def build_this_sunday():
          body, voice='studio', active='/workshops/', data_attrs=' data-page="this-sunday"', wa={'msg': f"Hi, I'd like to book a session this Sunday, {title_day}. Source: {{source}}.", 'fmt': 'this-sunday'})
 
 
+def build_painting():
+    """Umbrella page for every painting format. Dates link through to the format page and the day."""
+    sessions = [s for s in PUB if s['format'] in PAINTING_IDS]
+    formats = [FORMATS[i] for i in PAINTING_IDS]
+    msg = "Hi, I'd like to book a painting workshop. Which date is next? Source: {source}."
+    links = ''.join(f'<a class="btn ghost" href="/workshops/{f["id"]}/">{e(f["name"])}</a>' for f in formats)
+    title = 'Sip and Paint in KL · Master Artist'
+    desc = ('Sip and paint in Desa Sri Hartamas, KL. Next dates for textured canvas, acrylic, watercolour and glow, '
+            'a drink included. Book a seat on WhatsApp.')
+    if len(title) > 60:
+        raise SystemExit(f'painting title is {len(title)} characters: {title}')
+    if len(desc) > 155:
+        raise SystemExit(f'painting description is {len(desc)} characters: {desc}')
+    body = hero_split(
+        'Painting',
+        'Sip and paint, and every <em>painting workshop</em>',
+        'Textured canvas, acrylic, watercolour and glow-in-the-dark. Two hours, a drink included, and you take the piece home.',
+        '',
+        links,
+        photo('painting', eager=True),
+        crumbs(('/', 'Home'), ('/workshops/', 'Workshops'), (None, 'Painting')),
+        extra=UpcomingBlock(sessions, {'id': 'painting', 'msg': msg}, show_format=True))
+    body += f'''<section class="sec v-studio"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Formats</span><h2>Choose a <em>painting</em></h2>
+  <p>Each format has its own page. The dates above are the next ones across all four.</p></div>
+  <div class="grid-cards">{''.join(FormatCard(f) for f in formats)}</div>
+</div></section>'''
+    schema = ld(breadcrumb_ld([
+        ('Home', 'https://masterartist.co/'),
+        ('Workshops', 'https://masterartist.co/workshops/'),
+        ('Painting', 'https://masterartist.co/workshops/painting/'),
+    ]))
+    page('/workshops/painting/', title, desc, body, voice='studio', active='/workshops/', extra_head=schema,
+         data_attrs=' data-page="painting" data-format="painting"', wa={'msg': msg, 'fmt': 'painting'})
+
+
 def build_workshops():
     import shutil
     for d in (ROOT / 'workshops').glob('*'):
@@ -1472,6 +1549,7 @@ def build_workshops():
     build_workshops_index()
     for f in WORKSHOP_FORMATS:
         build_format(f)
+    build_painting()
     days = {}
     for s in PUB:
         days.setdefault((s['format'], s['date']), []).append(s)
@@ -1514,7 +1592,7 @@ def build_classes_index():
                      crumbs(('/', 'Home'), (None, 'Classes')), img=('art-photo-1.jpg', 'Young students holding up their paintings'))
     body += f'''<section class="sec v-academy"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Programmes</span><h2>Choose a <em>class</em></h2><p>Art classes are monthly, with a showcase every term. Music lessons are one to one. Siblings get {int(CL['discounts']['sibling'] * 100)}% off.</p>
-  <p>Drawing and painting are part of <a href="/classes/kids-art-younger/">ages 5 to 9</a>, <a href="/classes/kids-art-older/">ages 10 to 15</a> and <a href="/classes/adult-art/">adult art</a>. A paint night is on the <a href="/workshops/">workshops page</a>.</p></div>
+  <p>Drawing and painting are part of <a href="/classes/kids-art-younger/">ages 5 to 9</a>, <a href="/classes/kids-art-older/">ages 10 to 15</a> and <a href="/classes/adult-art/">adult art</a>. A paint night is on the <a href="/workshops/">workshops page</a>. A one-off kids workshop, including Family Sunday, is on <a href="/workshops/kids/">kids workshops</a>.</p></div>
   <div class="grid-cards">{''.join(ProgrammeCard(p) for p in PROGS)}</div>
 </div></section>
 <section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>
@@ -1708,7 +1786,7 @@ def build_sessions_feed():
     """/assets/sessions.json: the public sessions only, for the create-checkout function (prices and caps are
     read server-side from here) and the admin Bookings list. data/ itself stays off the public site."""
     keep = ('id', 'format', 'date', 'day', 'time', 'end', 'name', 'theme', 'cap', 'cap_unit', 'price', 'early_price', 'pair_price', 'price_unit', 'public', 'type')
-    feed = {'generated': dt.date.today().isoformat(), 'sessions': [{k: s[k] for k in keep if k in s} for s in PUB]}
+    feed = {'generated': TODAY.isoformat(), 'sessions': [{k: s[k] for k in keep if k in s} for s in PUB]}
     (ROOT / 'assets' / 'sessions.json').write_text(json.dumps(feed, ensure_ascii=False, separators=(',', ':')))
 
 
@@ -2513,6 +2591,7 @@ REDIRECTS = {
 # as REDIRECTS. The target is the live format page, which lists the next date.
 PAST_SESSION_REDIRECTS = {
     'workshops/textured-canvas/2026-11-25/index.html': '/workshops/textured-canvas/',
+    'workshops/textured-canvas/2026-11-26/index.html': '/workshops/textured-canvas/',
 }
 
 

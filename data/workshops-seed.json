@@ -61,7 +61,7 @@
       "cap": 24,
       "room": "L1 kitchen",
       "audience": "all",
-      "summary": "One bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes at RM85.",
+      "summary": "One bake, boxed to take home. A familiar bread most weeks. The price on each date is the price for that bake.",
       "upsell": "baking-course",
       "dine_addon": true,
       "live_from": "2026-11-04",
@@ -139,6 +139,26 @@
       "summary": "Learn the basic stitches with chunky yarn and a big hook, and leave with your own small bag. No experience needed.",
       "dine_addon": true,
       "live_from": "2026-11-04"
+    },
+    {
+      "id": "kids",
+      "name": "Kids workshops",
+      "discipline": "art",
+      "duration_min": 120,
+      "price": null,
+      "bundle": {
+        "name": "Family Sunday",
+        "price": 109,
+        "includes": "one adult Textured Canvas and one child, same hour",
+        "extra_child": 49
+      },
+      "cap": 12,
+      "room": "L2 back room",
+      "audience": "kids 6-12",
+      "summary": "A one-off workshop for children. Family Sunday is one adult textured canvas and one child making a piece next door, at the same hour. Weekly classes are a separate page.",
+      "upsell": "kids-art",
+      "dine_addon": false,
+      "live_from": "2026-11-08"
     },
     {
       "id": "kids-art-studio",
@@ -551,6 +571,31 @@
         "format": "textured-canvas",
         "theme": "Golden Impasto Sky",
         "room": "l2-front"
+      },
+      {
+        "date": "2026-12-02",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "bake-lab",
+        "theme": "Bread",
+        "room": "l1-kitchen",
+        "price": 95
+      },
+      {
+        "date": "2026-12-06",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "textured-canvas",
+        "theme": "Floral Impasto",
+        "room": "l2-front"
+      },
+      {
+        "date": "2026-12-06",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "kids",
+        "theme": "Family Sunday",
+        "room": "l2-back"
       },
       {
         "date": "2026-11-29",
