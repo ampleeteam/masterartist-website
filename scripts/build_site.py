@@ -1207,7 +1207,7 @@ def build_home():
   <div class="doors">
     <a class="door v-studio" href="/workshops/">{photo('bake-lab')}<span class="label">{e(SITE['labels']['studio'])}</span><h3>Workshops</h3>
       <p>A weeknight or a Sunday: paint a canvas, pour a candle, crochet a bag. A new theme every week, from {rm(min_ws)}, and you take it home.</p><span class="more">Upcoming workshops</span></a>
-    <a class="door v-academy" href="/classes/">{photo('kids-art-older')}<span class="label">{e(SITE['labels']['academy'])}</span><h3>Weekly classes</h3>
+    <a class="door v-academy" href="/classes/">{photo('kids-art-older')}<span class="label">Classes</span><h3>Weekly art classes</h3>
       <p>Weekly art, photo, video and baking, with the same teacher every week. From {rm(min_cl)} a month. Music lessons are one to one, at {hour_band(next(p for p in PROGS if p['id'] == 'voice'))} an hour. The {rm(TRIAL['price'])} trial is for weekly art classes.</p><span class="more">Classes and the trial</span></a>
     <a class="door v-studio" href="/groups/"><img src="/golden-shores-workshop-1.jpg" alt="A group workshop at Master Artist" loading="lazy" width="800" height="600"><span class="label">Groups</span><h3>Birthdays, team days and groups</h3>
       <p>Art, clay and baking birthday parties, and team days with rooms running side by side. Team packages from {rm(groups_from)}.</p><span class="more">Groups and birthdays</span></a>
@@ -1549,6 +1549,42 @@ def academy_cta(programme=None):
   <div class="hero-cta"><a class="btn" href="/trial/{f"?programme={programme['id']}" if programme else ''}">Book a {rm(TRIAL["price"])} trial</a>{WhatsAppButton(wa_trial(p_msg), "academy", "WhatsApp us", programme=(programme or {}).get("id", ""), trial=True)}</div></div>'''
 
 
+def class_faqs():
+    """The two answer blocks shown on /classes/ and /trial/. Facts come from classes-seed.json; the same text feeds the FAQPage schema."""
+    kids = [p for p in PROGS if p['id'] in ('kids-art-younger', 'kids-art-older')]
+    month = {p['price_month'] for p in kids}
+    per = {(p['per_session'], p['duration_min']) for p in kids}
+    if len(month) != 1 or len(per) != 1:
+        raise SystemExit('kids art classes no longer share one monthly price and class length: rewrite class_faqs()')
+    fee, (each, mins) = month.pop(), per.pop()
+    items = [
+        ('How much are kids art classes in KL?',
+         f"Kids art classes at Master Artist in Desa Sri Hartamas, KL are {rm(fee)} a month, which is {rm(each)} for each {mins // 60}-hour weekly class. "
+         f"There is a class for ages 5 to 9 and one for ages 10 to 15, in small groups with the same teacher. "
+         f"Siblings get {int(CL['discounts']['sibling'] * 100)}% off. The {rm(TRIAL['price'])} trial is credited to your first month."),
+        (f"How does the {rm(TRIAL['price'])} trial work?",
+         f"The {rm(TRIAL['price'])} trial is one weekly art class with the teacher who will teach you every week. "
+         f"Send the form on the trial page, we agree a time with you on WhatsApp, and you do a real class. "
+         f"If you continue, the {rm(TRIAL['price'])} is {TRIAL['note']}. It is for weekly art classes only."),
+    ]
+    for q, a in items:
+        n = len(a.split())
+        if not 40 <= n <= 60:
+            raise SystemExit(f'answer block for "{q}" is {n} words, wanted 40 to 60')
+    return items
+
+
+def classes_itemlist_ld():
+    """ItemList of every /classes/* page linked from the /classes/ cards, in card order."""
+    return {'@context': 'https://schema.org', '@type': 'ItemList', 'name': 'Master Artist weekly classes',
+            'itemListOrder': 'https://schema.org/ItemListUnordered', 'numberOfItems': len(PROGS),
+            'itemListElement': [
+                {'@type': 'ListItem', 'position': i, 'url': f"{SITE['url']}/classes/{p['id']}/", 'name': p['name'],
+                 'item': {'@type': 'Course', 'name': p['name'], 'url': f"{SITE['url']}/classes/{p['id']}/",
+                          'provider': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']}}}
+                for i, p in enumerate(PROGS, start=1)]}
+
+
 def build_classes_index():
     min_cl = min(p['price_month'] for p in PROGS if p.get('price_month'))
     music = hour_band(next(p for p in PROGS if p['id'] == 'voice'))
@@ -1562,6 +1598,7 @@ def build_classes_index():
   <div class="grid-cards">{''.join(ProgrammeCard(p) for p in PROGS)}</div>
 </div></section>
 <section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>
+<section class="sec v-academy" id="faq"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Classes and the <em>trial</em>: quick answers</h2></div>{FaqList(class_faqs())}</div></section>
 <section class="sec alt v-academy"><div class="wrap"><div class="sec-head"><span class="eyebrow">Google reviews</span><h2>What parents and students <em>say</em></h2></div>{GoogleReviews(3)}</div></section>'''
     page('/classes/', clip_title([
              'Kids art classes, voice lessons and more in Sri Hartamas, KL · Master Artist Academy',
@@ -1569,7 +1606,7 @@ def build_classes_index():
              'Kids art classes in KL · Master Artist',
          ]),
          f'Weekly art, photo, video and baking classes in Desa Sri Hartamas, KL. Art is RM320 a month. One-to-one music lessons are {music} an hour. The {rm(TRIAL["price"])} trial is for weekly art classes.',
-         body, voice='academy', active='/classes/', data_attrs=' data-page="classes"', wa={'msg': f"Hi, I'd like to book the {rm(TRIAL['price'])} trial. Source: {{source}}.", 'trial': True})
+         body, voice='academy', active='/classes/', extra_head=ld(classes_itemlist_ld()) + '\n' + ld(faq_ld(class_faqs())), data_attrs=' data-page="classes"', wa={'msg': f"Hi, I'd like to book the {rm(TRIAL['price'])} trial. Source: {{source}}.", 'trial': True})
 
 
 def build_programme(p):
@@ -1823,14 +1860,15 @@ def build_trial():
     <div class="level"><h3>3 · Come and try</h3><p>Meet the teacher and do a real class. Decide afterwards.</p></div></div>
     <h2>Weekly art classes</h2><p>{' · '.join(f'<a href="/classes/{p["id"]}/">{e(p["name"])}</a>' for p in trial_progs)}</p>
     <p>The {rm(TRIAL['price'])} trial is for these weekly art classes. For music and voice lessons, <a href="/classes/voice/">enquire to arrange</a> a time.</p></div>
-</div></section>'''
+</div></section>
+<section class="sec alt v-academy" id="faq"><div class="wrap" style="max-width:820px"><div class="sec-head"><h2>Trial and fees: quick answers</h2></div>{FaqList(class_faqs())}</div></section>'''
     page('/trial/', clip_title([
              f'Book a {rm(TRIAL["price"])} trial class · Master Artist Academy, Sri Hartamas KL',
              f'Book a {rm(TRIAL["price"])} trial class · Sri Hartamas KL · Master Artist',
              f'Book a {rm(TRIAL["price"])} trial class · Master Artist',
          ]),
          f'Try one weekly art class for {rm(TRIAL["price"])}, credited in full against your first month. Music lessons are arranged separately.',
-         body, voice='academy', active='/classes/', data_attrs=' data-page="trial"', wa={'msg': f"Hi, I'd like to book the {rm(TRIAL['price'])} trial. Source: {{source}}.", 'trial': True})
+         body, voice='academy', active='/classes/', extra_head=ld(faq_ld(class_faqs())), data_attrs=' data-page="trial"', wa={'msg': f"Hi, I'd like to book the {rm(TRIAL['price'])} trial. Source: {{source}}.", 'trial': True})
 
 
 def build_holiday_camps():
