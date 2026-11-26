@@ -1866,11 +1866,11 @@ def build_groups():
         raise SystemExit('team day extra person or minimum drifted')
     seat = {
         'acrylic-canvas': (89, 160, 18),
-        'textured-canvas': (89, 160, 20),
+        'textured-canvas': (89, 160, 18),
         'glow-canvas': (85, 153, 18),
-        'watercolour-botanicals': (80, 144, 20),
+        'watercolour-botanicals': (80, 144, 16),
         'candle-making': (89, 160, 16),
-        'crochet-bag': (95, 171, 20),
+        'crochet-bag': (95, 171, 14),
         'bake-lab': (95, 171, 24),
     }
     for fid, (price, pair, cap) in seat.items():
