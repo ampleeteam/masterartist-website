@@ -236,6 +236,32 @@ def two_pax_price(s):
     return f"{rm(s['price'])} <small>per person · {extra}</small>"
 
 
+def dual_price_text(s):
+    """'RM130 early bird · RM160 regular' when a dated session pins an early_price."""
+    return f"{rm(s['early_price'])} early bird · {rm(s['price'])} regular"
+
+
+def theme_short(s):
+    """'Gingerbread Baking Workshop' -> 'Gingerbread'."""
+    theme = (s.get('theme') or '').strip()
+    if not theme:
+        return s.get('name') or ''
+    short = re.sub(r'\s+(?:baking\s+)?workshop$', '', theme, flags=re.I).strip()
+    return short or theme
+
+
+def session_offers(s, url):
+    """One Offer at the session price, or Early bird + Regular when early_price is pinned."""
+    avail = 'https://schema.org/SoldOut' if s['seats_left'] == 0 else 'https://schema.org/InStock'
+    page = SITE['url'] + url
+    if s.get('early_price'):
+        return [
+            {'@type': 'Offer', 'name': 'Early bird', 'price': s['early_price'], 'priceCurrency': 'MYR', 'url': page, 'availability': avail},
+            {'@type': 'Offer', 'name': 'Regular', 'price': s['price'], 'priceCurrency': 'MYR', 'url': page, 'availability': avail},
+        ]
+    return {'@type': 'Offer', 'price': s['price'], 'priceCurrency': 'MYR', 'url': page, 'availability': avail}
+
+
 def wa_trial(p):
     return f"Hi, I'd like to book the RM{CL['trial']['price']} trial for {p['name']}. Source: {{source}}."
 
@@ -259,6 +285,8 @@ def SessionCard(s, link=True):
     f = FORMATS[s['format']]
     if s.get('bundle'):
         price = f'<div class="price">{rm(s["price"])} <small>Family Sunday: one adult Textured Canvas + one child, same hour · extra child {rm(s["bundle"]["extra_child"])}</small></div>'
+    elif s.get('early_price'):
+        price = f'<div class="price">{e(dual_price_text(s))}</div>'
     else:
         if s.get('pair_word') and s.get('pair_price'):
             price = f'<div class="price">{two_pax_price(s)}</div>'
@@ -1049,6 +1077,10 @@ def FormatCard(f):
     if f.get('bundle'):
         pair = f'<small>{e(f["bundle"]["name"])}: adult + child · extra child {rm(f["bundle"]["extra_child"])}</small>'
     when = f'<b>Next: {day_date(nxt["date"])} · {fmt_time(nxt["time"])}</b>' if nxt else '<b>New dates soon</b>'
+    if nxt and nxt.get('early_price'):
+        short = theme_short(nxt)
+        span = fmt_range(f"{nxt['time']}-{nxt['end']}")
+        when = f'<b>Next: {e(short)} · {day_date(nxt["date"])} · {span} · {e(dual_price_text(nxt))}</b>'
     badge = '<span class="badge dine">Dine + workshop available</span>' if f.get('dine_addon') else ''
     return f'''<article class="card v-studio">
   {photo(f['id'])}
@@ -1304,7 +1336,7 @@ def event_ld(s, url):
     loc = place()
     if s.get('location_name'):
         loc = dict(loc, name=s['location_name'])
-    # A session with its own summary is named on its own. One Offer, matching the per-person price.
+    # A session with its own summary is named on its own. Offers match the visible prices.
     if s.get('summary') and s.get('theme'):
         name, desc = s['theme'], s['summary']
     else:
@@ -1315,8 +1347,7 @@ def event_ld(s, url):
             'eventStatus': 'https://schema.org/EventScheduled', 'eventAttendanceMode': 'https://schema.org/OfflineEventAttendanceMode',
             'location': loc, 'image': [SITE['url'] + '/' + PHOTOS[s['format']][0]] if s['format'] in PHOTOS and s['format'] not in STAND_INS else [],
             'organizer': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']},
-            'offers': {'@type': 'Offer', 'price': s['price'], 'priceCurrency': 'MYR', 'url': SITE['url'] + url,
-                       'availability': 'https://schema.org/SoldOut' if s['seats_left'] == 0 else 'https://schema.org/InStock'}}
+            'offers': session_offers(s, url)}
 
 
 def build_session_day(slots):
@@ -1331,13 +1362,15 @@ def build_session_day(slots):
             for i, s in enumerate(slots)) + '</div>'
     blocks = []
     for s in slots:
-        if s.get('pair_word') and s.get('pair_price'):
+        if s.get('early_price'):
+            price_line = e(dual_price_text(s))
+        elif s.get('pair_word') and s.get('pair_price'):
             price_line = two_pax_price(s)
         else:
             price_line = rm(s['price']) + (f" <small>{e(s['price_unit'])}</small>" if s.get('price_unit') else '')
             if s.get('pair_price'):
                 price_line += f" <small>· pair {rm(s['pair_price'])}</small>"
-        if s.get('bundle'):
+        if s.get('bundle') and not s.get('early_price'):
             price_line = f"{rm(s['price'])} <small>{e(s['bundle']['name'])}, adult + child · extra child {rm(s['bundle']['extra_child'])}</small>"
         items = [('Date', long_date(s['date'])), ('Time', f"{fmt_time(s['time'])}–{fmt_time(s['end'])}"), ('Length', e(length(f))),
                  ('Room', e(s['room'])), ('Seats', seats_html(s))]
@@ -1665,7 +1698,7 @@ def build_programme(p):
 def build_sessions_feed():
     """/assets/sessions.json: the public sessions only, for the create-checkout function (prices and caps are
     read server-side from here) and the admin Bookings list. data/ itself stays off the public site."""
-    keep = ('id', 'format', 'date', 'day', 'time', 'end', 'name', 'theme', 'cap', 'cap_unit', 'price', 'pair_price', 'price_unit', 'public', 'type')
+    keep = ('id', 'format', 'date', 'day', 'time', 'end', 'name', 'theme', 'cap', 'cap_unit', 'price', 'early_price', 'pair_price', 'price_unit', 'public', 'type')
     feed = {'generated': dt.date.today().isoformat(), 'sessions': [{k: s[k] for k in keep if k in s} for s in PUB]}
     (ROOT / 'assets' / 'sessions.json').write_text(json.dumps(feed, ensure_ascii=False, separators=(',', ':')))
 

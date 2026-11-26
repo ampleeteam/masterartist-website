@@ -562,11 +562,12 @@
         "room": "l1-kitchen",
         "room_label": "Savor Level 1, Sri Hartamas",
         "price": 160,
+        "early_price": 130,
         "pair_price": 310,
         "cap": 20,
         "pair_word": "2 pax",
         "seo_title": "Gingerbread Baking Workshop · Sun 29 Nov 3pm",
-        "seo_description": "Gingerbread baking workshop, Sun 29 Nov, 3pm–5:30pm, Savor Level 1, Sri Hartamas. Bake a gingerbread man, decorate a gingerbread house. RM160; 2 pax RM310."
+        "seo_description": "Gingerbread baking workshop, Sun 29 Nov, 3–5:30pm, Savor Level 1, Sri Hartamas. Bake a gingerbread man, decorate a house. RM130 early bird · RM160 regular."
       }
     ]
   }
