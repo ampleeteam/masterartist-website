@@ -2476,13 +2476,29 @@ def build_404():
          extra_head=fallback + '\n' + blog_og('Page not found — Master Artist', desc, SITE['url'] + '/404.html'))
 
 # --- Redirects and sitemap ------------------------------------------------------------
-# Only pages with no directory of the same name. about/, blog/, privacy/, terms/ and
-# workshops/ already have index.html, so a sibling .html stub would be what GitHub Pages
-# serves for the extensionless URL and would block its own 301 to the trailing slash.
+# Each entry is (target, unique title). Titles must stay unique so the stubs do
+# not share "Moved · Master Artist" (Semrush duplicate-title errors).
+#
+# art, gallery, media, music, orchestra, pricing and visit have no directory of
+# the same name, so the stub only serves the .html URL.
+#
+# about.html, blog.html, privacy.html and workshops.html were removed in #35
+# because a sibling .html file is what GitHub Pages serves for the extensionless
+# URL, which blocks its own 301 to the trailing-slash page. They are restored
+# here so the old .html bookmarks stop 404ing. terms.html is left out: it was
+# not in the 26 Nov Semrush 4xx list. Do not add these four to the sitemap.
 REDIRECTS = {
-    'art.html': '/classes/', 'gallery.html': '/showcase/', 'media.html': '/classes/teen-photo-video/',
-    'music.html': '/classes/voice/', 'orchestra.html': '/classes/voice/', 'pricing.html': '/prices/',
-    'visit.html': '/about/#visit',
+    'about.html': ('/about/', 'About the studio has moved · Master Artist'),
+    'art.html': ('/classes/', 'Art classes have moved · Master Artist'),
+    'blog.html': ('/blog/', 'The blog has moved · Master Artist'),
+    'gallery.html': ('/showcase/', 'The gallery has moved · Master Artist'),
+    'media.html': ('/classes/teen-photo-video/', 'Teen photo and video classes have moved · Master Artist'),
+    'music.html': ('/classes/voice/', 'Music lessons have moved · Master Artist'),
+    'orchestra.html': ('/classes/voice/', 'Orchestra pages have moved · Master Artist'),
+    'pricing.html': ('/prices/', 'Pricing has moved · Master Artist'),
+    'privacy.html': ('/privacy/', 'The privacy notice has moved · Master Artist'),
+    'visit.html': ('/about/#visit', 'Visit details have moved · Master Artist'),
+    'workshops.html': ('/workshops/', 'Workshops have moved · Master Artist'),
 }
 
 
@@ -2494,7 +2510,7 @@ PAST_SESSION_REDIRECTS = {
 }
 
 
-def redirect_stub(new):
+def redirect_stub(new, title='Moved · Master Artist'):
     """HTML for a retired URL.
 
     GitHub Pages cannot send a 301 or 308 for these paths. This site is prebuilt
@@ -2509,13 +2525,14 @@ def redirect_stub(new):
 
     The stub is what Pages will do: noindex, a canonical on the clean URL, an
     immediate location.replace that keeps the query string, and a meta refresh
-    for browsers with JavaScript off.
+    for browsers with JavaScript off. Each legacy stub gets its own title.
     """
     url = SITE['url'] + new
     path = new.split('#')[0]
     hash_expr = json.dumps('#' + new.split('#')[1]) if '#' in new else 'location.hash'
+    title = e(title)
     return f'''<!DOCTYPE html>
-<html lang="en-MY"><head><meta charset="utf-8"><title>Moved · Master Artist</title>
+<html lang="en-MY"><head><meta charset="utf-8"><title>{title}</title>
 <link rel="canonical" href="{url}"><meta name="robots" content="noindex">
 <script>location.replace({json.dumps(path)} + location.search + ({hash_expr}));</script>
 <meta http-equiv="refresh" content="0; url={new}">
@@ -2525,8 +2542,9 @@ def redirect_stub(new):
 
 def build_redirects():
     """Retired pages become redirect stubs that keep the visitor's UTM query (ads may still point at them)."""
-    for old, new in REDIRECTS.items():
-        (ROOT / old).write_text(redirect_stub(new))
+    for old, dest in REDIRECTS.items():
+        new, title = dest
+        (ROOT / old).write_text(redirect_stub(new, title))
     for old, new in PAST_SESSION_REDIRECTS.items():
         dest = ROOT / old
         dest.parent.mkdir(parents=True, exist_ok=True)

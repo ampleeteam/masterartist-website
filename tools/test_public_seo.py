@@ -214,6 +214,42 @@ def main():
             if bad in html:
                 errors.append(f'{rel} still links {bad}')
 
+    legacy_stubs = {
+        'about.html': '/about/',
+        'art.html': '/classes/',
+        'blog.html': '/blog/',
+        'gallery.html': '/showcase/',
+        'media.html': '/classes/teen-photo-video/',
+        'music.html': '/classes/voice/',
+        'orchestra.html': '/classes/voice/',
+        'pricing.html': '/prices/',
+        'privacy.html': '/privacy/',
+        'visit.html': '/about/#visit',
+        'workshops.html': '/workshops/',
+    }
+    stub_titles = []
+    for rel, target in legacy_stubs.items():
+        stub = ROOT / rel
+        html = stub.read_text() if stub.is_file() else ''
+        if not html:
+            errors.append(f'missing redirect stub {rel}')
+            continue
+        if 'http-equiv="refresh"' not in html or f'url={target}' not in html:
+            errors.append(f'{rel} should refresh to {target}')
+        if f'rel="canonical" href="{SITE}{target}"' not in html:
+            errors.append(f'{rel} should canonicalize to {SITE}{target}')
+        if 'name="robots" content="noindex"' not in html:
+            errors.append(f'{rel} should stay noindex')
+        found = re.search(r'<title>(.*?)</title>', html)
+        got = found.group(1) if found else ''
+        if not got or got == 'Moved · Master Artist':
+            errors.append(f'{rel} needs a unique title, got {got!r}')
+        stub_titles.append(got)
+        if f'<loc>{SITE}/{rel}</loc>' in sitemap:
+            errors.append(f'sitemap should not list /{rel}')
+    if len(stub_titles) != len(set(stub_titles)):
+        errors.append(f'redirect stub titles are not unique: {stub_titles}')
+
     if errors:
         print('\n'.join(errors))
         sys.exit(1)
