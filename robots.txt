@@ -3,3 +3,6 @@ Allow: /
 Disallow: /admin.html
 
 Sitemap: https://masterartist.co/sitemap.xml
+
+# For AI assistants and LLM crawlers: a plain-text summary of the site
+# https://masterartist.co/llms.txt
