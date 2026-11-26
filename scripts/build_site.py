@@ -229,7 +229,10 @@ def WhatsAppButton(message, voice, label='WhatsApp us', cls='btn wa', fmt='', pr
 
 def wa_studio(s):
     who = f"{s['theme']} ({s['name']})" if s.get('theme') else s['name']
-    return f"Hi, I'd like to book {who} on {day_date(s['date'])} at {fmt_time(s['time'])}. Source: {{source}}."
+    when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
+    if s.get('confirm') or not s.get('price'):
+        return f"Hi, I'd like to book {who} on {when}. Please tell me the price. Source: {{source}}."
+    return f"Hi, I'd like to book {who} on {when}. Source: {{source}}."
 
 
 def two_pax_price(s):
@@ -256,10 +259,11 @@ def theme_short(s):
 
 
 def session_offers(s, url):
-    """One Offer at the session price, or Early bird + Regular when early_price is pinned."""
+    """One Offer at the session price. No price yet means no Offer (checkout must not see RM0)."""
+    if not s.get('price'):
+        return None
     avail = 'https://schema.org/SoldOut' if s['seats_left'] == 0 else 'https://schema.org/InStock'
     page = SITE['url'] + url
-    # One price: the amount create-checkout charges (price × 100 sen). No early-bird comparison.
     return {'@type': 'Offer', 'price': s['price'], 'priceCurrency': 'MYR', 'url': page, 'availability': avail}
 
 
@@ -282,9 +286,11 @@ def seats_html(s):
 
 
 def SessionCard(s, link=True):
-    """Studio Sessions card: photo · name · day/date/time · room · price (+pair) · seats · Book."""
+    """Studio Sessions card: photo · name · day/date/time · room · one price · seats · Book."""
     f = FORMATS[s['format']]
-    if s.get('bundle'):
+    if s.get('confirm') or not s.get('price'):
+        price = '<div class="price">Ask us on WhatsApp</div>'
+    elif s.get('bundle'):
         price = f'<div class="price">{rm(s["price"])} <small>Family Sunday: one adult Textured Canvas + one child, same hour · extra child {rm(s["bundle"]["extra_child"])}</small></div>'
     else:
         if s.get('pair_word') and s.get('pair_price'):
@@ -402,10 +408,10 @@ def ConsentFields(kind):
 
 def consent_kind(s):
     f = FORMATS[s['format']]
-    if f['discipline'] == 'baking':
-        return 'baking'
     if 'kid' in (f.get('audience') or '') or s['format'] in ('kids', 'kids-art-studio', 'parent-child-studio'):
         return 'child'
+    if f['discipline'] == 'baking':
+        return 'baking'
     return 'adult'
 
 
@@ -428,6 +434,13 @@ PAY = bool(SITE.get('payments', {}).get('stripe'))   # online payment through St
 
 def BookingEmbed(s):
     """WhatsApp booking until a payment tool is chosen (spec §3 fallback: booking: whatsapp)."""
+    if s.get('confirm') or not s.get('price'):
+        who = f"{s['theme']} ({s['name']})" if s.get('theme') else s['name']
+        when = f"{day_date(s['date'])} at {fmt_time(s['time'])}"
+        return f'''<div class="booking v-studio"><h2 class="h3">Book {e(s.get('theme') or s['name'])}</h2>
+  <p class="book-for">{e(who)} · {e(when)}</p>
+  {WhatsAppButton(wa_studio(s), 'studio', 'Ask us on WhatsApp', cls='btn wa block', fmt=s['format'], session=s['id'])}
+  <p class="note">The price for this date is not on the page yet. Message us and we will confirm it with your seat.</p></div>'''
     dine = WS['addons']['dine']
     if s.get('pair_price') and s.get('pair_word'):
         save = 2 * s['price'] - s['pair_price']
@@ -546,7 +559,7 @@ def PriceTable(voice):
         if f.get('bundle'):
             price, extra = rm(f['bundle']['price']), f"Family Sunday: {f['bundle']['includes']} · extra child {rm(f['bundle']['extra_child'])}"
         else:
-            price = rm(f['price']) + (f" {f['price_unit']}" if f.get('price_unit') else '')
+            price = (rm(f['price']) + (f" {f['price_unit']}" if f.get('price_unit') else '')) if f.get('price') else 'Ask us on WhatsApp'
             extra = ' · '.join(x for x in [f"pair {rm(f['pair_price'])}" if f.get('pair_price') else '',
                                             f"{f['duration_min'] // 60}h{f['duration_min'] % 60:02d}".replace('h00', 'h')] if x)
         rows.append(f'<tr><td><a href="/workshops/{f["id"]}/">{e(f["name"])}</a></td><td class="muted">{e(extra)}</td><td class="num">{e(price)}</td></tr>')
@@ -1099,7 +1112,7 @@ def FormatCard(f):
   {photo(f['id'])}
   <div class="body">
     <h3>{e(f['name'])}</h3><div class="sub">{e(hub_card_sub(f))}</div>
-    <div class="price">{money_from(f)} {pair}</div>
+    <div class="price">{money_from(f) or 'Ask us on WhatsApp'} {pair}</div>
     <div class="meta">{when}<span>{e(length(f))} · {e(f['room'])}</span></div>
     <div class="badges">{badge}</div>
     <div class="actions"><a class="btn" href="/workshops/{f['id']}/">See dates</a></div>
@@ -1256,7 +1269,9 @@ def build_workshops_index():
 
 
 def one_price_html(s):
-    """The session price only. Gingerbread keeps its 2 pax total. No early-bird line."""
+    """The sheet price only. Gingerbread keeps its 2 pax line. No price yet asks on WhatsApp."""
+    if s.get('confirm') or not s.get('price'):
+        return 'Ask us on WhatsApp'
     if s.get('bundle'):
         return f'{rm(s["price"])} <small>{e(s["bundle"]["name"])}, adult and child</small>'
     if s.get('pair_word') and s.get('pair_price'):
@@ -1280,7 +1295,7 @@ def UpcomingBlock(sessions, ask, limit=3, show_format=False):
             f'<li class="next-date" data-start="{s["date"]}T{s["time"]}:00+08:00">'
             f'<div><b>{e(label)}</b><a class="theme" href="{link}">{e(theme)}</a>{fmt_link}'
             f'<span class="amt">{one_price_html(s)}</span></div>'
-            f'{WhatsAppButton(wa_studio(s), "studio", "Book on WhatsApp", cls="btn wa", fmt=s["format"], session=s["id"])}'
+            f'{WhatsAppButton(wa_studio(s), "studio", "Ask us on WhatsApp" if s.get("confirm") or not s.get("price") else "Book on WhatsApp", cls="btn wa", fmt=s["format"], session=s["id"])}'
             f'</li>')
     none_hidden = '' if not rows else ' hidden'
     list_hidden = ' hidden' if not rows else ''
@@ -1312,7 +1327,7 @@ def build_format(f):
                 + ''.join(SessionCard(s) for s in rest) + '</div></div></details>')
     make = [('clock', f"{e(length(f))} · {e(f['room'])}"),
              ('palette', f"{e(POL['included'].capitalize())} included"),
-             ('users', f"Two of you get {int(POL['pair_discount'] * 100)}% off" if f.get('pair_price') else ''),
+             ('users', f"Two of you get {int(POL['pair_discount'] * 100)}% off" if any(s.get('pair_price') for s in sessions) else ''),
              ('star', 'Beginners welcome: a teacher takes you through it step by step'),
              ('bag', 'Take it home the same day')]
     if f.get('dine_addon'):
@@ -1343,13 +1358,18 @@ def build_format(f):
 </div></section>'''
     price = money_from(f)
     # /workshops/bake-lab/ has its own title from main. Do not shorten that one.
-    title = clip_title([
+    titled = [
         f"{f['name']} workshop in KL · {price} · Master Artist",
         f"{f['name']} in KL · {price} · Master Artist",
         f"{f['name']} workshop in KL · {price}",
         f"{f['name']} · {price} · Master Artist",
         f['name'],
-    ])
+    ] if price else [
+        f"{f['name']} in KL · Master Artist",
+        f"{f['name']} in KL",
+        f['name'],
+    ]
+    title = clip_title(titled)
     desc = f"{f['summary']} {money_from(f)}, {f['room']}, Desa Sri Hartamas, KL. Pick a date and book a seat."
     extra_head = ''
     if f['id'] == 'bake-lab':
@@ -1398,12 +1418,15 @@ def event_ld(s, url):
     else:
         name = f"{s['name']}" + (f" · {s['theme']}" if s.get('theme') else '')
         desc = f['summary']
-    return {'@context': 'https://schema.org', '@type': 'Event', 'name': name,
-            'description': desc, 'startDate': f"{s['date']}T{s['time']}:00+08:00", 'endDate': f"{s['date']}T{s['end']}:00+08:00",
-            'eventStatus': 'https://schema.org/EventScheduled', 'eventAttendanceMode': 'https://schema.org/OfflineEventAttendanceMode',
-            'location': loc, 'image': [SITE['url'] + '/' + PHOTOS[s['format']][0]] if s['format'] in PHOTOS and s['format'] not in STAND_INS else [],
-            'organizer': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']},
-            'offers': session_offers(s, url)}
+    event = {'@context': 'https://schema.org', '@type': 'Event', 'name': name,
+             'description': desc, 'startDate': f"{s['date']}T{s['time']}:00+08:00", 'endDate': f"{s['date']}T{s['end']}:00+08:00",
+             'eventStatus': 'https://schema.org/EventScheduled', 'eventAttendanceMode': 'https://schema.org/OfflineEventAttendanceMode',
+             'location': loc, 'image': [SITE['url'] + '/' + PHOTOS[s['format']][0]] if s['format'] in PHOTOS and s['format'] not in STAND_INS else [],
+             'organizer': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']}}
+    offers = session_offers(s, url)
+    if offers:
+        event['offers'] = offers
+    return event
 
 
 def build_session_day(slots):
@@ -1418,11 +1441,13 @@ def build_session_day(slots):
             for i, s in enumerate(slots)) + '</div>'
     blocks = []
     for s in slots:
-        if s.get('pair_word') and s.get('pair_price'):
+        if s.get('confirm') or not s.get('price'):
+            price_line = 'Ask us on WhatsApp'
+        elif s.get('pair_word') and s.get('pair_price'):
             price_line = two_pax_price(s)
         else:
             price_line = rm(s['price']) + (f" <small>{e(s['price_unit'])}</small>" if s.get('price_unit') else '')
-        if s.get('bundle') and not s.get('early_price'):
+        if s.get('bundle') and s.get('price') and not s.get('confirm') and not s.get('early_price'):
             price_line = f"{rm(s['price'])} <small>{e(s['bundle']['name'])}, adult + child · extra child {rm(s['bundle']['extra_child'])}</small>"
         items = [('Date', long_date(s['date'])), ('Time', f"{fmt_time(s['time'])}–{fmt_time(s['end'])}"), ('Length', e(length(f))),
                  ('Room', e(s['room'])), ('Seats', seats_html(s))]
@@ -1462,13 +1487,16 @@ def build_session_day(slots):
         when = f"{day_date(s0['date'])} {t0}"
         price = rm(s0['price'])
         options = []
-        if theme and theme != f['name']:
+        if price and theme and theme != f['name']:
             options.append(f"{keyword} · {f['name']} · {when} · {price} · Master Artist")
+        if price:
+            options += [
+                f"{keyword} · {when} · {price} · Master Artist",
+                f"{keyword} · {when} · {price}",
+                f"{keyword} · {price} · Master Artist",
+            ]
         options += [
-            f"{keyword} · {when} · {price} · Master Artist",
-            f"{keyword} · {when} · {price}",
             f"{keyword} · {when} · Master Artist",
-            f"{keyword} · {price} · Master Artist",
             f"{keyword} · {when}",
             keyword,
         ]
@@ -1592,7 +1620,7 @@ def build_classes_index():
                      crumbs(('/', 'Home'), (None, 'Classes')), img=('art-photo-1.jpg', 'Young students holding up their paintings'))
     body += f'''<section class="sec v-academy"><div class="wrap">
   <div class="sec-head"><span class="eyebrow">Programmes</span><h2>Choose a <em>class</em></h2><p>Art classes are monthly, with a showcase every term. Music lessons are one to one. Siblings get {int(CL['discounts']['sibling'] * 100)}% off.</p>
-  <p>Drawing and painting are part of <a href="/classes/kids-art-younger/">ages 5 to 9</a>, <a href="/classes/kids-art-older/">ages 10 to 15</a> and <a href="/classes/adult-art/">adult art</a>. A paint night is on the <a href="/workshops/">workshops page</a>. A one-off kids workshop, including Family Sunday, is on <a href="/workshops/kids/">kids workshops</a>.</p></div>
+  <p>Drawing and painting are part of <a href="/classes/kids-art-younger/">ages 5 to 9</a>, <a href="/classes/kids-art-older/">ages 10 to 15</a> and <a href="/classes/adult-art/">adult art</a>. A paint night is on the <a href="/workshops/">workshops page</a>. One-off kids workshops, including kids baking, are on <a href="/workshops/kids/">kids workshops</a>.</p></div>
   <div class="grid-cards">{''.join(ProgrammeCard(p) for p in PROGS)}</div>
 </div></section>
 <section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>
@@ -1786,7 +1814,10 @@ def build_sessions_feed():
     """/assets/sessions.json: the public sessions only, for the create-checkout function (prices and caps are
     read server-side from here) and the admin Bookings list. data/ itself stays off the public site."""
     keep = ('id', 'format', 'date', 'day', 'time', 'end', 'name', 'theme', 'cap', 'cap_unit', 'price', 'early_price', 'pair_price', 'price_unit', 'public', 'type')
-    feed = {'generated': TODAY.isoformat(), 'sessions': [{k: s[k] for k in keep if k in s} for s in PUB]}
+    # Confirm dates have no sheet price. Leave them out of the checkout feed so a
+    # missing price cannot be charged as RM0 (unit_amount is price × 100 sen).
+    priced = [s for s in PUB if isinstance(s.get('price'), (int, float)) and s['price'] > 0]
+    feed = {'generated': TODAY.isoformat(), 'sessions': [{k: s[k] for k in keep if k in s} for s in priced]}
     (ROOT / 'assets' / 'sessions.json').write_text(json.dumps(feed, ensure_ascii=False, separators=(',', ':')))
 
 
