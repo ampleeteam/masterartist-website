@@ -3,7 +3,7 @@
    element exists on the page, and only the Supabase views that page needs are
    fetched. All reads use public, read-only views, so the anon key is safe here. */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
-import { firstTouch, refCode, withRef } from './attribution.mjs';
+import { firstTouch, refCode, withRef, captureVisit, applyGoogleClick, buildWhatsAppHref, dispatchAdRef } from './attribution.mjs';
 
 const SUPABASE_URL  = 'https://fudaosneozobacdalncv.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZGFvc25lb3pvYmFjZGFsbmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4OTIwNDUsImV4cCI6MjEwMjQ2ODA0NX0.0PKbkncE8goPg-iJlAUacNUa3MjWJSj1ZLeqTpkqPZ0';
@@ -45,6 +45,19 @@ function currentTouch() {
   return touch;
 }
 const touch = currentTouch();
+let adFirst = null;
+let adLast = null;
+try {
+  const visit = captureVisit({
+    storage: localStorage,
+    now: Date.now(),
+    search: location.search,
+    landing: location.href.split('#')[0],
+    referrer: document.referrer || '',
+  });
+  adFirst = visit.first;
+  adLast = visit.last;
+} catch { /* private mode */ }
 const blank = v => {
   const s = String(v ?? '').trim();
   return s ? s : null;
@@ -65,8 +78,24 @@ async function q(builder) {
   } catch (e) { console.warn('[site]', e); return null; }
 }
 
-function waLink(text) {
-  return 'https://wa.me/' + waDigits + '?text=' + encodeURIComponent(withRef(text, touch));
+function stampGoogle(text, send) {
+  try {
+    const result = applyGoogleClick({
+      storage: localStorage,
+      now: Date.now(),
+      first: adFirst,
+      last: adLast,
+      text,
+      transport: send ? (url, payload) => dispatchAdRef(url, payload, SUPABASE_ANON) : null,
+    });
+    return result.text;
+  } catch {
+    return text;
+  }
+}
+function waLink(text, opts) {
+  const send = Boolean(opts && opts.send);
+  return buildWhatsAppHref('https://wa.me/' + waDigits, stampGoogle(withRef(text, touch), send));
 }
 
 function applyWhatsApp() {
@@ -75,8 +104,8 @@ function applyWhatsApp() {
     a.target = '_blank';
     a.rel = 'noopener';
   });
-  // Plain wa.me links (privacy, terms) get the same ref prefix.
-  document.querySelectorAll('a[href*="wa.me/"]').forEach(a => {
+  // Plain wa.me / api.whatsapp.com links (privacy, terms) get the same ref prefix.
+  document.querySelectorAll('a[href*="wa.me/"], a[href*="api.whatsapp.com/"]').forEach(a => {
     if (a.hasAttribute('data-wa')) return;
     let existing = '';
     try { existing = new URL(a.href, location.href).searchParams.get('text') || ''; }
@@ -233,9 +262,22 @@ function placeOf(el) {
 }
 
 // Every WhatsApp link on the site (buttons, footer, floating button)
+function restampWhatsApp(a, send) {
+  let existing = '';
+  try { existing = new URL(a.href, location.href).searchParams.get('text') || ''; }
+  catch { existing = ''; }
+  a.href = buildWhatsAppHref(a.href, stampGoogle(existing, send));
+}
 document.addEventListener('click', e => {
-  const a = e.target.closest && e.target.closest('a[href*="wa.me/"]');
-  if (a) track('whatsapp', { where: placeOf(a) });
+  const a = e.target.closest && e.target.closest('a[href*="wa.me/"], a[href*="api.whatsapp.com/"]');
+  if (!a) return;
+  try { restampWhatsApp(a, true); } catch { /* keep the link usable */ }
+  track('whatsapp', { where: placeOf(a) });
+}, true);
+document.addEventListener('auxclick', e => {
+  const a = e.target.closest && e.target.closest('a[href*="wa.me/"], a[href*="api.whatsapp.com/"]');
+  if (!a || e.button !== 1) return;
+  try { restampWhatsApp(a, true); } catch { /* keep the link usable */ }
 }, true);
 
 /* -------------------------------------------------------------- trial form
@@ -396,7 +438,7 @@ function addContactFields(form, n) {
         return;
       }
       track('trial', { programme, where: placeOf(form) });
-      window.open(waLink(lines.join('\n')), '_blank', 'noopener');
+      window.open(waLink(lines.join('\n'), { send: true }), '_blank', 'noopener');
       form.classList.add('sent');
       if (btn) btn.textContent = 'Sent';
     });

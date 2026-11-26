@@ -791,7 +791,7 @@ def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_
 {body}
 </main>
 {footer(voice, wa)}
-<script src="/assets/ma.js?v={ver('assets/ma.js')}" defer></script>
+<script type="module" src="/assets/ma.js?v={ver('assets/ma.js')}"></script>
 </body>
 </html>
 '''
