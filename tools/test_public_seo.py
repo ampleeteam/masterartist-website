@@ -137,6 +137,49 @@ def main():
             except json.JSONDecodeError as exc:
                 errors.append(f'{path.name} invalid JSON-LD: {exc}')
 
+    # Course JSON-LD on the 7 class pages: offers live on the CourseInstance, with courseMode, url and availability.
+    course_pages = {
+        'kids-art-younger': ('Offer', 320, None),
+        'kids-art-older': ('Offer', 320, None),
+        'adult-art': ('Offer', 320, None),
+        'teen-photo-video': ('Offer', 300, None),
+        'photo-video-adult': ('Offer', 400, None),
+        'baking-course': ('Offer', 450, None),
+        'voice': ('AggregateOffer', 80, 100),
+    }
+    for slug, (offer_type, price, high) in course_pages.items():
+        rel = f'classes/{slug}/index.html'
+        html = (ROOT / rel).read_text()
+        blocks = []
+        for raw in re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.S):
+            blocks.append(json.loads(raw))
+        course = next((b for b in blocks if b.get('@type') == 'Course'), None)
+        if not course:
+            errors.append(f'{rel} missing Course JSON-LD')
+            continue
+        if 'offers' in course:
+            errors.append(f'{rel} Course still has offers; they belong on hasCourseInstance')
+        instance = course.get('hasCourseInstance') or {}
+        if instance.get('@type') != 'CourseInstance':
+            errors.append(f'{rel} missing hasCourseInstance CourseInstance')
+        if instance.get('courseMode') != 'onsite':
+            errors.append(f'{rel} CourseInstance missing courseMode onsite')
+        offer = instance.get('offers') or {}
+        page_url = f'{SITE}/classes/{slug}/'
+        if offer.get('@type') != offer_type:
+            errors.append(f'{rel} offers type {offer.get("@type")!r}, expected {offer_type}')
+        if offer.get('url') != page_url:
+            errors.append(f'{rel} offers url {offer.get("url")!r}, expected {page_url}')
+        if offer.get('availability') != 'https://schema.org/InStock':
+            errors.append(f'{rel} offers missing availability InStock')
+        if offer.get('priceCurrency') != 'MYR':
+            errors.append(f'{rel} offers missing priceCurrency MYR')
+        if offer_type == 'AggregateOffer':
+            if offer.get('lowPrice') != price or offer.get('highPrice') != high:
+                errors.append(f'{rel} AggregateOffer prices {offer.get("lowPrice")}/{offer.get("highPrice")}, expected {price}/{high}')
+        elif offer.get('price') != price:
+            errors.append(f'{rel} Offer price {offer.get("price")}, expected {price}')
+
     banned = ('plant' + '-based', 'plant based', 'cheaper than', 'vegan', 'hrdc', 'hrd corp')
     for rel in pages + ['404.html']:
         visible = re.sub(r'<script\b[^>]*>.*?</script>', ' ', (ROOT / rel).read_text(), flags=re.S).lower()

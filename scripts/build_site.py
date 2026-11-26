@@ -1636,12 +1636,16 @@ def build_programme(p):
     else:
         title = f"{p['name']} in Sri Hartamas, KL · {rm(p.get('price_month') or p.get('price_course'))}{'/month' if p.get('price_month') else ''} · Master Artist Academy"
         desc = f"{p.get('summary', '')} {price_plain}." + (f" {rm(TRIAL['price'])} trial, credited against the first month." if trial else '')
+    page_url = f"{SITE['url']}/classes/{p['id']}/"
     if hourly:
         # Same Course block as the live voice page: an hourly range, no monthly offer.
+        # Offers sit on the CourseInstance so the markup matches Google's Course rules.
         course_ld = {'@context': 'https://schema.org', '@type': 'Course', 'name': p['name'], 'description': p.get('summary', ''),
                      'provider': {'@type': 'Organization', 'name': SITE['labels']['academy'], 'url': SITE['url']},
-                     'offers': {'@type': 'AggregateOffer', 'lowPrice': p['price_hour_min'], 'highPrice': p['price_hour_max'], 'priceCurrency': 'MYR'},
-                     'hasCourseInstance': {'@type': 'CourseInstance', 'courseMode': 'onsite', 'location': place()}}
+                     'hasCourseInstance': {'@type': 'CourseInstance', 'courseMode': 'onsite', 'location': place(),
+                                           'offers': {'@type': 'AggregateOffer', 'lowPrice': p['price_hour_min'],
+                                                      'highPrice': p['price_hour_max'], 'priceCurrency': 'MYR',
+                                                      'url': page_url, 'availability': 'https://schema.org/InStock'}}}
     else:
         # The course name is the class named in the heading, so the schema and the page say the same thing.
         headline = re.sub(r'<[^>]+>', '', c.get('headline') or p['name'])
@@ -1659,18 +1663,16 @@ def build_programme(p):
             raise SystemExit(f'{p["id"]} course name is not in the heading: {course_name}')
         if e(schema_desc) not in body:
             raise SystemExit(f'{p["id"]} course description is not on the page')
-        a = SITE['address']
         # Piano has no fee. Do not invent one. A monthly or course price is included only when the page shows it.
         if price_num is not None and rm(price_num) not in body:
             raise SystemExit(f'{p["id"]} price {rm(price_num)} is not on the page')
-        course_ld = {'@context': 'https://schema.org', '@type': 'Course', 'name': course_name, 'description': schema_desc,
-                     'provider': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']}}
+        instance = {'@type': 'CourseInstance', 'courseMode': 'onsite', 'location': place()}
         if price_num is not None:
-            course_ld['offers'] = {'@type': 'Offer', 'price': price_num, 'priceCurrency': 'MYR'}
-        course_ld['hasCourseInstance'] = {'@type': 'CourseInstance',
-                                          'location': {'@type': 'Place', 'name': SITE['name'],
-                                                       'address': {'@type': 'PostalAddress', 'streetAddress': a['street'],
-                                                                   'addressLocality': a['city'], 'postalCode': a['postcode']}}}
+            instance['offers'] = {'@type': 'Offer', 'price': price_num, 'priceCurrency': 'MYR',
+                                  'url': page_url, 'availability': 'https://schema.org/InStock'}
+        course_ld = {'@context': 'https://schema.org', '@type': 'Course', 'name': course_name, 'description': schema_desc,
+                     'provider': {'@type': 'Organization', 'name': SITE['name'], 'url': SITE['url']},
+                     'hasCourseInstance': instance}
     if hourly:
         title = clip_title([
             f"One-to-one voice lessons · {hour_band(p)}/hr · Master Artist",
