@@ -535,15 +535,64 @@ def HoursBlock():
 # ------------------------------------------------------------------ shell
 NAV = [('/workshops/', 'Workshops'), ('/classes/', 'Classes'), ('/groups/', 'Groups'), ('/prices/', 'Prices'), ('/blog/', 'Blog'), ('/about/', 'About')]
 
+# These titles belong to other pulls. /prices/ is also left as it is: this change only adds its social tags.
+TITLE_UNTOUCHED = {'/workshops/', '/workshops/bake-lab/', '/groups/', '/prices/'}
+# Heroes already published on each page. Absolute URLs are built from SITE['url'].
+OG_IMAGE = {
+    '/': 'hero-1.jpg',
+    '/workshops/': 'golden-shores-workshop-1.jpg',
+    '/groups/': 'focaccia-workshop-3.jpg',
+    '/workshops/bake-lab/': 'focaccia-workshop-1.jpg',
+    '/prices/': 'golden-shores-workshop-4.jpg',
+}
+
+
+def clip_title(options, limit=60):
+    """First wording that fits. Earlier options keep more of the original meaning."""
+    for option in options:
+        if option and len(option) <= limit:
+            return option
+    text = next((option for option in options if option), '')
+    cut = text[:limit].rstrip()
+    if len(text) > limit and ' ' in cut:
+        cut = cut.rsplit(' ', 1)[0]
+    return cut.rstrip(' ·:—–,')
+
+
+def social_meta(title, desc, canonical):
+    """Open Graph and Twitter tags for the five pages that share them. Empty for every other page."""
+    path = canonical[len(SITE['url']):] if canonical.startswith(SITE['url']) else ''
+    filename = OG_IMAGE.get(path)
+    if not filename:
+        return ''
+    if not (ROOT / filename).is_file():
+        raise SystemExit(f'og:image is not a file in the repo: {filename}')
+    img = f"{SITE['url']}/{filename}"
+    return '\n'.join([
+        f'<meta property="og:title" content="{e(title)}">',
+        f'<meta property="og:description" content="{e(desc)}">',
+        f'<meta property="og:url" content="{e(canonical)}">',
+        '<meta property="og:type" content="website">',
+        f'<meta property="og:image" content="{img}">',
+        '<meta property="og:site_name" content="Master Artist">',
+        '<meta property="og:locale" content="en_MY">',
+        '<meta name="twitter:card" content="summary_large_image">',
+        f'<meta name="twitter:title" content="{e(title)}">',
+        f'<meta name="twitter:description" content="{e(desc)}">',
+        f'<meta name="twitter:image" content="{img}">',
+    ])
+
 
 def head(title, desc, canonical, extra=''):
     t = SITE['tracking']
+    social = social_meta(title, desc, canonical)
+    social_block = f'\n{social}' if social else ''
     return f'''<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {LEAD_FILTER}
 <title>{e(title)}</title>
 <meta name="description" content="{e(desc)}">
-<link rel="canonical" href="{e(canonical)}">
+<link rel="canonical" href="{e(canonical)}">{social_block}
 <link rel="icon" type="image/svg+xml" href="/logo.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -695,6 +744,11 @@ def social_tags(title, desc, canonical, image):
 
 
 def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_head='', noindex=False, wa=None):
+    limit = 65 if path == '/' else 60
+    if path not in TITLE_UNTOUCHED and len(title) > limit:
+        raise SystemExit(f'{path} title is {len(title)} characters: {title}')
+    if path == '/' and len(desc) > 155:
+        raise SystemExit(f'home description is {len(desc)} characters: {desc}')
     canonical = SITE['url'] + path
     robots = f'<meta name="robots" content="{noindex if isinstance(noindex, str) else "noindex"}">' if noindex else ''
     doc = f'''<!DOCTYPE html>
@@ -1094,8 +1148,8 @@ def build_home():
     <div class="hero-cta"><a class="btn ghost" href="{e(SITE['google']['maps_url'])}" target="_blank" rel="noopener">Open in Google Maps</a>{WhatsAppButton(msg, 'both')}</div></div>
   <div>{HoursBlock()}</div>
 </div></section>'''
-    page('/', 'Master Artist · Art, voice and baking classes and workshops in Sri Hartamas, KL',
-         f'Weekly classes taught by working artists, and workshops in the room with the view in Desa Sri Hartamas, KL. Workshops from {rm(min_ws)}; classes from {rm(min_cl)}/month; {rm(TRIAL["price"])} trial.',
+    page('/', 'Art & Baking Workshops, Team Days & Classes in KL · Master Artist',
+         f'Art and baking workshops in Sri Hartamas, KL, and weekly classes taught by working artists. Workshops from {rm(min_ws)}; classes from {rm(min_cl)}/month; {rm(TRIAL["price"])} trial.',
          body + open_day + doors + this_week + made + reviews + visit, data_attrs=' data-page="home"')
 
 
@@ -1199,7 +1253,15 @@ def build_format(f):
     {f'<h2>Who runs <em>it</em></h2><p>Taught by working artists from the Master Artist team.</p>{team}' if team else ''}</div>
   <div class="aside"><h2 style="font-size:26px">Good to <em>know</em></h2>{Accordion(policy_items())}</div>
 </div></section>'''
-    title = f"{f['name']} workshop in KL · {money_from(f)} · Master Artist"
+    price = money_from(f)
+    # /workshops/bake-lab/ has its own title from main. Do not shorten that one.
+    title = clip_title([
+        f"{f['name']} workshop in KL · {price} · Master Artist",
+        f"{f['name']} in KL · {price} · Master Artist",
+        f"{f['name']} workshop in KL · {price}",
+        f"{f['name']} · {price} · Master Artist",
+        f['name'],
+    ])
     desc = f"{f['summary']} {money_from(f)}, {f['room']}, Desa Sri Hartamas, KL. Pick a date and book a seat."
     extra_head = ''
     if f['id'] == 'bake-lab':
@@ -1311,7 +1373,21 @@ def build_session_day(slots):
         if len(title) > 60:
             raise SystemExit(f'seo title is {len(title)} characters: {title}')
     else:
-        title = f"{theme + ' · ' + f['name'] if theme else f['name']} · {day_date(s0['date'])} {t0} · {rm(s0['price'])} · Master Artist KL"
+        keyword = theme or f['name']
+        when = f"{day_date(s0['date'])} {t0}"
+        price = rm(s0['price'])
+        options = []
+        if theme and theme != f['name']:
+            options.append(f"{keyword} · {f['name']} · {when} · {price} · Master Artist")
+        options += [
+            f"{keyword} · {when} · {price} · Master Artist",
+            f"{keyword} · {when} · {price}",
+            f"{keyword} · {when} · Master Artist",
+            f"{keyword} · {price} · Master Artist",
+            f"{keyword} · {when}",
+            keyword,
+        ]
+        title = clip_title(options)
     if s0.get('seo_description'):
         desc = s0['seo_description']
         if len(desc) > 155:
@@ -1399,7 +1475,11 @@ def build_classes_index():
 </div></section>
 <section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>
 <section class="sec alt v-academy"><div class="wrap"><div class="sec-head"><span class="eyebrow">Google reviews</span><h2>What parents and students <em>say</em></h2></div>{GoogleReviews(3)}</div></section>'''
-    page('/classes/', 'Kids art classes, voice lessons and more in Sri Hartamas, KL · Master Artist Academy',
+    page('/classes/', clip_title([
+             'Kids art classes, voice lessons and more in Sri Hartamas, KL · Master Artist Academy',
+             'Kids art classes and voice lessons in KL · Master Artist',
+             'Kids art classes in KL · Master Artist',
+         ]),
          f'Weekly art, photo, video and baking classes in Desa Sri Hartamas, KL. Art is RM320 a month. One-to-one music lessons are {music} an hour. The {rm(TRIAL["price"])} trial is for weekly art classes.',
          body, voice='academy', active='/classes/', data_attrs=' data-page="classes"', wa={'msg': f"Hi, I'd like to book the {rm(TRIAL['price'])} trial. Source: {{source}}.", 'trial': True})
 
@@ -1528,6 +1608,27 @@ def build_programme(p):
                  'provider': {'@type': 'Organization', 'name': SITE['labels']['academy'], 'url': SITE['url']},
                  'offers': offers,
                  'hasCourseInstance': {'@type': 'CourseInstance', 'courseMode': 'onsite', 'location': place()}}
+    if hourly:
+        title = clip_title([
+            f"One-to-one voice lessons · {hour_band(p)}/hr · Master Artist",
+            f"One-to-one voice lessons · {hour_band(p)} per hour",
+            'One-to-one voice lessons',
+        ])
+    else:
+        price = f"{rm(p.get('price_month') or p.get('price_course'))}{'/month' if p.get('price_month') else ''}"
+        label = {
+            'kids-art-younger': 'Kids art classes (5–9)',
+            'kids-art-older': 'Kids art classes (10–15)',
+            'adult-art': 'Adult art classes',
+        }.get(p['id'], p['name'])
+        title = clip_title([
+            f"{label} in KL · {price} · Master Artist",
+            f"{label} · KL · {price} · Master Artist",
+            f"{label} · {price} · Master Artist",
+            f"{label} · KL · {price}",
+            f"{label} · {price}",
+            label,
+        ])
     page(f"/classes/{p['id']}/", title, desc,
          body, voice='academy', active='/classes/', extra_head=ld(course_ld), data_attrs=f' data-page="programme" data-programme="{p["id"]}"', wa=page_wa)
 
@@ -1608,7 +1709,11 @@ def build_trial():
     <h2>Weekly art classes</h2><p>{' · '.join(f'<a href="/classes/{p["id"]}/">{e(p["name"])}</a>' for p in trial_progs)}</p>
     <p>The {rm(TRIAL['price'])} trial is for these weekly art classes. For music and voice lessons, <a href="/classes/voice/">enquire to arrange</a> a time.</p></div>
 </div></section>'''
-    page('/trial/', f'Book a {rm(TRIAL["price"])} trial class · Master Artist Academy, Sri Hartamas KL',
+    page('/trial/', clip_title([
+             f'Book a {rm(TRIAL["price"])} trial class · Master Artist Academy, Sri Hartamas KL',
+             f'Book a {rm(TRIAL["price"])} trial class · Sri Hartamas KL · Master Artist',
+             f'Book a {rm(TRIAL["price"])} trial class · Master Artist',
+         ]),
          f'Try one weekly art class for {rm(TRIAL["price"])}, credited in full against your first month. Music lessons are arranged separately.',
          body, voice='academy', active='/classes/', data_attrs=' data-page="trial"', wa={'msg': f"Hi, I'd like to book the {rm(TRIAL['price'])} trial. Source: {{source}}.", 'trial': True})
 
@@ -1626,7 +1731,11 @@ def build_holiday_camps():
                      crumbs(('/', 'Home'), ('/classes/', 'Classes'), (None, 'Holiday camps')), img=('art-photo-2.jpg', 'Children painting in the studio'))
     body += f'''<section class="sec v-academy"><div class="wrap"><div class="grid-cards">{''.join(cards)}</div></div></section>
 <section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>'''
-    page('/holiday-camps/', 'School holiday art and photo camps in KL · Master Artist Academy',
+    page('/holiday-camps/', clip_title([
+             'School holiday art and photo camps in KL · Master Artist Academy',
+             'School holiday art and photo camps in KL · Master Artist',
+             'School holiday art and photo camps in KL',
+         ]),
          'Three-day school holiday camps in art and in photo and video for kids and teens, in Desa Sri Hartamas, KL.',
          body, voice='academy', active='/classes/', data_attrs=' data-page="holiday-camps"', wa={'msg': "Hi, I'd like to hear about the school holiday camps. Source: {source}.", 'programme': 'holiday-camps'})
 
@@ -1809,7 +1918,11 @@ def build_gift_vouchers():
         ('Can I give it for a team or group?', 'Yes. <a href="/groups/">See group packages</a> or ask us on WhatsApp.'),
     ])}</div>
 </div></section>'''
-    page('/gift-vouchers/', 'Workshop gift vouchers in KL · painting and baking · Master Artist',
+    page('/gift-vouchers/', clip_title([
+             'Workshop gift vouchers in KL · painting and baking · Master Artist',
+             'Workshop gift vouchers in KL · painting and baking',
+             'Workshop gift vouchers in KL · Master Artist',
+         ]),
          f'Gift vouchers for painting, candle making, crochet and baking workshops in Desa Sri Hartamas, KL: {amounts} or a seat at a chosen workshop.',
          body, voice='studio', active='/workshops/', data_attrs=' data-page="gift-vouchers"', wa={'msg': "Hi, I'd like to buy a gift voucher. Source: {source}.", 'fmt': 'gift-voucher'})
 
@@ -1864,7 +1977,11 @@ def build_birthdays():
         ('Saturdays', 'We are closed on Saturdays, so parties run on Sundays and weekdays.'),
     ])}</div>
 </div></section>'''
-    page('/birthdays/', 'Kids birthday party workshops in KL · art, clay and baking · Master Artist',
+    page('/birthdays/', clip_title([
+             'Kids birthday party workshops in KL · art, clay and baking · Master Artist',
+             'Kids birthday party workshops in KL · art, clay and baking',
+             'Kids birthday party workshops in KL · Master Artist',
+         ]),
          'Art, air-dry clay and baking birthday parties for kids, teens and adults in Desa Sri Hartamas, KL, with a teacher, materials and time for cake.',
          body, voice='studio', active='/groups/', data_attrs=' data-page="birthdays"', wa={'msg': "Hi, I'd like to plan a birthday party. Source: {source}.", 'fmt': 'birthday'})
 
@@ -1906,7 +2023,12 @@ def build_about():
     <p class="muted">Upstairs: the L2 front room (the room with the view), the L2 back room and the L2 recording studio. Downstairs, at Savor: the L1 kitchen and the L1 front room, with the same view.</p>
     <div class="hero-cta"><a class="btn ghost" href="{e(SITE['google']['maps_url'])}" target="_blank" rel="noopener">Open in Google Maps</a></div></div>
   <div>{HoursBlock()}</div></div></section>'''
-    page('/about/', 'About Master Artist · taught by working artists in Desa Sri Hartamas, KL',
+    page('/about/', clip_title([
+             'About Master Artist · taught by working artists in Desa Sri Hartamas, KL',
+             'About Master Artist · taught by working artists in Sri Hartamas, KL',
+             'About Master Artist · working artists in Sri Hartamas, KL',
+             'About Master Artist · taught by working artists in KL',
+         ]),
          'Master Artist was started by recording artist Sabrina Hew: art, voice, photo, video and baking taught by working artists in Desa Sri Hartamas, KL.',
          body, voice='academy', active='/about/', data_attrs=' data-page="about"')
 
@@ -1930,7 +2052,11 @@ def build_reviews():
     body += f'''<section class="sec"><div class="wrap"><div class="sec-head"><span class="eyebrow">Google</span><h2>Our <em>rating</em></h2></div><div data-greviews-split>{GoogleReviews(5)}</div></div></section>
 <section class="sec alt v-academy" data-voice-section hidden><div class="wrap"><div class="sec-head"><span class="eyebrow">{e(SITE['labels']['academy'])}</span><h2>Weekly <em>classes</em></h2></div><div class="reviews" data-greviews-voice="academy"></div></div></section>
 <section class="sec v-studio" data-voice-section hidden><div class="wrap"><div class="sec-head"><span class="eyebrow">{e(SITE['labels']['studio'])}</span><h2><em>Workshops</em></h2></div><div class="reviews" data-greviews-voice="studio"></div></div></section>'''
-    page('/reviews/', 'Reviews · Master Artist classes and workshops, Sri Hartamas KL',
+    page('/reviews/', clip_title([
+             'Reviews · Master Artist classes and workshops, Sri Hartamas KL',
+             'Reviews · Master Artist classes & workshops, Sri Hartamas KL',
+             'Reviews · classes and workshops, Sri Hartamas KL',
+         ]),
          'Google reviews of Master Artist weekly classes and workshops in Desa Sri Hartamas, KL.',
          body, voice='both', active='', data_attrs=' data-page="reviews"')
 
