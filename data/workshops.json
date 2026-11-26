@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-26T11:02:40",
+ "generated": "2026-11-26T18:03:09",
  "currency": "MYR",
  "formats": [
   {
@@ -489,8 +489,8 @@
    "end": "17:30",
    "label": "Sun 29 Nov · 3pm",
    "room": "Savor Level 1, Sri Hartamas",
-   "price": 160,
-   "pair_price": 310,
+   "price": 130,
+   "pair_price": 260,
    "price_set": "launch",
    "price_unit": null,
    "cap": 20,
@@ -507,8 +507,7 @@
    "summary": "Bake your own gingerbread man. Decorate your own gingerbread house.",
    "pair_word": "2 pax",
    "seo_title": "Gingerbread Baking Workshop · Sun 29 Nov 3pm",
-   "seo_description": "Gingerbread baking workshop, Sun 29 Nov, 3–5:30pm, Savor Level 1, Sri Hartamas. Bake a gingerbread man, decorate a house. RM130 early bird · RM160 regular.",
-   "early_price": 130,
+   "seo_description": "Gingerbread baking workshop, Sun 29 Nov, 3–5:30pm, Savor Level 1, Sri Hartamas. Bake a gingerbread man, decorate a house. RM130 per person.",
    "public": true,
    "next_session": null
   },

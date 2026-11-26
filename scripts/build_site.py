@@ -1077,10 +1077,11 @@ def FormatCard(f):
     if f.get('bundle'):
         pair = f'<small>{e(f["bundle"]["name"])}: adult + child · extra child {rm(f["bundle"]["extra_child"])}</small>'
     when = f'<b>Next: {day_date(nxt["date"])} · {fmt_time(nxt["time"])}</b>' if nxt else '<b>New dates soon</b>'
-    if nxt and nxt.get('early_price'):
+    # A dated session can cost something else than the format (Gingerbread is RM130, not Bake Lab's RM95).
+    if nxt and nxt.get('price') not in (None, f.get('price')):
         short = theme_short(nxt)
         span = fmt_range(f"{nxt['time']}-{nxt['end']}")
-        when = f'<b>Next: {e(short)} · {day_date(nxt["date"])} · {span} · {e(dual_price_text(nxt))}</b>'
+        when = f'<b>Next: {e(short)} · {day_date(nxt["date"])} · {span} · {rm(nxt["price"])} per person</b>'
     badge = '<span class="badge dine">Dine + workshop available</span>' if f.get('dine_addon') else ''
     return f'''<article class="card v-studio">
   {photo(f['id'])}
