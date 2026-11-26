@@ -622,6 +622,78 @@ def responsive_images(doc):
     return re.sub(r'<img src="/([^"/]+\.jpg)"', swap, doc)
 
 
+# Draft pull #37 adds Open Graph on these five pages and shortens the home description.
+# Leave both to that pull so the tags are not written twice when the branches meet.
+SOCIAL_OWNED_ELSEWHERE = {'/', '/workshops/', '/groups/', '/workshops/bake-lab/', '/prices/'}
+
+
+def clip_meta(desc, limit=155):
+    """Keep the opening sentence and the price when a description is too long."""
+    desc = re.sub(r'\s+', ' ', desc or '').strip()
+    if len(desc) <= limit:
+        return desc
+    parts = [p.strip() for p in re.findall(r'.*?[.!?](?:\s|$)', desc) if p.strip()]
+    if not parts:
+        return desc[:limit].rsplit(' ', 1)[0].rstrip(' ,;:')
+    lead = parts[0]
+    price = next((p for p in parts if re.search(r'RM\s?\d', p)), '')
+    extra = []
+    for part in parts[1:]:
+        if part == price:
+            continue
+        trial = [lead] + extra + [part] + ([price] if price and price != lead else [])
+        if len(' '.join(trial)) <= limit:
+            extra.append(part)
+        else:
+            break
+    pieces = [lead] + extra
+    if price and price != lead:
+        pieces.append(price)
+    text = ' '.join(pieces)
+    if len(text) <= limit:
+        return text
+    amount = re.search(r'RM\s?\d+', price or desc)
+    if amount and amount.group(0) not in lead:
+        for tail in (f" {amount.group(0)}, Desa Sri Hartamas.", f" {amount.group(0)}."):
+            short = f"{lead}{tail}"
+            if 'Hartamas' in lead and 'Hartamas' in tail:
+                continue
+            if len(short) <= limit:
+                return short
+    if len(lead) <= limit:
+        return lead
+    return lead[:limit].rsplit(' ', 1)[0].rstrip(' ,;:')
+
+
+def og_image_for(path):
+    """A photo that is already on the site. Absolute URL is added by the caller."""
+    if path.startswith('/workshops/'):
+        return 'golden-shores-workshop-1.jpg'
+    if path.startswith('/classes/') or path in ('/trial/', '/holiday-camps/'):
+        return 'art-photo-1.jpg'
+    if path == '/birthdays/':
+        return 'painting-4.jpg'
+    return 'hero-1.jpg'
+
+
+def social_tags(title, desc, canonical, image):
+    img = f"{SITE['url']}/{image}"
+    return '\n'.join([
+        f'<meta property="og:title" content="{e(title)}">',
+        f'<meta property="og:description" content="{e(desc)}">',
+        f'<meta property="og:url" content="{e(canonical)}">',
+        '<meta property="og:type" content="website">',
+        f'<meta property="og:image" content="{img}">',
+        f'<meta property="og:image:alt" content="{e(title)}">',
+        '<meta property="og:site_name" content="Master Artist">',
+        '<meta property="og:locale" content="en_MY">',
+        '<meta name="twitter:card" content="summary_large_image">',
+        f'<meta name="twitter:title" content="{e(title)}">',
+        f'<meta name="twitter:description" content="{e(desc)}">',
+        f'<meta name="twitter:image" content="{img}">',
+    ])
+
+
 def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_head='', noindex=False, wa=None):
     canonical = SITE['url'] + path
     robots = f'<meta name="robots" content="{noindex if isinstance(noindex, str) else "noindex"}">' if noindex else ''
@@ -646,6 +718,20 @@ def page(path, title, desc, body, voice='both', active='', data_attrs='', extra_
         GENERATED.append((path, '1.0' if path == '/' else '0.8' if depth <= 1 else '0.7' if depth == 2 else '0.5',
                           'daily' if path.startswith(('/workshops', '/this-sunday')) or path == '/' else 'monthly'))
     doc = responsive_images(doc)
+    # Home description is shortened on the titles pull. Clip the others here, after
+    # the page is built, so this does not sit on the lines that pull edits.
+    if path != '/' and len(desc) > 155:
+        clipped = clip_meta(desc)
+        doc = doc.replace(
+            f'<meta name="description" content="{e(desc)}">',
+            f'<meta name="description" content="{e(clipped)}">',
+            1)
+        desc = clipped
+    if not noindex and path not in SOCIAL_OWNED_ELSEWHERE and 'property="og:title"' not in doc:
+        image = og_image_for(path)
+        if not (ROOT / image).is_file():
+            raise SystemExit(f'og:image is not a file in the repo: {image}')
+        doc = doc.replace('</title>', '</title>\n' + social_tags(title, desc, canonical, image), 1)
     out = ROOT / path.strip('/') / 'index.html' if path.endswith('/') else ROOT / path.strip('/')
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(doc)
@@ -1302,12 +1388,13 @@ def academy_cta(programme=None):
 def build_classes_index():
     min_cl = min(p['price_month'] for p in PROGS if p.get('price_month'))
     music = hour_band(next(p for p in PROGS if p['id'] == 'voice'))
-    body = hero_band(e(SITE['labels']['academy']), 'Weekly classes, <em>taught by working artists</em>',
-                     f"Weekly art, photo, video and baking, in small groups with the same teacher every week. You'll actually get better. From {rm(min_cl)} a month. Music and voice lessons are one to one, at {music} per hour.",
+    body = hero_band('Classes', 'Weekly art classes in <em>Sri Hartamas, KL</em>',
+                     f"Weekly art, photo, video and baking in Desa Sri Hartamas, in small groups with the same teacher every week. These are ongoing classes, not a one-off workshop. From {rm(min_cl)} a month. Music and voice lessons are one to one, at {music} per hour.",
                      f'<a class="btn" href="/trial/">Book a {rm(TRIAL["price"])} trial</a><a class="btn ghost" href="/holiday-camps/">Holiday camps</a>',
                      crumbs(('/', 'Home'), (None, 'Classes')), img=('art-photo-1.jpg', 'Young students holding up their paintings'))
     body += f'''<section class="sec v-academy"><div class="wrap">
-  <div class="sec-head"><span class="eyebrow">Programmes</span><h2>Choose a <em>class</em></h2><p>Art classes are monthly, with a showcase every term. Music lessons are one to one. Siblings get {int(CL['discounts']['sibling'] * 100)}% off.</p></div>
+  <div class="sec-head"><span class="eyebrow">Programmes</span><h2>Choose a <em>class</em></h2><p>Art classes are monthly, with a showcase every term. Music lessons are one to one. Siblings get {int(CL['discounts']['sibling'] * 100)}% off.</p>
+  <p>Drawing and painting are part of <a href="/classes/kids-art-younger/">ages 5 to 9</a>, <a href="/classes/kids-art-older/">ages 10 to 15</a> and <a href="/classes/adult-art/">adult art</a>. A paint night is on the <a href="/workshops/">workshops page</a>.</p></div>
   <div class="grid-cards">{''.join(ProgrammeCard(p) for p in PROGS)}</div>
 </div></section>
 <section class="sec tight v-academy"><div class="wrap">{academy_cta()}</div></section>
@@ -1757,8 +1844,8 @@ def build_birthdays():
   <div><label for="bm">Anything else? <span class="muted">(optional)</span></label><textarea id="bm" name="notes" rows="2" maxlength="600"></textarea></div>'''
     form = WaForm("Hi, I'd like to book a {package} for {n} guests on {date} (birthday: {age}).{notes} Name: {name}. Source: {source}.", fields,
                   'Send on WhatsApp', fmt='birthday', done='we will check the date and reply')
-    body = hero_band('Master Artist Studio Sessions', 'Birthday parties <em>they make something at</em>',
-                     'Painting, clay or baking, with a teacher, all materials and time for cake. Everyone takes their piece home.',
+    body = hero_band('Master Artist Studio Sessions', 'Birthday parties in KL: <em>art, clay and baking</em>',
+                     'Painting, clay or baking in Desa Sri Hartamas, with a teacher, all materials and time for cake. Everyone takes their piece home.',
                      '<a class="btn" href="#quote">Plan a birthday</a><a class="btn ghost" href="#parties">See the parties</a>',
                      crumbs(('/', 'Home'), ('/groups/', 'Groups'), (None, 'Birthdays')), img=('painting-4.jpg', 'A teacher helping children paint'))
     body += f'''<section class="sec v-studio" id="parties"><div class="wrap">
