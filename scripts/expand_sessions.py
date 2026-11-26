@@ -191,7 +191,7 @@ def expand(seed, themes, bookings, holidays, today, days):
         if entry.get('room_label'):
             s['room'] = entry['room_label']
             s['location_name'] = entry['room_label']
-        for key in ('summary', 'pair_word', 'seo_title', 'seo_description'):
+        for key in ('summary', 'pair_word', 'seo_title', 'seo_description', 'early_price'):
             if entry.get(key):
                 s[key] = entry[key]
         if fmt.get('bundle'):
@@ -225,9 +225,11 @@ def preview(sessions, until):
             extra = f" — {s['public_holiday']}" + (' (no surcharge)' if s['surcharge_waived'] else '') if s['public_holiday'] else ''
             lines += ['', f"## {d.strftime('%A %-d %B %Y')}{extra}"]
         price = f"RM{s['price']}" + (f" ({s['price_unit']})" if s['price_unit'] else '') if s['price'] else 'TODO price'
+        if s.get('early_price'):
+            price = f"RM{s['early_price']} early bird · RM{s['price']} regular"
         if s.get('bundle'):
             price = f"Family Sunday RM{s['price']} (+RM{s['bundle']['extra_child']} per extra child)"
-        pair = f" · {s.get('pair_word') or 'pair'} RM{s['pair_price']}" if s['pair_price'] else ''
+        pair = f" · {s.get('pair_word') or 'pair'} RM{s['pair_price']}" if s['pair_price'] and not s.get('early_price') else ''
         dine = f" · Dine add-on ({s['dine_timing']})" if s['dine'] else ''
         cap = f"{s['seats_left']} of {s['cap']}{' ' + s['cap_unit'] if s['cap_unit'] else ''} seats left"
         theme = f" · {s['theme']}" if s['theme'] else ''
