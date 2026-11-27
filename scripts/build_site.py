@@ -997,6 +997,47 @@ def length(fmt):
     return f"{h}h{m:02d}" if m else f"{h} hour{'s' if h != 1 else ''}"
 
 
+def session_minutes(s):
+    """Minutes between a session's own start and end.
+
+    A dated session can run longer than its format. Gingerbread is 15:00–17:30
+    on a Bake Lab format that is otherwise 2 hours.
+    """
+    start, end = s.get('time'), s.get('end')
+    if start and end:
+        sh, sm = map(int, start.split(':'))
+        eh, em = map(int, end.split(':'))
+        span = (eh * 60 + em) - (sh * 60 + sm)
+        if span > 0:
+            return span
+    return FORMATS[s['format']].get('duration_min', 0)
+
+
+def session_length(s):
+    """Length of one dated session, as the schedule sheet writes a half hour.
+
+    150 minutes is '2.5 hours' (Gingerbread). Whole hours stay '2 hours'.
+    Birthday packages keep length(), which still writes 150 minutes as '2h30'.
+    """
+    h, m = divmod(session_minutes(s), 60)
+    if m == 30:
+        return f"{h}.5 hours" if h else "30 minutes"
+    return length({'duration_min': h * 60 + m})
+
+
+def listed_cap(fmt, sessions):
+    """Cap named beside the dates on a format page.
+
+    That sentence describes the dates listed there. When they all share one cap,
+    use it. Gingerbread is the only Bake Lab date, and that specialty cap is 20.
+    The format's usual cap stays in the data (Bake Lab is 24).
+    """
+    caps = {s['cap'] for s in sessions if s.get('cap') is not None}
+    if len(caps) == 1:
+        return next(iter(caps))
+    return fmt['cap']
+
+
 def teachers_for(key):
     return [t for t in TEACHERS if key in t.get('teaches', [])]
 
@@ -1108,12 +1149,15 @@ def FormatCard(f):
         span = fmt_range(f"{nxt['time']}-{nxt['end']}")
         when = f'<b>Next: {e(short)} · {day_date(nxt["date"])} · {span} · {rm(nxt["price"])} per person</b>'
     badge = '<span class="badge dine">Dine + workshop available</span>' if f.get('dine_addon') else ''
+    # The meta line follows the next date when that date runs a different length
+    # (Gingerbread is 2.5 hours; usual Bake Lab stays 2 hours).
+    shown = session_length(nxt) if nxt else length(f)
     return f'''<article class="card v-studio">
   {photo(f['id'])}
   <div class="body">
     <h3>{e(f['name'])}</h3><div class="sub">{e(hub_card_sub(f))}</div>
     <div class="price">{money_from(f) or 'Ask us on WhatsApp'} {pair}</div>
-    <div class="meta">{when}<span>{e(length(f))} · {e(f['room'])}</span></div>
+    <div class="meta">{when}<span>{e(shown)} · {e(f['room'])}</span></div>
     <div class="badges">{badge}</div>
     <div class="actions"><a class="btn" href="/workshops/{f['id']}/">See dates</a></div>
   </div>
@@ -1339,7 +1383,7 @@ def build_format(f):
     later = ''
     if rest:
         later = f'''<section class="sec v-studio" id="more-dates"><div class="wrap">
-  <div class="sec-head"><span class="eyebrow">Later</span><h2>More <em>dates</em></h2><p>Seats are limited to {f['cap']}{' ' + e(f['cap_unit']) if f.get('cap_unit') else ''} a session.</p></div>
+  <div class="sec-head"><span class="eyebrow">Later</span><h2>More <em>dates</em></h2><p>Seats are limited to {listed_cap(f, sessions)}{' ' + e(f['cap_unit']) if f.get('cap_unit') else ''} a session.</p></div>
   {more}
 </div></section>'''
     classes_note = ''
@@ -1449,7 +1493,7 @@ def build_session_day(slots):
             price_line = rm(s['price']) + (f" <small>{e(s['price_unit'])}</small>" if s.get('price_unit') else '')
         if s.get('bundle') and s.get('price') and not s.get('confirm') and not s.get('early_price'):
             price_line = f"{rm(s['price'])} <small>{e(s['bundle']['name'])}, adult + child · extra child {rm(s['bundle']['extra_child'])}</small>"
-        items = [('Date', long_date(s['date'])), ('Time', f"{fmt_time(s['time'])}–{fmt_time(s['end'])}"), ('Length', e(length(f))),
+        items = [('Date', long_date(s['date'])), ('Time', f"{fmt_time(s['time'])}–{fmt_time(s['end'])}"), ('Length', e(session_length(s))),
                  ('Room', e(s['room'])), ('Seats', seats_html(s))]
         if s.get('public_holiday'):
             items.append(('Holiday', e(s['public_holiday']) + (' · no surcharge' if s.get('surcharge_waived') else '')))
