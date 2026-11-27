@@ -61,7 +61,7 @@
       "cap": 24,
       "room": "L1 kitchen",
       "audience": "all",
-      "summary": "One bake, boxed to take home. A familiar bread most weeks (focaccia, pizza dough, cinnamon rolls, bagels, milk bread); specialty breads and cakes at RM85.",
+      "summary": "One bake, boxed to take home. A familiar bread most weeks. The price on each date is the price for that bake.",
       "upsell": "baking-course",
       "dine_addon": true,
       "live_from": "2026-11-04",
@@ -139,6 +139,20 @@
       "summary": "Learn the basic stitches with chunky yarn and a big hook, and leave with your own small bag. No experience needed.",
       "dine_addon": true,
       "live_from": "2026-11-04"
+    },
+    {
+      "id": "kids",
+      "name": "Kids workshops",
+      "discipline": "baking",
+      "duration_min": 120,
+      "price": null,
+      "cap": 12,
+      "room": "L1 kitchen",
+      "audience": "kids 6-12",
+      "summary": "A one-off workshop for children, including kids baking. Weekly art classes are a separate page.",
+      "upsell": "kids-art",
+      "dine_addon": false,
+      "live_from": "2026-11-08"
     },
     {
       "id": "kids-art-studio",
@@ -452,7 +466,7 @@
     "note": "Spec 03-PROMPTS step 7: RM100, RM200 and any-workshop. Validity period TODO."
   },
   "schedule": {
-    "_note": "Dated sessions from Sabrina's schedule (Google Sheet, Nov 2026). Rooms are Claude's guesses: evenings and Sunday art in the L2 front room; candles in the L1 front room; baking in the L1 kitchen.",
+    "_note": "Dated sessions. From 1 Dec 2026 these match Sabrina's private schedule as read 27 Nov 2026, 1:27am KL. confirm means the sheet has no price yet. Rooms: art in L2 front, candles in L1 front, baking and kids baking in the L1 kitchen. Gingerbread keeps its own price and 2 pax total.",
     "sessions": [
       {
         "date": "2026-11-04",
@@ -567,6 +581,213 @@
         "pair_word": "2 pax",
         "seo_title": "Gingerbread Baking Workshop · Sun 29 Nov 3pm",
         "seo_description": "Gingerbread baking workshop, Sun 29 Nov, 3–5:30pm, Savor Level 1, Sri Hartamas. Bake a gingerbread man, decorate a house. RM130 per person."
+      },
+      {
+        "date": "2026-12-01",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "watercolour-botanicals",
+        "theme": "Watercolour Christmas Tree",
+        "room": "l2-front",
+        "price": 80
+      },
+      {
+        "date": "2026-12-01",
+        "time": "19:00",
+        "end": "21:00",
+        "format": "glow-canvas",
+        "theme": "Glow-in-the-Dark Galaxy",
+        "room": "l2-front",
+        "price": 85
+      },
+      {
+        "date": "2026-12-02",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "acrylic-canvas",
+        "theme": "Silhouette Reindeer",
+        "room": "l2-front",
+        "price": 89
+      },
+      {
+        "date": "2026-12-02",
+        "time": "19:00",
+        "end": "21:00",
+        "format": "acrylic-canvas",
+        "theme": "Silhouette Reindeer",
+        "room": "l2-front",
+        "price": 89
+      },
+      {
+        "date": "2026-12-03",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "acrylic-canvas",
+        "theme": "Aurora Christmas Night",
+        "room": "l2-front",
+        "confirm": true
+      },
+      {
+        "date": "2026-12-03",
+        "time": "19:00",
+        "end": "21:00",
+        "format": "watercolour-botanicals",
+        "theme": "Watercolour Christmas Tree",
+        "room": "l2-front",
+        "price": 80
+      },
+      {
+        "date": "2026-12-06",
+        "time": "10:00",
+        "end": "12:00",
+        "format": "textured-canvas",
+        "theme": "Floral Impasto",
+        "room": "l2-front",
+        "price": 89
+      },
+      {
+        "date": "2026-12-06",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "textured-canvas",
+        "theme": "Floral Impasto",
+        "room": "l2-front",
+        "price": 89
+      },
+      {
+        "date": "2026-12-07",
+        "time": "19:00",
+        "end": "21:00",
+        "format": "acrylic-canvas",
+        "theme": "Aurora Christmas Night",
+        "room": "l2-front",
+        "confirm": true
+      },
+      {
+        "date": "2026-12-08",
+        "time": "10:00",
+        "end": "12:00",
+        "format": "kids",
+        "theme": "Kids Baking: Christmas Cookies",
+        "room": "l1-kitchen",
+        "confirm": true
+      },
+      {
+        "date": "2026-12-09",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "kids",
+        "theme": "Kids Baking: Christmas Cookies",
+        "room": "l1-kitchen",
+        "confirm": true
+      },
+      {
+        "date": "2026-12-13",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "candle-making",
+        "theme": "Christmas Ornaments",
+        "room": "l1-front",
+        "confirm": true
+      },
+      {
+        "date": "2026-12-15",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "acrylic-canvas",
+        "theme": "Ornament",
+        "room": "l2-front",
+        "price": 89
+      },
+      {
+        "date": "2026-12-15",
+        "time": "19:00",
+        "end": "21:00",
+        "format": "textured-canvas",
+        "theme": "Christmas Tree",
+        "room": "l2-front",
+        "price": 89
+      },
+      {
+        "date": "2026-12-16",
+        "time": "10:00",
+        "end": "12:00",
+        "format": "acrylic-canvas",
+        "theme": "Silhouette Reindeer",
+        "room": "l2-front",
+        "price": 89
+      },
+      {
+        "date": "2026-12-16",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "bake-lab",
+        "theme": "Brownies",
+        "room": "l1-kitchen",
+        "price": 85
+      },
+      {
+        "date": "2026-12-17",
+        "time": "10:00",
+        "end": "12:00",
+        "format": "kids",
+        "theme": "Kids Baking: Cookies and Ornaments",
+        "room": "l1-kitchen",
+        "confirm": true
+      },
+      {
+        "date": "2026-12-17",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "bake-lab",
+        "theme": "Cakepop",
+        "room": "l1-kitchen",
+        "confirm": true
+      },
+      {
+        "date": "2026-12-20",
+        "time": "10:00",
+        "end": "12:00",
+        "format": "acrylic-canvas",
+        "theme": "Silhouette Reindeer",
+        "room": "l2-front",
+        "price": 89
+      },
+      {
+        "date": "2026-12-20",
+        "time": "15:00",
+        "end": "17:30",
+        "format": "candle-making",
+        "theme": "Candle Making",
+        "room": "l1-front",
+        "confirm": true
+      },
+      {
+        "date": "2026-12-22",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "watercolour-botanicals",
+        "theme": "Christmas Ornaments",
+        "room": "l2-front",
+        "confirm": true
+      },
+      {
+        "date": "2026-12-23",
+        "time": "15:00",
+        "end": "17:00",
+        "format": "acrylic-canvas",
+        "theme": "Aurora Christmas Night",
+        "room": "l2-front",
+        "price": 89
+      },
+      {
+        "date": "2026-12-23",
+        "time": "19:00",
+        "end": "21:00",
+        "format": "candle-making",
+        "theme": "Scented Candle",
+        "room": "l1-front",
+        "confirm": true
       }
     ]
   }

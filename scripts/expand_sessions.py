@@ -26,10 +26,33 @@ import argparse
 import datetime as dt
 import json
 import pathlib
+from zoneinfo import ZoneInfo
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA = ROOT / 'data'
 DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+KL = ZoneInfo('Asia/Kuala_Lumpur')
+
+
+def kl_today():
+    return dt.datetime.now(KL).date()
+
+
+def load_schedule(seed):
+    """The sheet import replaces the dated list when a sync has written one."""
+    path = DATA / 'schedule-import.json'
+    if not path.exists():
+        return seed
+    try:
+        doc = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        return seed
+    rows = doc.get('sessions') or []
+    if not rows:
+        return seed
+    seed = json.loads(json.dumps(seed))
+    seed.setdefault('schedule', {})['sessions'] = rows
+    return seed
 
 
 def load(name, default=None):
@@ -126,15 +149,18 @@ def expand(seed, themes, bookings, holidays, today, days):
                 if entry.get('alternate_weeks_with') and week_no % 2 == 1:
                     fid = entry['alternate_weeks_with']
                 week_no += 1
-                yield d, entry, fid
+                yield d, entry, fid, False
                 d += dt.timedelta(days=7)
         for entry in seed.get('schedule', {}).get('sessions', []):
             d = dt.date.fromisoformat(entry['date'])
             if start <= d <= end:
-                yield d, dict(entry, day=DAY_NAMES[d.weekday()]), entry['format']
+                # A row Sabrina dated is kept even when a weekly closure would
+                # drop it (Sunday 10am, Monday evening). The weekly template
+                # still obeys those rules.
+                yield d, dict(entry, day=DAY_NAMES[d.weekday()]), entry['format'], True
 
     sessions, skipped = [], []
-    for d, entry, fid in occurrences():
+    for d, entry, fid, from_sheet in occurrences():
         fmt = formats[fid]
         iso = d.isoformat()
         if fmt.get('status') == 'paused':
@@ -142,13 +168,13 @@ def expand(seed, themes, bookings, holidays, today, days):
         live_from = dt.date.fromisoformat(max(fmt.get('live_from', iso), entry.get('from', iso)))
         if d < live_from:
             continue
-        if closed(entry['day'], entry['time'], closures):
+        if not from_sheet and closed(entry['day'], entry['time'], closures):
             skipped.append(f"{iso} {entry['time']} {fid}: closure rule")
             continue
         room_rule = next((r for r in seed.get('rooms', []) if r['id'] == entry.get('room')), {})
         blocked = next((b for b in room_rule.get('blocked', []) if b['day'] == entry['day']
                         and hm_to_min(entry['time']) < hm_to_min(b['until'])), None)
-        if blocked:
+        if blocked and not from_sheet:
             skipped.append(f"{iso} {entry['time']} {fid}: {room_rule['name']} blocked ({blocked['reason']})")
             continue
         sid = f"{fid}-{iso}-{entry['time'].replace(':', '')}"
@@ -159,10 +185,15 @@ def expand(seed, themes, bookings, holidays, today, days):
             continue
         variant = entry.get('variant') if fid == entry['format'] else None
         price, pair, price_set = price_for(fmt, d, policies, variant)
-        if price_set == 'launch' and entry.get('price'):   # a dated session priced on its own (e.g. the first week)
-            price, pair = entry['price'], entry.get('pair_price', pair)
+        # "confirm" means the sheet has no price yet. A sheet price stands on
+        # its own: no inherited pair price, and no holiday surcharge on top.
+        if entry.get('confirm'):
+            price, pair = None, None
+        elif entry.get('price'):
+            price = entry['price']
+            pair = entry['pair_price'] if 'pair_price' in entry else None
         is_hol = iso in hol
-        if is_hol and iso not in waived and price:
+        if is_hol and iso not in waived and price and not entry.get('price') and not entry.get('confirm'):
             price = round(price * (1 + surcharge))
         # A dated session can pin its own cap. The 29 Nov gingerbread stays at 20
         # while Bake Lab's usual cap is 24.
@@ -187,6 +218,7 @@ def expand(seed, themes, bookings, holidays, today, days):
             'theme': themes.get(sid) or entry.get('theme'), 'public_holiday': hol.get(iso),
             'surcharge_waived': is_hol and iso in waived,
             'type': fmt.get('type', 'workshop'),
+            'confirm': bool(entry.get('confirm')),
         }
         if entry.get('room_label'):
             s['room'] = entry['room_label']
@@ -240,7 +272,7 @@ def preview(sessions, until):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--today', default=dt.date.today().isoformat())
+    ap.add_argument('--today', default=kl_today().isoformat())
     ap.add_argument('--days', type=int, default=42)
     args = ap.parse_args()
     today = dt.date.fromisoformat(args.today)
@@ -250,6 +282,7 @@ def main():
     private = DATA / 'private' / 'workshops-private.json'   # never copied into workshops.json
     if private.exists():
         deep_merge(seed, json.loads(private.read_text()))
+    seed = load_schedule(seed)   # a fetched sheet wins over the seed and the private overlay
     themes = load('themes.json', {})
     bookings = load('bookings.json', {})
     holidays = load('public-holidays.json', {}).get('holidays', [])
